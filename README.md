@@ -23,7 +23,7 @@ Structure
 
 License (GPL 3)
 --------------------------------------------------------------------------------
-elseRPG: An RPG engine.
+elseRPG: An RPG engine.  
 Copyright (C) 2024 Asmov LLC 
 
 This program is free software: you can redistribute it and/or modify

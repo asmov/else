@@ -6,7 +6,7 @@ pub struct Junction {
     exit: Endpoint,
 }
 
-impl Build for Junction {
+impl Built for Junction {
     type BuilderType = JunctionBuilder;
 }
 

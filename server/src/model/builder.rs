@@ -27,7 +27,7 @@ pub trait Builder: Sized {
 }
 
 /// Provides the static creator() and editor() methods.
-pub trait Build {
+pub trait Built {
     type BuilderType: Builder;
 
     fn creator() -> Self::BuilderType {

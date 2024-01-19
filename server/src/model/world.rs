@@ -237,7 +237,7 @@ impl WorldBuilder {
     }
 }
 
-impl Build for World {
+impl Built for World {
     type BuilderType = WorldBuilder;
 }
 

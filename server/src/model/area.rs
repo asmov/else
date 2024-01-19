@@ -146,7 +146,7 @@ impl BuildableDescriptor for AreaBuilder {
     }
 }
 
-impl Build for Area {
+impl Built for Area {
     type BuilderType = AreaBuilder;
 }
 

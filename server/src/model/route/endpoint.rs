@@ -105,7 +105,7 @@ impl Builder for EndpointBuilder {
     }
 }
 
-impl Build for Endpoint {
+impl Built for Endpoint {
     type BuilderType = EndpointBuilder;
 }
 

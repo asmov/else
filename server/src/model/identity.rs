@@ -205,7 +205,7 @@ pub trait BuildableIdentity: Builder {
     }
 }
 
-impl Build for Identity {
+impl Built for Identity {
     type BuilderType = IdentityBuilder;
 }
 

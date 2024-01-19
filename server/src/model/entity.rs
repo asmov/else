@@ -156,7 +156,7 @@ impl IdentifiableMut for Entity {
     }
 }
 
-impl Build for Entity {
+impl Built for Entity {
     type BuilderType = EntityBuilder;
 }
 

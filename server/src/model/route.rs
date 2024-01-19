@@ -1,9 +1,11 @@
+pub mod direction;
 pub mod endpoint;
 pub mod junction;
 pub mod point;
 
 use crate::model::{error::*, builder::*, identity::*, descriptor::*};
-pub use crate::model::route::{endpoint::*, junction::*, point::*};
+
+pub use crate::model::route::{endpoint::*, junction::*, point::*, direction::*};
 
 #[derive(Debug)]
 pub struct Route {
@@ -13,33 +15,35 @@ pub struct Route {
     point_b: Endpoint
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum Direction {
-    North,
-    East,
-    South,
-    West,
-    Up,
-    Down,
-    UpNorth,
-    UpEast,
-    UpSouth,
-    UpWest,
-    DownNorth,
-    DownEast,
-    DownSouth,
-    DownWest
+impl Identifiable for Route {
+    fn identity(&self) -> &Identity {
+        &self.identity
+    }
+}
+
+impl IdentifiableMut for Route {
+    fn identity_mut(&mut self) -> &mut Identity {
+        &mut self.identity
+    }
+}
+
+impl Descriptive for Route {
+    fn descriptor(&self) -> &Descriptor {
+        &self.descriptor
+    }
+}
+
+impl DescriptiveMut for Route {
+    fn descriptor_mut(&mut self) -> &mut Descriptor {
+        &mut self.descriptor
+    }
+}
+
+impl Built for Route {
+    type BuilderType = RouteBuilder;
 }
 
 impl Route {
-    pub fn identity(&self) -> &Identity {
-        &self.identity
-    }
-
-    pub fn descriptor(&self) -> &Descriptor {
-        &self.descriptor
-    }
-
     pub fn point_a(&self) -> &Point {
         &self.point_a
     }
@@ -128,7 +132,7 @@ impl Builder for RouteBuilder {
                 .create()?,
             point_b: self.point_b
                 .ok_or_else(||
-                    Error::FieldNotSet{class: RouteField::CLASSNAME, field: RouteField::FIELDNAME_POINT_A})?
+                    Error::FieldNotSet{class: RouteField::CLASSNAME, field: RouteField::FIELDNAME_POINT_B})?
                 .create()?,
         })
     }
@@ -150,15 +154,11 @@ impl Builder for RouteBuilder {
         }
         if let Some(point_b) = self.point_b {
             original.point_b = point_b.create()?;
-            fields_changed.push(RouteField::PointA.field())
+            fields_changed.push(RouteField::PointB.field())
         }
 
         Ok(ModifyResult::new(fields_changed))
     }
-}
-
-impl Build for Route {
-    type BuilderType = RouteBuilder;
 }
 
 impl BuildableIdentity for RouteBuilder {

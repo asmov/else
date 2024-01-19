@@ -64,7 +64,7 @@ impl Builder for CharacterBuilder {
     }
 }
 
-impl Build for Character {
+impl Built for Character {
     type BuilderType = CharacterBuilder;
 }
 

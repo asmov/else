@@ -215,7 +215,7 @@ pub trait BuildableDescriptor: Builder {
     fn descriptor_builder(&mut self) -> &mut DescriptorBuilder;
 }
 
-impl Build for Descriptor {
+impl Built for Descriptor {
     type BuilderType = DescriptorBuilder;
 }
 
