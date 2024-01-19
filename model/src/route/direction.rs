@@ -1,5 +1,6 @@
+use serde;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize, Debug)]
 pub enum Direction {
     North,
     East,

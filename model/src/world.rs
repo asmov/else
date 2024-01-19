@@ -1,6 +1,7 @@
 use crate::{error::*, builder::*, identity::*, descriptor::*, entity::*, thing::*, area::*, route::*};
+use serde;
 
-#[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct World {
     identity: Identity,
     descriptor: Descriptor,

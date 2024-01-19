@@ -1,8 +1,9 @@
 use crate::{s, error::*, builder::*};
+use serde;
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`
-#[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Descriptor {
     /// The title
     name: String,

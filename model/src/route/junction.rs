@@ -1,6 +1,7 @@
-use crate::{error::*, builder::*, identity::*, descriptor::*, route::*};
+use crate::{error::*, builder::*, route::*};
+use serde;
 
-#[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Junction {
     entrances: Vec<Endpoint>,
     exit: Endpoint,

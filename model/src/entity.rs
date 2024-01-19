@@ -1,7 +1,8 @@
-use crate::{s, error::*, identity::*, builder::*, descriptor::*, inventory::*, composition::*};
+use crate::{error::*, identity::*, builder::*, descriptor::*, inventory::*, composition::*};
+use serde;
 
 
-#[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Entity {
     identity: Identity,
     descriptor: Descriptor,

@@ -35,12 +35,11 @@ pub use area::*;
 pub use route::*;
 pub use world::*;
 
-#[cfg(test)]
-mod tests {
-    use crate::{self as model, *};
+pub mod testing {
     use crate::s;
+    use crate::{self as model, *};
 
-    fn create_world() -> World {
+    pub fn create_world() -> World {
         let mut world_creator = model::World::creator();
 
         world_creator.identity_builder().guid(0, 0, 1, 1).unwrap();
@@ -144,9 +143,17 @@ mod tests {
         world
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::testing;
+    use crate::{self as model, *};
+    use crate::s;
+
     #[test]
     fn test_create_world() {
-        let world = create_world();
+        let world = testing::create_world();
         dbg!(&world);
 
         assert_eq!("Cat House", world.find_area("cat_house").unwrap().name());
@@ -155,7 +162,7 @@ mod tests {
 
     #[test]
     fn test_spawn_thing() {
-        let mut world = create_world();
+        let mut world = testing::create_world();
 
         let area = world.find_area("cat_house").unwrap();
 
@@ -180,7 +187,7 @@ mod tests {
 
     #[test]
     fn test_manual_building() {
-        let mut world = create_world();
+        let mut world = testing::create_world();
 
         let litterbox_id = world.find_area("cat_house")
             .unwrap()

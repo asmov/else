@@ -1,11 +1,12 @@
 use crate::{error::*, builder::*};
+use serde;
 
 pub type ID = u64;
 pub type RegionID = u16;
 pub type WorldID = u16;
 pub type UniverseID = u32;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(PartialEq, Eq, serde::Serialize, serde::Deserialize, Debug)]
 pub struct Identity {
     id: ID,
     region_id: RegionID,

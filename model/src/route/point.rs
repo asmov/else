@@ -1,6 +1,7 @@
 use crate::{error::*, builder::*, identity::*, descriptor::*, route::*};
+use serde;
 
-#[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum Point {
     Endpoint (Endpoint),
     Junction (Junction)

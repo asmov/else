@@ -1,6 +1,7 @@
 use crate::{error::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*};
+use serde;
 
-#[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum Thing {
     Character (Character),
     Item (Item)

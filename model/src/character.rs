@@ -1,6 +1,7 @@
 pub use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*};
+use serde;
 
-#[derive(Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Character {
     entity: Entity,
 }
