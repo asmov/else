@@ -1,4 +1,4 @@
-use crate::{s, model::{error::*, builder::*}};
+use crate::{s, error::*, builder::*};
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`

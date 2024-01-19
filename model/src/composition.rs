@@ -1,4 +1,4 @@
-use crate::model::{identity::*, descriptor::*};
+use crate::{identity::*, descriptor::*};
 
 #[derive(Debug)]
 pub struct Composition {

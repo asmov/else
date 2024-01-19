@@ -1,4 +1,4 @@
-pub use crate::{s, model::{error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*}};
+pub use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*};
 
 #[derive(Debug)]
 pub struct Character {

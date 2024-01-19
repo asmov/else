@@ -1,4 +1,4 @@
-use crate::model::{error::*, builder::*, identity::*, descriptor::*, entity::*, thing::*, area::*, route::*};
+use crate::{error::*, builder::*, identity::*, descriptor::*, entity::*, thing::*, area::*, route::*};
 
 #[derive(Debug)]
 pub struct World {

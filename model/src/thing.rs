@@ -1,4 +1,4 @@
-use crate::model::{error::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*};
+use crate::{error::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*};
 
 #[derive(Debug)]
 pub enum Thing {

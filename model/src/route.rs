@@ -3,9 +3,9 @@ pub mod endpoint;
 pub mod junction;
 pub mod point;
 
-use crate::model::{error::*, builder::*, identity::*, descriptor::*};
+use crate::{error::*, builder::*, identity::*, descriptor::*};
 
-pub use crate::model::route::{endpoint::*, junction::*, point::*, direction::*};
+pub use crate::route::{endpoint::*, junction::*, point::*, direction::*};
 
 #[derive(Debug)]
 pub struct Route {

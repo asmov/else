@@ -1,4 +1,4 @@
-use crate::model::{error::*, builder::*, identity::*, descriptor::*, entity::*};
+use crate::{error::*, builder::*, identity::*, descriptor::*, entity::*};
 
 /// Represents an area that things are located in, generally. There is no exact position.
 /// Each area has a fixed set of `Route` objects that link it to other areas. 

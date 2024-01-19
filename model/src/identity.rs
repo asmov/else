@@ -1,4 +1,4 @@
-use crate::model::{error::*, builder::*};
+use crate::{error::*, builder::*};
 
 pub type ID = u64;
 pub type RegionID = u16;

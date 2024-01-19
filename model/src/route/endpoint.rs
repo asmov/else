@@ -1,4 +1,4 @@
-use crate::model::{error::*, builder::*, identity::*, descriptor::*, route::*};
+use crate::{error::*, builder::*, identity::*, descriptor::*, route::*};
 
 /// Connects a single Area to a Route.  
 /// All fields are from the point-of-view of the Area, describing the Route that this connects to.

@@ -1,4 +1,7 @@
-pub mod types {
+#[macro_export]
+macro_rules! s {
+    ($s:literal) => { String::from($s) };
+    ($s:ident) => { $s.to_string() };
 }
 
 pub mod error;
@@ -34,7 +37,7 @@ pub use world::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{self, *};
+    use crate::{self as model, *};
     use crate::s;
 
     fn create_world() -> World {

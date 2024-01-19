@@ -1,4 +1,4 @@
-use crate::model::{error::*, builder::*, identity::*, descriptor::*, route::*};
+use crate::{error::*, builder::*, identity::*, descriptor::*, route::*};
 
 #[derive(Debug)]
 pub struct Junction {

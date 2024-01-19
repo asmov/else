@@ -1,4 +1,4 @@
-use crate::model::error::*;
+use crate::error::*;
 
 pub trait Builder: Sized {
     type Type;

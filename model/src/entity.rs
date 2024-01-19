@@ -1,4 +1,4 @@
-use crate::{s, model::{error::*, identity::*, builder::*, descriptor::*, inventory::*, composition::*}};
+use crate::{s, error::*, identity::*, builder::*, descriptor::*, inventory::*, composition::*};
 
 
 #[derive(Debug)]

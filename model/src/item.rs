@@ -1,4 +1,4 @@
-use crate::model::entity::*;
+use crate::entity::*;
 
 #[derive(Debug)]
 pub struct Item {
