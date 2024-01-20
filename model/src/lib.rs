@@ -18,7 +18,7 @@ pub mod thing;
 pub mod area;
 pub mod route;
 pub mod access;
-pub mod zone;
+pub mod world;
 
 pub use error::*;
 pub use builder::*;
@@ -33,27 +33,27 @@ pub use item::*;
 pub use thing::*;
 pub use area::*;
 pub use route::*;
-pub use zone::*;
+pub use world::*;
 
 pub mod testing {
     use crate::s;
     use crate::{self as model, *};
 
-    pub fn create_zone() -> Zone {
-        let mut zone_creator = model::Zone::creator();
+    pub fn create_world() -> World {
+        let mut world_creator = model::World::creator();
 
-        zone_creator.identity_builder().guid(0, 0, 1, 1).unwrap();
+        world_creator.identity_builder().guid(0, 0, 1, 1).unwrap();
 
-        zone_creator.descriptor({
+        world_creator.descriptor({
                 let mut descriptor = model::Descriptor::creator();
-                descriptor.key(s!("unit_test_zone")).unwrap();
-                descriptor.name(s!("Unit Test Zone")).unwrap();
-                descriptor.description(s!("A zone where all models are equally buggy")).unwrap();
+                descriptor.key(s!("unit_test_world")).unwrap();
+                descriptor.name(s!("Unit Test World")).unwrap();
+                descriptor.description(s!("A world where all models are equally buggy")).unwrap();
                 descriptor.notes(s!("Testing only")).unwrap();
                 descriptor
         }).unwrap();
 
-        zone_creator.add_area({
+        world_creator.add_area({
             let mut area_creator = model::Area::creator();
             area_creator.descriptor({
                 let mut descriptor = model::Descriptor::creator();
@@ -65,7 +65,7 @@ pub mod testing {
             area_creator
         }).unwrap();
 
-        zone_creator.add_area({
+        world_creator.add_area({
             let mut area_creator = model::Area::creator();
             area_creator.descriptor({
                 let mut descriptor = model::Descriptor::creator();
@@ -77,7 +77,7 @@ pub mod testing {
             area_creator
         }).unwrap();
 
-        zone_creator.add_area({
+        world_creator.add_area({
             let mut area_creator = model::Area::creator();
             area_creator.descriptor({
                 let mut descriptor = model::Descriptor::creator();
@@ -89,7 +89,7 @@ pub mod testing {
             area_creator
         }).unwrap();
 
-        zone_creator.add_thing({
+        world_creator.add_thing({
             let mut character_creator = model::Character::creator();
             let descriptor_creator = character_creator.entity_builder().descriptor_builder();
             descriptor_creator.key(s!("black_cat")).unwrap();
@@ -98,12 +98,12 @@ pub mod testing {
             character_creator.thing_builder()
         }).unwrap();
 
-        let mut zone = zone_creator.create().unwrap();
-        let mut zone_editor = Zone::editor();
+        let mut world = world_creator.create().unwrap();
+        let mut world_editor = World::editor();
 
-        zone_editor.add_route({
-            let area_a = zone.find_area("backyard").unwrap();
-            let area_b = zone.find_area("dog_house").unwrap();
+        world_editor.add_route({
+            let area_a = world.find_area("backyard").unwrap();
+            let area_b = world.find_area("dog_house").unwrap();
             let mut route_creator = Route::creator();
             route_creator.descriptor({
                 let mut descriptor_creator = Descriptor::creator();
@@ -138,9 +138,9 @@ pub mod testing {
             route_creator
         }).unwrap();
 
-        let _result = zone_editor.modify(&mut zone).unwrap();
+        let _result = world_editor.modify(&mut world).unwrap();
         
-        zone
+        world
     }
 
 }
@@ -152,19 +152,19 @@ mod tests {
     use crate::s;
 
     #[test]
-    fn test_create_zone() {
-        let zone = testing::create_zone();
-        dbg!(&zone);
+    fn test_create_world() {
+        let world = testing::create_world();
+        dbg!(&world);
 
-        assert_eq!("Cat House", zone.find_area("cat_house").unwrap().name());
-        assert_eq!("Black Cat", zone.find_thing("black_cat").unwrap().name());
+        assert_eq!("Cat House", world.find_area("cat_house").unwrap().name());
+        assert_eq!("Black Cat", world.find_thing("black_cat").unwrap().name());
     }
 
     #[test]
     fn test_spawn_thing() {
-        let mut zone = testing::create_zone();
+        let mut world = testing::create_world();
 
-        let area = zone.find_area("cat_house").unwrap();
+        let area = world.find_area("cat_house").unwrap();
 
         let mut character_creator = model::Character::creator();
         character_creator.entity({
@@ -179,17 +179,17 @@ mod tests {
             entity_creator
         }).unwrap();
 
-        let thing_id = zone.spawn_thing(character_creator.thing_builder(), area.id()).unwrap();
-        let thing = zone.thing(thing_id).unwrap();
+        let thing_id = world.spawn_thing(character_creator.thing_builder(), area.id()).unwrap();
+        let thing = world.thing(thing_id).unwrap();
 
         assert_eq!("A gray cat", thing.description().unwrap());
     }
 
     #[test]
     fn test_manual_building() {
-        let mut zone = testing::create_zone();
+        let mut world = testing::create_world();
 
-        let litterbox_id = zone.find_area("cat_house")
+        let litterbox_id = world.find_area("cat_house")
             .unwrap()
             .id();
 
@@ -206,19 +206,19 @@ mod tests {
             entity
         }).unwrap();
 
-        let gray_cat_id = zone.spawn_thing(gray_cat.thing_builder(), litterbox_id).unwrap();
-        let gray_cat = zone.thing(gray_cat_id).unwrap();
+        let gray_cat_id = world.spawn_thing(gray_cat.thing_builder(), litterbox_id).unwrap();
+        let gray_cat = world.thing(gray_cat_id).unwrap();
 
         assert_eq!("Cat", gray_cat.name());
 
-        let result = zone.find_things("Cat");
+        let result = world.find_things("Cat");
         let gray_cat = result.first().unwrap();
 
         assert_eq!("A gray cat", gray_cat.description().unwrap());
 
         // test simple mutation
 
-        let gray_cat = zone.find_thing_mut("gray_cat").unwrap();
+        let gray_cat = world.find_thing_mut("gray_cat").unwrap();
 
         let mut gray_cat_descriptor_editor = Descriptor::editor();
         gray_cat_descriptor_editor.description(s!("A slightly gray cat")).unwrap();
@@ -227,7 +227,7 @@ mod tests {
         let gray_cat_editor = Entity::editor();
         gray_cat_editor.modify(gray_cat.entity_mut()).unwrap();
 
-        let gray_cat = zone.find_thing("gray_cat").unwrap();
+        let gray_cat = world.find_thing("gray_cat").unwrap();
         assert_eq!("A slightly gray cat", gray_cat.description().unwrap());
     }
 }
