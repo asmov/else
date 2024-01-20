@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="./tailwind-output.css" rel="stylesheet">
+<title>elseRPG: Terminal</title>
+</head>
+<body>
+
+
+<div id="app" class="container h-screen mx-auto p-1">
+
+<div id="terminal" class="border rounded p-1 h-full flex flex-col space-y-2">
+  <div id="titlebar" class="border rounded px-2 text-center text-lg">
+    <span>This is a title</span>
+  </div>
+  <div id="lines" class="h-full border rounded p-1 overflow-y-scroll">
+    <p>lorem ipsum lorem ipsum lorem ipsum</p>
+    <p>ipsum lorem ipsum lorem ipsum lorem ipsum</p>
+  </div>
+  <input type="input" class="hover:shadow-md rounded border px-4" placeholder="input text ..." title="Input" />
+  <div id="footer" class="flex justify-between items-center px-6 text-sm *:border *:rounded *:px-1">
+    <span>Character Name</span>
+    <span>LH: Shield</span>
+    <span>H: 1000 R: 1000 A: 1000</span>
+    <span>RH: Ice Sword</span>
+    <span>23001</span>
+  </div>
+</div>
+
+</div>
+
+
+</body>
+</html>
