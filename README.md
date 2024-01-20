@@ -1,7 +1,7 @@
-elseRPG
+elseZone
 ================================================================================
 
-An RPG engine.
+A world engine.
 
 Packages
 --------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ Structure
 
 License (GPL 3)
 --------------------------------------------------------------------------------
-elseRPG: An RPG engine.  
+elseZone: A world engine.  
 Copyright (C) 2024 Asmov LLC 
 
 This program is free software: you can redistribute it and/or modify

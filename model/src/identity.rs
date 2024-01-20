@@ -3,14 +3,14 @@ use serde;
 
 pub type ID = u64;
 pub type RegionID = u16;
-pub type WorldID = u16;
+pub type ZoneID = u16;
 pub type UniverseID = u32;
 
 #[derive(PartialEq, Eq, serde::Serialize, serde::Deserialize, Debug)]
 pub struct Identity {
     id: ID,
     region_id: RegionID,
-    world_id: WorldID,
+    zone_id: ZoneID,
     universe_id: UniverseID,
 }
 
@@ -25,8 +25,8 @@ pub trait Identifiable {
         self.identity().region_id
     }
 
-    fn world_id(&self) -> WorldID {
-        self.identity().world_id
+    fn zone_id(&self) -> ZoneID {
+        self.identity().zone_id
     }
 
     fn universe_id(&self) -> UniverseID {
@@ -54,7 +54,7 @@ impl IdentifiableMut for Identity {
 pub enum IdentityField {
     ID,
     RegionID,
-    WorldID,
+    ZoneID,
     UniverseID,
 }
 
@@ -62,19 +62,19 @@ impl IdentityField {
     pub const CLASSNAME: &'static str = "Identity";
     pub const FIELDNAME_ID: &'static str = "id";
     pub const FIELDNAME_REGION_ID: &'static str = "region_id";
-    pub const FIELDNAME_WORLD_ID: &'static str = "world_id";
+    pub const FIELDNAME_ZONE_ID: &'static str = "zone_id";
     pub const FIELDNAME_UNIVERSE_ID: &'static str = "universe_id";
 
     pub const FIELD_ID: Field = Field::new(Self::FIELDNAME_ID, FieldValueType::String);
     pub const FIELD_REGION_ID: Field = Field::new(Self::FIELDNAME_REGION_ID, FieldValueType::StringArray);
-    pub const FIELD_WORLD_ID: Field = Field::new(Self::FIELDNAME_WORLD_ID, FieldValueType::String);
+    pub const FIELD_ZONE_ID: Field = Field::new(Self::FIELDNAME_ZONE_ID, FieldValueType::String);
     pub const FIELD_UNIVERSE_ID: Field = Field::new(Self::FIELDNAME_UNIVERSE_ID, FieldValueType::String);
 
     pub const fn field(&self) -> &'static Field {
         match self {
             Self::ID => &Self::FIELD_ID,
             Self::RegionID => &Self::FIELD_REGION_ID,
-            Self::WorldID => &Self::FIELD_WORLD_ID,
+            Self::ZoneID => &Self::FIELD_ZONE_ID,
             Self::UniverseID => &Self::FIELD_UNIVERSE_ID
         }
     }
@@ -85,7 +85,7 @@ pub struct IdentityBuilder {
     builder_mode: BuilderMode,
     id: Option<ID>,
     region_id: Option<RegionID>,
-    world_id: Option<WorldID>,
+    zone_id: Option<ZoneID>,
     universe_id: Option<UniverseID>
 }
 
@@ -97,7 +97,7 @@ impl Builder for IdentityBuilder {
             builder_mode: BuilderMode::Creator,
             id: None,
             region_id: None,
-            world_id: None,
+            zone_id: None,
             universe_id: None
         }
     }
@@ -119,8 +119,8 @@ impl Builder for IdentityBuilder {
                 Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_ID})?,
             region_id: self.region_id.ok_or_else(||
                 Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_REGION_ID})?,
-            world_id: self.world_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_WORLD_ID})?,
+            zone_id: self.zone_id.ok_or_else(||
+                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_ZONE_ID})?,
             universe_id: self.universe_id.ok_or_else(||
                 Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_UNIVERSE_ID})?
         })
@@ -137,9 +137,9 @@ impl Builder for IdentityBuilder {
             original.region_id = region_id;
             fields_changed.push(IdentityField::RegionID.field());
         }
-        if let Some(world_id) = self.world_id {
-            original.world_id = world_id;
-            fields_changed.push(IdentityField::WorldID.field());
+        if let Some(zone_id) = self.zone_id {
+            original.zone_id = zone_id;
+            fields_changed.push(IdentityField::ZoneID.field());
         }
         if let Some(universe_id) = self.universe_id {
             original.universe_id = universe_id;
@@ -161,8 +161,8 @@ impl IdentityBuilder {
         Ok(())
     }
 
-    pub fn world_id(&mut self, world_id: WorldID) -> Result<()> {
-        self.world_id = Some(world_id);
+    pub fn zone_id(&mut self, zone_id: ZoneID) -> Result<()> {
+        self.zone_id = Some(zone_id);
         Ok(())
     }
 
@@ -171,10 +171,10 @@ impl IdentityBuilder {
         Ok(())
     }
 
-    pub fn guid(&mut self, id: ID, region_id: RegionID, world_id: WorldID, universe_id: UniverseID) -> Result<()> {
+    pub fn guid(&mut self, id: ID, region_id: RegionID, zone_id: ZoneID, universe_id: UniverseID) -> Result<()> {
         self.id(id)?;
         self.region_id(region_id)?;
-        self.world_id(world_id)?;
+        self.zone_id(zone_id)?;
         self.universe_id(universe_id)?;
         Ok(())
     }
@@ -187,8 +187,8 @@ impl IdentityBuilder {
         self.region_id
     }
 
-    pub fn get_world_id(&self) -> Option<WorldID> {
-        self.world_id
+    pub fn get_zone_id(&self) -> Option<ZoneID> {
+        self.zone_id
     }
 
     pub fn get_universe_id(&self) -> Option<UniverseID> {
@@ -211,18 +211,18 @@ impl Built for Identity {
 }
 
 impl Identity {
-    pub fn new(id: ID, region_id: RegionID, world_id: WorldID, universe_id: UniverseID) -> Self {
+    pub fn new(id: ID, region_id: RegionID, zone_id: ZoneID, universe_id: UniverseID) -> Self {
         Self {
             id: id,
             region_id: region_id,
-            world_id: world_id,
+            zone_id: zone_id,
             universe_id: universe_id,
         }
     }
 
     pub fn to_creator(&self) -> IdentityBuilder {
         let mut creator = Identity::creator();
-        creator.guid(self.id, self.region_id, self.world_id, self.universe_id);
+        creator.guid(self.id, self.region_id, self.zone_id, self.universe_id);
         creator
     }
 }

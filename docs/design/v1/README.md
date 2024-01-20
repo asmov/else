@@ -1,4 +1,4 @@
-Design Notes for elseRPG Version 1
+Design Notes for elseZone Version 1
 ================================================================================
 
 

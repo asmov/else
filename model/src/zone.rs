@@ -2,7 +2,7 @@ use crate::{error::*, builder::*, identity::*, descriptor::*, entity::*, thing::
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct World {
+pub struct Zone {
     identity: Identity,
     descriptor: Descriptor,
     areas: Vec<Area>,
@@ -12,7 +12,7 @@ pub struct World {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum WorldField {
+pub enum ZoneField {
     Identity,
     Descriptor,
     Areas,
@@ -20,8 +20,8 @@ pub enum WorldField {
     Things
 }
 
-impl WorldField {
-    pub const CLASSNAME: &'static str = "World";
+impl ZoneField {
+    pub const CLASSNAME: &'static str = "Zone";
     pub const FIELDNAME_IDENTITY: &'static str = "identity";
     pub const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     pub const FIELDNAME_AREAS: &'static str = "areas";
@@ -46,7 +46,7 @@ impl WorldField {
 }
 
 #[derive(Debug)]
-pub struct WorldBuilder {
+pub struct ZoneBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
@@ -56,8 +56,8 @@ pub struct WorldBuilder {
     next_id: ID,
 }
 
-impl Builder for WorldBuilder {
-    type Type = World;
+impl Builder for ZoneBuilder {
+    type Type = Zone;
 
     fn creator() -> Self {
         Self {
@@ -84,7 +84,7 @@ impl Builder for WorldBuilder {
 
     fn create(mut self) -> Result<Self::Type> {
         let identity = self.identity.as_ref()
-            .ok_or_else(|| Error::FieldNotSet {class: WorldField::CLASSNAME, field: WorldField::FIELDNAME_IDENTITY})?
+            .ok_or_else(|| Error::FieldNotSet {class: ZoneField::CLASSNAME, field: ZoneField::FIELDNAME_IDENTITY})?
             .clone()
             .create()?;
 
@@ -93,7 +93,7 @@ impl Builder for WorldBuilder {
         for area in &mut self.areas {
             let identity_builder = area.identity_builder();
             identity_builder.universe_id(identity.universe_id())?;
-            identity_builder.world_id(identity.world_id())?;
+            identity_builder.zone_id(identity.zone_id())?;
             identity_builder.region_id(identity.region_id())?;
             identity_builder.id(next_id)?;
             next_id += 1;
@@ -102,7 +102,7 @@ impl Builder for WorldBuilder {
         for thing in &mut self.things {
             let identity_builder = thing.entity_builder().identity_builder();
             identity_builder.universe_id(identity.universe_id())?;
-            identity_builder.world_id(identity.world_id())?;
+            identity_builder.zone_id(identity.zone_id())?;
             identity_builder.region_id(identity.region_id())?;
             identity_builder.id(next_id)?;
             next_id += 1;
@@ -110,11 +110,11 @@ impl Builder for WorldBuilder {
 
         self.next_id = next_id;
 
-        Ok(World {
+        Ok(Zone {
             identity,
             descriptor: self.descriptor
                 .ok_or_else(||
-                    Error::FieldNotSet {class: WorldField::CLASSNAME, field: WorldField::FIELDNAME_IDENTITY})?
+                    Error::FieldNotSet {class: ZoneField::CLASSNAME, field: ZoneField::FIELDNAME_IDENTITY})?
                 .create()?,
             areas: self.areas.into_iter()
                 .map(|area| area.create())
@@ -134,7 +134,7 @@ impl Builder for WorldBuilder {
             if !area.has_identity() {
                 let identity_builder = area.identity_builder();
                 identity_builder.universe_id(original.identity().universe_id())?;
-                identity_builder.world_id(original.identity().world_id())?;
+                identity_builder.zone_id(original.identity().zone_id())?;
                 identity_builder.region_id(original.identity().region_id())?;
                 identity_builder.id(original.generate_id())?;
             }
@@ -146,7 +146,7 @@ impl Builder for WorldBuilder {
             if !route.has_identity() {
                 let identity_builder = route.identity_builder();
                 identity_builder.universe_id(original.identity().universe_id())?;
-                identity_builder.world_id(original.identity().world_id())?;
+                identity_builder.zone_id(original.identity().zone_id())?;
                 identity_builder.region_id(original.identity().region_id())?;
                 identity_builder.id(original.generate_id())?;
             }
@@ -158,7 +158,7 @@ impl Builder for WorldBuilder {
             if !thing.entity_builder().has_identity() {
                 let identity_builder = thing.entity_builder().identity_builder();
                 identity_builder.universe_id(original.identity().universe_id())?;
-                identity_builder.world_id(original.identity().world_id())?;
+                identity_builder.zone_id(original.identity().zone_id())?;
                 identity_builder.region_id(original.identity().region_id())?;
                 identity_builder.id(original.generate_id())?;
             }
@@ -175,7 +175,7 @@ impl Builder for WorldBuilder {
     }
 }
 
-impl BuildableIdentity for WorldBuilder {
+impl BuildableIdentity for ZoneBuilder {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
         self.identity = Some(identity);
         Ok(())
@@ -194,7 +194,7 @@ impl BuildableIdentity for WorldBuilder {
     }
 }
 
-impl BuildableDescriptor for WorldBuilder {
+impl BuildableDescriptor for ZoneBuilder {
     fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
         self.descriptor = Some(descriptor);
         Ok(())
@@ -209,28 +209,28 @@ impl BuildableDescriptor for WorldBuilder {
     }
 }
 
-impl BuildableAreaVector for WorldBuilder {
+impl BuildableAreaVector for ZoneBuilder {
     fn add_area(&mut self, area: AreaBuilder) -> Result<()> {
         self.areas.push(area);
         Ok(())
     }
 }
 
-impl BuildableRouteVector for WorldBuilder {
+impl BuildableRouteVector for ZoneBuilder {
     fn add_route(&mut self, route: RouteBuilder) -> Result<()> {
         self.routes.push(route);
         Ok(())
     }
 }
 
-impl BuildableThingVector for WorldBuilder {
+impl BuildableThingVector for ZoneBuilder {
     fn add_thing(&mut self, thing: ThingBuilder) -> Result<()> {
        self.things.push(thing); 
        Ok(())
     }
 }
 
-impl WorldBuilder {
+impl ZoneBuilder {
     fn generate_id(&mut self) -> ID {
         let id = self.next_id;
         self.next_id += 1;
@@ -238,35 +238,35 @@ impl WorldBuilder {
     }
 }
 
-impl Built for World {
-    type BuilderType = WorldBuilder;
+impl Built for Zone {
+    type BuilderType = ZoneBuilder;
 }
 
-impl Identifiable for World {
+impl Identifiable for Zone {
     fn identity(&self) -> &Identity {
         &self.identity
     }
 }
 
-impl IdentifiableMut for World {
+impl IdentifiableMut for Zone {
     fn identity_mut(&mut self) -> &mut Identity {
         &mut self.identity
     }
 }
 
-impl Descriptive for World {
+impl Descriptive for Zone {
     fn descriptor(&self) -> &Descriptor {
         &self.descriptor
     }
 }
 
-impl DescriptiveMut for World {
+impl DescriptiveMut for Zone {
     fn descriptor_mut(&mut self) -> &mut Descriptor {
         &mut self.descriptor
     }
 }
 
-impl World {
+impl Zone {
     fn generate_id(&mut self) -> u64 {
         let id = self.next_id;
         self.next_id += 1;
@@ -316,12 +316,12 @@ impl World {
         thing.entity_builder().identity_builder().guid(
             thing_id,
             self.identity.region_id(),
-            self.identity.world_id(),
+            self.identity.zone_id(),
             self.identity.universe_id())?;
 
-        let mut world_editor = World::editor();
-        world_editor.add_thing(thing)?;
-        let _result = world_editor.modify(self)?;
+        let mut zone_editor = Zone::editor();
+        zone_editor.add_thing(thing)?;
+        let _result = zone_editor.modify(self)?;
 
         Ok(thing_id)
     }
