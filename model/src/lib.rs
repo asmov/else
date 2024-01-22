@@ -38,6 +38,9 @@ pub use world::*;
 pub mod testing {
     use crate::s;
     use crate::{self as model, *};
+    use bincode;
+    use bytes;
+    use serde::Serialize;
 
     pub fn create_world() -> World {
         let mut world_creator = model::World::creator();
@@ -141,6 +144,15 @@ pub mod testing {
         let _result = world_editor.modify(&mut world).unwrap();
         
         world
+    }
+
+    pub fn world_to_binary(world: &model::World) -> Result<Vec<u8>> {
+        let bytes = bincode::serialize(&world).unwrap();
+        Ok(bytes)
+    }
+
+    pub fn world_from_binary(world_bytes: Vec<u8>) -> Result<World> {
+        Ok(bincode::deserialize(&world_bytes).unwrap())
     }
 
 }
