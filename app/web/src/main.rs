@@ -3,7 +3,7 @@ use yew::prelude::*;
 #[function_component]
 fn App() -> Html {
     let stats: Vec<AttrValue> = vec![
-        AttrValue::Static("Character Name"),
+        AttrValue::Static("/dev/tty/a0f24d3e"),
         AttrValue::Static("LH: Shield"),
         AttrValue::Static("H: 1000 R: 1000 A: 1000"),
         AttrValue::Static("RH: Ice Sword"),
@@ -11,14 +11,20 @@ fn App() -> Html {
     ];
 
     let log: Vec<AttrValue> = vec![
-        AttrValue::Static("lorem ipsum lorem ipsum lorem ipsum"),
-        AttrValue::Static("ipsum lorem ipsum lorem ipsum lorem ipsum"),
-        AttrValue::Static("lorem ipsum lorem ipsum lorem ipsum lorem ipsum")
+        AttrValue::Static("Welcome to Terminal."),
+        AttrValue::Static("Connect your interface to begin your journey."),
+        AttrValue::Static(""),
+        AttrValue::Static("A myriad of bright colors race around you and then dissolve into your surroundings as \
+        quickly as they appeared."),
+        AttrValue::Static(""),
+        AttrValue::Static("You find yourself in what appears to be an enormous translucent sphere. Beyond that,
+        you can see only the void of space, littered with clusters of brightly lit stars in all directions. The walls \
+        of the great sphere shimmer with color in tune with the motion and sounds around you."),
     ];
 
     html! {
         <div id="app" class="container h-screen mx-auto p-1">
-            <Terminal title="This is a title" log={log} stats={stats} />
+            <Terminal title="Terminal" log={log} stats={stats} />
         </div>
     }
 }
@@ -38,7 +44,7 @@ fn Terminal(props: &TerminalProps) -> Html {
                 <span>{props.title.clone()}</span>
             </div>
             <div id="lines" class="h-full border rounded p-1 overflow-y-scroll">
-                {props.log.iter().map(|s| html!{<p>{s}</p>}).collect::<Html>()}
+                {props.log.iter().map(|s| if s.is_empty() { html!{ <p><br /></p> } } else { html!{<p>{s}</p>} }).collect::<Html>()}
             </div>
             <input type="input" class="hover:shadow-md rounded border px-4" placeholder="input text ..." title="Input" />
             <div id="footer" class={classes!("flex", "justify-between", "items-center", "px-6", "text-sm", "*:border", "*:rounded", "*:px-1")}>

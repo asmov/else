@@ -3,5 +3,5 @@ resolver = "2"
 members = [
     "model",
     "app/web",
-    "server"
+    "server/frontend"
 ]
