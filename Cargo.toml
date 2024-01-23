@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "model",
-    "app/web",
-    "server/frontend"
+    "client/web",
+    "server/zone",
+    "server/world",
 ]
