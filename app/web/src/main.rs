@@ -89,7 +89,7 @@ impl Component for App {
                 AttrValue::Static(""),
                 // Area::description()
                 AttrValue::Static("You find yourself in what appears to be an enormous translucent sphere. Beyond that,
-                you see only the void of space, littered with clusters of brightly lit stars in all directions. The irradescent wall \
+                you see only the void of space, littered with clusters of brightly lit stars in all directions. The iridescent wall \
                 of the great sphere shimmers with color in tune with the motion and sounds around you. Numerous others, \
                 like yourself, hustle and bustle about the area. You hear the soft buzz of the commotion surrounding you; \
                 discussions, laughter, the whirring of people casually materializing in and out of existence."),
