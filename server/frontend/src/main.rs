@@ -23,8 +23,8 @@ async fn main() -> Result<(), Error>{
               if msg.is_text() || msg.is_binary() {
                 println!("RECV: {:?}", msg);
                 let world = model::testing::create_world();
-                let world_bytes = model::testing::world_to_binary(&world).unwrap();
-                ws_stream.send(Message::binary(bytes::Bytes::from(world_bytes))).await?;
+                let world_bytes = model::testing::world_to_bytes(&world).unwrap();
+                ws_stream.send(Message::binary(world_bytes)).await?;
               }
             }
     

@@ -91,17 +91,17 @@ impl Builder for ThingBuilder {
         }
     }
 
-    fn create(self) -> Result<Self::Type> {
+    fn create(self) -> Result<Thing> {
         match self {
             ThingBuilder::Character(b) => b.create_thing()
         }
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Thing) -> Result<ModifyResult> {
         match self {
-            ThingBuilder::Character(b) => {
-                if let Thing::Character(t) = original {
-                    b.modify_thing(t)
+            ThingBuilder::Character(character_builder) => {
+                if let Thing::Character(character) = original {
+                    character_builder.modify_thing(character)
                 } else {
                     panic!("Dispatch type mismatch in ThingBuilder::modify for Character")
                 }
@@ -111,15 +111,15 @@ impl Builder for ThingBuilder {
 }
 
 impl BuildableEntity for ThingBuilder {
-    fn entity(&mut self, entity: EntityBuilder) -> Result<()> {
+    fn entity(&mut self, entity_builder: EntityBuilder) -> Result<()> {
         match self {
-            ThingBuilder::Character(b) => b.entity(entity)
+            ThingBuilder::Character(character_builder) => character_builder.entity(entity_builder)
         }
     }
 
     fn entity_builder(&mut self) -> &mut EntityBuilder {
         match self {
-            ThingBuilder::Character(b) => b.entity_builder()
+            ThingBuilder::Character(character_builder) => character_builder.entity_builder()
         }
     }
 }

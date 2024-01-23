@@ -151,10 +151,13 @@ pub mod testing {
         Ok(bytes)
     }
 
+    pub fn world_to_bytes(world: &model::World) -> Result<bytes::Bytes> {
+        Ok(bytes::Bytes::from(world_to_binary(world).unwrap()))
+    }
+
     pub fn world_from_binary(world_bytes: Vec<u8>) -> Result<World> {
         Ok(bincode::deserialize(&world_bytes).unwrap())
     }
-
 }
 
 #[cfg(test)]
