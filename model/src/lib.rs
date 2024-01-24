@@ -19,6 +19,7 @@ pub mod area;
 pub mod route;
 pub mod access;
 pub mod world;
+pub mod message;
 
 pub use error::*;
 pub use builder::*;
@@ -30,10 +31,10 @@ pub use entity::*;
 pub use something::*;
 pub use character::*;
 pub use item::*;
-pub use thing::*;
 pub use area::*;
 pub use route::*;
 pub use world::*;
+pub use message::*;
 
 pub mod testing {
     use crate::s;

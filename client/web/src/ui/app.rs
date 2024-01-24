@@ -52,7 +52,7 @@ impl Component for App {
         app
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         let stats: Vec<AttrValue> = vec![
             AttrValue::Static("/dev/tty/a0f24d3e"),
             AttrValue::Static("LH: Empty"),
