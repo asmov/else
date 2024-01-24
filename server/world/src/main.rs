@@ -15,14 +15,51 @@ async fn main() -> Result<(), Error>{
     while let Ok((tcp_stream, addr)) = zone_tcp_listener.accept().await {
         let websocket_stream = tokio_tungstenite::accept_async(tcp_stream).await?;
         dbg!(addr);
-        let task = tokio::spawn(client_websocket_stream_task(websocket_stream));
+        let task = tokio::spawn(zone_stream_task(websocket_stream));
         zone_stream_tasks.push(task);
     }
 
     Ok(())
 }
 
-async fn client_websocket_stream_task(mut websocket_stream: WebSocketStream<TcpStream>) -> Result<(), ()> {
+async fn zone_stream_task(mut websocket_stream: WebSocketStream<TcpStream>) -> Result<(), ()> {
+    // Receive a protocol header from the connecting socket
+    if let Some(Ok(received)) = websocket_stream.next().await {
+        match received {
+            Message::Binary(bytes) => {
+                let protocol_header: ProtocolHeader = match bincode::deserialize(&bytes) {
+                    Ok(msg) => msg,
+                    Err(_) => {
+                        payload_error(websocket_stream).await;
+                        return Err(());
+                    }
+                };
+
+                // Send our protocol header regardless
+                let our_protocol_header = ProtocolHeader::current(Protocol::WorldToZone);
+                match websocket_stream.send(
+                    Message::binary(Bytes::from(bincode::serialize(&our_protocol_header).unwrap()))).await
+                {
+                    Ok(_) => {},
+                    Err(_) => {
+                        let _ = payload_error(websocket_stream);
+                        return Err(());
+                    }
+                }
+
+                // If their header isn't compatible, disconnect
+                if !protocol_header.compatible(Protocol::ZoneToWorld) {
+                    let _ = payload_error(websocket_stream);
+                    return Err(());
+                }
+            }
+            _ => {
+                payload_error(websocket_stream).await;
+                return Err(());
+            }
+        }
+    }
+
     while let Some(Ok(received)) = websocket_stream.next().await {
         match received {
             Message::Binary(bytes) => {

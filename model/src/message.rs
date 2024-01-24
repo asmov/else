@@ -8,6 +8,37 @@ pub enum ErrorCodes {
     IllegalWebsocketFrame = 0x01 
 }
 
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Copy, Debug)]
+pub enum Protocol {
+    ClientToZone,
+    ZoneToWorld,
+    WorldToZone,
+    ZoneToClient,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct ProtocolHeader {
+    pub protocol: Protocol,
+    pub version: u16
+}
+
+pub const PROTOCOL_VERSION: u16 = 1;
+
+impl ProtocolHeader {
+    pub fn current(protocol: Protocol) -> Self {
+        Self {
+            protocol,
+            version: PROTOCOL_VERSION
+        }
+    }
+
+    /// Checks this library's version and the expected protocol
+    pub fn compatible(&self, expected_protocol: Protocol) -> bool {
+        self.version == PROTOCOL_VERSION
+            && self.protocol == expected_protocol
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum ClientToZoneMessage {
     Acknowledged(AcknowledgedMsg), // 0
