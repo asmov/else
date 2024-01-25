@@ -1,7 +1,12 @@
 #!/bin/bash
 set -e
 
-cd ${1:-.}
+OUTPUT_DIR="${1:-./certs}"
+
+[ ! -e "$OUTPUT_DIR" ] &&
+    mkdir -p "$OUTPUT_DIR"
+
+cd "$OUTPUT_DIR"
 
 # prepare config file for root CA generation
 cat <<EOF >> root.cnf
@@ -13,8 +18,6 @@ basicConstraints = CA:TRUE
 keyUsage = digitalSignature, nonRepudiation, keyCertSign, cRLSign
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always
-subjectAltName = DNS:127.0.0.1
-
 EOF
 
 ROOT_CA_KEY=root-ca.key.pem
@@ -25,7 +28,7 @@ echo "Generate root CA key"
 openssl genrsa -out $ROOT_CA_KEY 4096
 
 echo "Generate root CA certificate"
-openssl req -x509 -new -key $ROOT_CA_KEY -out $ROOT_CA -days 365 -SHA256 -subj "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd" -config root.cnf -extensions v3_ca
+openssl req -x509 -new -key $ROOT_CA_KEY -out $ROOT_CA -days 365 -SHA256 -subj "/C=US/ST=CA/O=Self-Signed Localhost Debugging Certificate" -config root.cnf -extensions v3_ca
 openssl x509 -outform der -in $ROOT_CA -out $ROOT_CA_DER
 
 rm root.cnf
@@ -36,7 +39,6 @@ extendedKeyUsage=serverAuth
 subjectAltName = @alt_names
 [alt_names]
 DNS.1 = 127.0.0.1
-DNS.2 = 192.168.1.177
 EOF
 
 SERVER_KEY=server.key.pem
@@ -49,7 +51,7 @@ echo "Generate server key"
 openssl genrsa -out $SERVER_KEY 4096
 
 echo "Generate server certificate"
-openssl req -out server.csr -key $SERVER_KEY -new -days 365 -SHA256 -subj "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=127.0.0.1"
+openssl req -out server.csr -key $SERVER_KEY -new -SHA256 -subj "/C=US/ST=CA/O=Self-Signed Localhost Debugging Certificate/CN=localhost"
 openssl x509 -req -days 365 -SHA256 -in server.csr -CA $ROOT_CA -CAkey $ROOT_CA_KEY -CAcreateserial -out $SERVER_CERT -extfile server.cnf
 openssl x509 -outform der -in $SERVER_CERT -out $SERVER_CERT_DER
 
