@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fs::File, io::{self, BufReader}, path::{Path, PathBuf}, sync::Arc};
+use std::{borrow::Cow, fs::{self, File}, io::{self, BufReader}, path::{Path, PathBuf}, sync::Arc};
 
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
@@ -6,30 +6,27 @@ use tokio_tungstenite::{self, tungstenite::{self, error::Error, protocol::{frame
 use elsezone_model::message::*;
 use elsezone_network as elsenet;
 use bincode;
-use rustls::{self, pki_types::CertificateDer, ClientConfig};
-use rustls_pemfile::certs;
-
-fn load_certs(path: &Path) -> io::Result<Vec<CertificateDer<'static>>> {
-    certs(&mut BufReader::new(File::open(path)?)).collect()
-}
+use native_tls as tls;
+use anyhow;
+use tokio_native_tls;
 
 
 #[tokio::main]
-async fn main() -> Result<(), Error>{
+async fn main() -> anyhow::Result<()>{
     let mut client_websocket_stream_tasks = Vec::new();
 
-    let certs = load_certs(&PathBuf::from("/tmp/end.chain")).unwrap();
-    // TLS
-    let mut root_cert_store = rustls::RootCertStore::empty();
-    for cert in certs {
-        root_cert_store.add(cert).unwrap();
-    }
 
-    let config = ClientConfig::builder()
-        .with_root_certificates(root_cert_store)
-        .with_no_client_auth();
+    let cert_2 = tls::Certificate::from_der(&fs::read("../world/cert/cert.der").unwrap()).unwrap();
+    let cert_1 = tls::Certificate::from_der(&fs::read("../world/cert/root-ca.der").unwrap()).unwrap();
 
-    let connector = Connector::Rustls(Arc::new(config));
+    let tls_connector = tls::TlsConnector::builder()
+        .add_root_certificate(cert_2)
+        .add_root_certificate(cert_1)
+        .danger_accept_invalid_hostnames(true)
+        .build()
+        .unwrap();
+
+    let connector = tokio_tungstenite::Connector::NativeTls(tls_connector);
 
     //let (world_websocket_stream, _) = tokio_tungstenite::connect_async(elsenet::ELSE_LOCALHOST_WORLD_URL).await.unwrap();
     let (world_websocket_stream, _) = tokio_tungstenite::connect_async_tls_with_config(

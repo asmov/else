@@ -10,7 +10,7 @@ use elsezone_network as elsenet;
 
 
 pub async fn connect() -> Result<(), ()> {
-    let mut websocket = WebSocket::open(elsenet::ELSE_LOCALHOST_ZONE_URL).unwrap();
+    let mut websocket = WebSocket::open(elsenet::ELSE_LOCALHOST_WORLD_URL).unwrap();
     //let mut websocket = WebSocket::open(elsenet::ELSE_LOCALHOST_ZONE_URL).unwrap();
     //let (mut tx, mut rcv) = websocket.split();
 

@@ -1,5 +1,5 @@
 
-use std::{fs::File, io::{self, BufReader}, path::{Path, PathBuf}, sync::Arc};
+use std::{fs::{self, File}, io::{self, BufReader, Read}, path::{Path, PathBuf}, sync::Arc};
 
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
@@ -8,38 +8,33 @@ use elsezone_model::message::*;
 use elsezone_network as elsenet;
 use bytes::Bytes;
 use bincode;
-use rustls_pemfile::{certs, rsa_private_keys};
-use rustls::{self, server::Acceptor, pki_types::{CertificateDer, PrivateKeyDer}, ServerConfig};
-use tokio_rustls::{self, server::TlsStream, TlsAcceptor};
+use native_tls::{self as tls};
+use tokio_native_tls::{self, TlsStream};
+use anyhow::{self, Context};
 
-fn load_certs(path: &Path) -> io::Result<Vec<CertificateDer<'static>>> {
-    certs(&mut BufReader::new(File::open(path)?)).collect()
-}
+fn read_file(path: &Path) {
 
-fn load_keys(path: &Path) -> io::Result<PrivateKeyDer<'static>> {
-    rsa_private_keys(&mut BufReader::new(File::open(path)?))
-        .next()
-        .unwrap()
-        .map(Into::into)
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error>{
+async fn main() -> anyhow::Result<()> {
     let mut zone_stream_tasks = Vec::new();
 
-    let config = ServerConfig::builder()
-        .with_no_client_auth()
-        .with_single_cert(
-            load_certs(&PathBuf::from("/tmp/end.cert")).unwrap(),
-            load_keys(&PathBuf::from("/tmp/end.rsa")).unwrap()).unwrap();
+    let cert = tls::Identity::from_pkcs12(
+            &fs::read("cert/identity.p12").unwrap(),
+            "mypass")
+        .unwrap();
 
-    let acceptor = TlsAcceptor::from(Arc::new(config));
+    let tls_acceptor = tokio_native_tls::TlsAcceptor::from(
+        native_tls::TlsAcceptor::builder(cert)
+            .build()
+            .unwrap());
 
 
     let zone_tcp_listener = tokio::net::TcpListener::bind(elsenet::ELSE_LOCALHOST_WORLD_ADDR).await.unwrap();
     while let Ok((tcp_stream, addr)) = zone_tcp_listener.accept().await {
-        let acceptor = acceptor.clone();
-        let tls_stream = acceptor.accept(tcp_stream).await?;
+        let acceptor = tls_acceptor.clone();
+        let tls_stream = acceptor.accept(tcp_stream).await.unwrap();
         let websocket_stream = tokio_tungstenite::accept_async(tls_stream).await?;
         dbg!(addr);
         let task = tokio::spawn(zone_stream_task(websocket_stream));
