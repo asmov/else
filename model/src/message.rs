@@ -1,3 +1,6 @@
+use std::fmt::Display;
+use strum;
+
 use crate::identity::Identity;
 
 pub type MessageID = u16;
@@ -8,7 +11,7 @@ pub enum ErrorCodes {
     IllegalWebsocketFrame = 0x01 
 }
 
-#[derive(serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Copy, Debug, strum::Display)]
 pub enum Protocol {
     Unsupported,
     ClientToZone,
@@ -37,6 +40,12 @@ impl ProtocolHeader {
     pub fn compatible(&self, expected_protocol: Protocol) -> bool {
         self.version == PROTOCOL_VERSION
             && self.protocol == expected_protocol
+    }
+}
+
+impl Display for ProtocolHeader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} v{}", self.protocol, self.version)
     }
 }
 

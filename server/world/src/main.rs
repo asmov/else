@@ -12,13 +12,7 @@ use bincode;
 use native_tls::{self as tls};
 use tokio_native_tls::{self, TlsStream};
 use anyhow::{self, Context};
-use elsezone_server_common as server;
-
-fn load_identity(password: String) -> tls::Identity {
-    let filepath = certs_dir().join("identity.p12");
-    let bytes = &fs::read(filepath).unwrap();
-    tls::Identity::from_pkcs12(bytes, &password).unwrap()
-}
+use elsezone_server_common::{self as server, connection_close, connection_send_error};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -29,13 +23,8 @@ async fn main() -> anyhow::Result<()> {
     let bind_address = format!("{bind_ip}:{bind_port}");
     let mut next_connection_id: usize = 1;
 
-    let identity = load_identity(identity_password);
-    let tls_acceptor = tokio_native_tls::TlsAcceptor::from(
-        native_tls::TlsAcceptor::builder(identity)
-            .build()
-            .unwrap());
-
-    let zone_tcp_listener = tokio::net::TcpListener::bind(elsenet::ELSE_LOCALHOST_WORLD_ADDR).await.unwrap();
+    let tls_acceptor = server::build_tls_acceptor(identity_password);
+    let zone_tcp_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
     server::log!("Listening for zone server connections on {bind_address}.");
 
     while let Ok((tcp_stream, addr)) = zone_tcp_listener.accept().await {
@@ -69,7 +58,7 @@ async fn zone_stream_task(who: server::Who, mut websocket_stream: WebSocketStrea
                 // Send our protocol header regardless
                 let our_protocol_header = ProtocolHeader::current(Protocol::WorldToZone);
                 match websocket_stream.send(
-                    Message::binary(Bytes::from(bincode::serialize(&our_protocol_header).unwrap()))).await
+                    Message::binary(bincode::serialize(&our_protocol_header).unwrap())).await
                 {
                     Ok(_) => {},
                     Err(e) => {
@@ -101,18 +90,14 @@ async fn zone_stream_task(who: server::Who, mut websocket_stream: WebSocketStrea
                     }
                 };
 
-                dbg!(&msg);
-
                 match msg {
                     ZoneToWorldMessage::Connect => {
                         let response = WorldToZoneMessage::Connected;
-                        let res = websocket_stream.send(Message::binary(Bytes::from(bincode::serialize(&response).unwrap()))).await;
-                        match res {
-                            Ok(_) => {},
-                            Err(e) => {
-                                return connection_send_error(&who, e);
-                            }
+                        if let Err(e) = websocket_stream.send(Message::binary(Bytes::from(bincode::serialize(&response).unwrap()))).await {
+                            return connection_send_error(&who, e);
                         }
+
+                        server::log!("Session negotiated with {who}.")
                     },
                     _ => {
                         return payload_error(&who, websocket_stream, "Expected ZoneToWorldMessage::Connect").await;
@@ -147,15 +132,3 @@ async fn payload_error(who: &server::Who, mut websocket_stream: WebSocketStream<
 fn connection_error(who: &server::Who, reason: &str) {
     server::log_error!("Connection with {who} failed :> {reason}");
 }
-
-fn connection_send_error(who: &server::Who, error: tokio_tungstenite::tungstenite::error::Error) -> Result<(),()> {
-    server::log_error!("Connection with {who} failed :> Error while sending data :> {}", error.to_string());
-    Err(())
-}
-
-async fn connection_close(who: &server::Who, mut websocket_stream: WebSocketStream<TlsStream<TcpStream>>) -> Result<(),()> {
-    server::log!("Closed connection with {who}.");
-    websocket_stream.close(None).await;
-    Ok(())
-}
-
