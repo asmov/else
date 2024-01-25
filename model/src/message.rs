@@ -10,6 +10,7 @@ pub enum ErrorCodes {
 
 #[derive(serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Protocol {
+    Unsupported,
     ClientToZone,
     ZoneToWorld,
     WorldToZone,
@@ -19,10 +20,10 @@ pub enum Protocol {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ProtocolHeader {
     pub protocol: Protocol,
-    pub version: u16
+    pub version: u8
 }
 
-pub const PROTOCOL_VERSION: u16 = 1;
+pub const PROTOCOL_VERSION: u8 = 1;
 
 impl ProtocolHeader {
     pub fn current(protocol: Protocol) -> Self {

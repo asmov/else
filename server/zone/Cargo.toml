@@ -10,6 +10,8 @@ elsezone-model = { version = "0.1.0", path = "../../model" }
 elsezone-network = { version = "0.1.0", path = "../../network" }
 elsezone-server-common = { version = "0.1.0", path = "../common" }
 futures-util = { version = "0.3.30", features = ["tokio-io", "sink"] }
+rustls = "0.22.2"
+rustls-pemfile = "2.0.0"
 tokio = { version = "1.35.1", features = ["full"] }
-tokio-tungstenite = "0.21.0"
-tokio-websockets = { version = "0.5.1", features = ["server", "sha1_smol"] }
+tokio-tungstenite = { version = "0.21.0", features = ["rustls", "rustls-tls-webpki-roots"] }
+webpki-roots = "0.26.0"
