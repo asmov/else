@@ -1,27 +1,32 @@
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::VChild};
 use gloo_console::log;
-use crate::{net, ui::terminal::Terminal, input::TextInput};
+use crate::{net, ui::terminal::{Entry, EntryCategory, EntryProps, Terminal}, input::ParsedInput};
 
-pub enum Msg {
+use super::terminal;
+
+pub enum AppMsg {
     Ready,
     Connected,
     Disconnected,
-    Received(String)
+    TerminalOutput(String, EntryCategory)
 }
 
 #[derive(Default, Properties, PartialEq, Debug)]
-pub struct Props {}
+pub struct Props {
+}
 
 pub struct App {
-    log: Vec<AttrValue>
+    terminal_output_entries: Vec<VChild<terminal::Entry>>,
+    log: Vec<AttrValue>,
 }
 
 impl Component for App {
-    type Message = Msg;
+    type Message = AppMsg;
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-       let app = Self{
+       let mut app = Self{
+            terminal_output_entries: Vec::new(),
             log: vec![
                 // World::arrival_description()
                 AttrValue::Static("Welcome to Terminal."),
@@ -45,13 +50,20 @@ impl Component for App {
             ]
         };
 
-        ctx.link().send_message(Msg::Ready);
+        ctx.link().send_message(AppMsg::Ready);
         
-         
+        app.terminal_output_entries.push(VChild::new(
+            EntryProps{
+                text: AttrValue::Static("test"),
+                category: EntryCategory::Standard
+            },
+            None
+        ));
+          
         app
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let stats: Vec<AttrValue> = vec![
             AttrValue::Static("/dev/tty/a0f24d3e"),
             AttrValue::Static("LH: Empty"),
@@ -60,41 +72,63 @@ impl Component for App {
             AttrValue::Static("23001"),
         ];
 
-        
-
-        html! {
+       html! {
             <div id="app" class="container h-screen mx-auto p-1">
-                <Terminal title="Terminal" log={self.log.clone()} stats={stats} />
+                <Terminal title="Terminal" stats={stats} output_entries={self.terminal_output_entries.clone()}/>
             </div>
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Ready => {
+            AppMsg::Ready => {
+                let callback = ctx.link().callback(|(text, category)| {
+                    AppMsg::TerminalOutput(text, category)
+                });
+
                 ctx.link().send_future(async {
-                    match net::connect().await {
-                        Ok(_) => Msg::Connected,
-                        Err(_) => Msg::Disconnected
+                    match net::connect(callback).await {
+                        Ok(_) => AppMsg::Connected,
+                        Err(_) => AppMsg::Disconnected
                     }
                 });
 
+                self.terminal_output_entries.push(VChild::new(
+                    EntryProps {
+                        text: AttrValue::Static("Ready to party"),
+                        category: EntryCategory::Debug
+                    },
+                    None
+                ));
+            
                 log!("READY");
 
-                let mut input = TextInput::new("go".to_string());
-                log!(input.parse().unwrap_err().to_string());
+                //let mut input = ParsedInput::parse("go".to_string())?;
+                //log!(input.parse().unwrap_err().to_string());
  
                 self.log.push(AttrValue::Static("Ready."));
             },
-            Msg::Connected => {
+            AppMsg::Connected => {
                 log!("CONNECTED");
                 self.log.push(AttrValue::Static("Connected."));
             },
-            Msg::Disconnected => log!("DISCONNECTED"),
-            Msg::Received(_) => log!("RECEIVED"),
+            AppMsg::Disconnected => log!("DISCONNECTED"),
+            AppMsg::TerminalOutput(msg, category) => self.terminal_output(msg, category),
         }
 
         true
+    }
+}
+
+impl App {
+    fn terminal_output(&mut self, text: String, category: EntryCategory) {
+        self.terminal_output_entries.push(VChild::new(
+            EntryProps {
+                text: AttrValue::Rc(text.into()),
+                category
+            },
+            None
+        ));
     }
 }
 

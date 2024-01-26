@@ -6,9 +6,14 @@ use gloo_console::log;
 use elsezone_model as model;
 use bincode;
 use elsezone_network as elsenet;
+use yew::Callback;
 
-pub async fn connect() -> Result<(), ()> {
+use crate::ui::terminal::EntryCategory;
+
+pub async fn connect(log: Callback<(String,EntryCategory)>) -> Result<(), ()> {
     let mut websocket = WebSocket::open(elsenet::ELSE_LOCALHOST_ZONE_URL).unwrap();
+
+    log.emit(("Connecting".to_string(), EntryCategory::Debug));
 
     // Send the protocol header
     let msg = model::ProtocolHeader::current(model::Protocol::ClientToZone);
@@ -19,7 +24,7 @@ pub async fn connect() -> Result<(), ()> {
             return Err(());
         }
     }
-
+    
     // The server should send a protocol header back
     if let Some(msg) = websocket.next().await {
         match msg {
@@ -31,6 +36,8 @@ pub async fn connect() -> Result<(), ()> {
                         return Err(());
                     },
                 };
+
+                log.emit((format!("Got protocol :> {:?}", protocol_header).to_string(), EntryCategory::Debug));
 
                 if !protocol_header.compatible(model::Protocol::ZoneToClient) {
                     log!(format!("Incompatible protocol: {:?}", protocol_header));

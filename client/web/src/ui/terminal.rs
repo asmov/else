@@ -1,26 +1,26 @@
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
-pub struct Props {
+pub struct TerminalProps {
     pub title: AttrValue,
     pub stats: Vec<AttrValue>,
-    pub log: Vec<AttrValue>
+    pub output_entries: ChildrenWithProps<Entry>
 }
 
-pub struct Msg {
-
+pub enum TerminalMsg {
+    NewEntry(String, EntryCategory)
 }
 
 pub struct Terminal {
-
 }
 
 impl Component for Terminal {
-    type Message = Msg;
-    type Properties = Props;
+    type Message = TerminalMsg;
+    type Properties = TerminalProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self{}
+        Self {
+        }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -29,14 +29,113 @@ impl Component for Terminal {
                 <div class="terminal-title border rounded px-2 text-center text-lg">
                     <span>{ctx.props().title.clone()}</span>
                 </div>
-                <div class="terminal-output h-full border rounded p-1 overflow-y-scroll">
-                    {ctx.props().log.iter().map(|s| if s.is_empty() { html!{ <p><br /></p> } } else { html!{<p>{s}</p>} }).collect::<Html>()}
-                </div>
-                <input class="terminal-input" type="input" class="hover:shadow-md rounded border px-4" placeholder="input text ..." title="Input" />
+                <Output>
+                    {for ctx.props().output_entries.iter() }
+                </Output>
+                <input type="input" class="hover:shadow-md rounded border px-4" placeholder="input text ..." title="Input" />
                 <div class="terminal-stats flex justify-between items-center px-6 text-sm">
-                    {ctx.props().stats.iter().map(|s| html!{<span class="border rounded px-1">{s}</span>}).collect::<Html>()}
+                { ctx.props().stats.iter()
+                        .map(|s| html!{
+                            <span class="border rounded px-1">{s.clone()}</span>
+                        })
+                        .collect::<Html>() }
                 </div>
             </div>
         }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            TerminalMsg::NewEntry(text, category) => {
+                let entry_props = EntryProps{
+                    text: AttrValue::Rc(text.into()),
+                    category,
+                };
+
+                true
+            }
+        }
+    }
+}
+
+#[derive(PartialEq, Properties)]
+pub struct OutputProps {
+    #[prop_or_default]
+    pub children: ChildrenWithProps<Entry>
+}
+
+pub struct OutputMsg {}
+
+pub struct Output {
+}
+
+impl Component for Output {
+    type Message = OutputMsg;
+    type Properties = OutputProps;
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self{}
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        html!{
+            <div class="h-full border rounded p-1 overflow-y-scroll">
+                { for ctx.props().children.iter() } 
+            </div>
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum TerminalContext {
+    Global,
+    Inventory
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum EntryCategory {
+    Standard,
+    Error,
+    Debug,
+    Context(TerminalContext)
+}
+
+#[derive(PartialEq, Properties, Clone)]
+pub struct EntryProps {
+    pub text: AttrValue,
+    pub category: EntryCategory
+}
+
+#[derive(PartialEq)]
+pub struct Entry {
+
+}
+
+pub enum EntryMsg {}
+
+impl Component for Entry {
+    type Message = EntryMsg;
+    type Properties = EntryProps;
+
+    fn create(ctx: &Context<Self>) -> Self {
+        Self{}
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        match ctx.props().category {
+            EntryCategory::Standard => html!{
+                <p>{ctx.props().text.clone()}</p>
+            },
+            EntryCategory::Error => html!{
+                <p class="text-red-800">{ctx.props().text.clone()}</p>
+            },
+            EntryCategory::Debug => html!{
+                <p class="text-lime-800">{ctx.props().text.clone()}</p>
+            },
+            EntryCategory::Context(_) => html!{
+                <p class="text-slate-600">{ctx.props().text.clone()}</p>
+            }
+        }
+
     }
 }
