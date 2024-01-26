@@ -7,7 +7,11 @@ pub enum Error {
     #[error("{0}")]
     Generic(String),
     #[error("Unable to parse text input: {0}")]
-    InputParsing(String),
+    GenericInputParsing(String),
+    #[error("Unable to parse text input: {text} :> {cause}")]
+    InputParsing{ text: String, cause: String},
+    #[error("{usage}")]
+    CommandUsage{usage: &'static str},
     #[error("Unknown command: {0}")]
     UnknownCommand(String)
 }

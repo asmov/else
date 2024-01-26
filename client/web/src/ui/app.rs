@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use gloo_console::log;
-use crate::{net, ui::terminal::Terminal};
+use crate::{net, ui::terminal::Terminal, input::TextInput};
 
 pub enum Msg {
     Ready,
@@ -21,7 +21,7 @@ impl Component for App {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let app = Self{
+       let app = Self{
             log: vec![
                 // World::arrival_description()
                 AttrValue::Static("Welcome to Terminal."),
@@ -42,7 +42,6 @@ impl Component for App {
                 AttrValue::Static("A holographic computer screen materializes in front of you. The dotted blue outline of a \
                 hand appears in the center of the screen with instructions below:"),
                 AttrValue::Static("Type .connect to begin ..."),
-                AttrValue::Static(""),
             ]
         };
 
@@ -81,6 +80,10 @@ impl Component for App {
                 });
 
                 log!("READY");
+
+                let mut input = TextInput::new("go".to_string());
+                log!(input.parse().unwrap_err().to_string());
+ 
                 self.log.push(AttrValue::Static("Ready."));
             },
             Msg::Connected => {
