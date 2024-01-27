@@ -1,17 +1,15 @@
 
-use std::{borrow::Cow, fs::{self, File}, io::{self, BufReader, Read}, path::{Path, PathBuf}, sync::Arc};
+use std::borrow::Cow;
 
-use elsezone_server_common::certs_dir;
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
-use tokio_tungstenite::{WebSocketStream, tungstenite::{error::Error, protocol::{frame::coding::CloseCode, CloseFrame}, Message}};
-use elsezone_model::{identity, message::*};
-use elsezone_network as elsenet;
+use tokio_tungstenite::{WebSocketStream, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}};
+use elsezone_model::message::*;
+use elsezone_network_common as elsenet;
 use bytes::Bytes;
 use bincode;
-use native_tls::{self as tls};
 use tokio_native_tls::{self, TlsStream};
-use anyhow::{self, Context};
+use anyhow;
 use elsezone_server_common::{self as server, connection_close, connection_send_error};
 
 #[tokio::main]

@@ -179,13 +179,11 @@ impl Builder for DescriptorBuilder {
 
     fn set(&mut self, raw_field: &str, raw_value: String) -> Result<()> {
         match raw_field {
-            DescriptorField::FIELDNAME_NAME => self.name(raw_value)?,
-            DescriptorField::FIELDNAME_DESCRIPTION => self.description(raw_value)?,
-            DescriptorField::FIELDNAME_NOTES => self.notes(raw_value)?,
-            _ => bail!(Error::UnknownField{class: DescriptorField::CLASSNAME, field: s!(raw_field) })
+            DescriptorField::FIELDNAME_NAME => self.name(raw_value),
+            DescriptorField::FIELDNAME_DESCRIPTION => self.description(raw_value),
+            DescriptorField::FIELDNAME_NOTES => self.notes(raw_value),
+            _ => Err(Error::UnknownField{class: DescriptorField::CLASSNAME, field: s!(raw_field)})
         }
-
-        Ok(())
     }
 }
 

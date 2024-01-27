@@ -103,7 +103,7 @@ impl Builder for ThingBuilder {
                 if let Thing::Character(character) = original {
                     character_builder.modify_thing(character)
                 } else {
-                    panic!("Dispatch type mismatch in ThingBuilder::modify for Character")
+                    unreachable!("Dispatch type mismatch in ThingBuilder::modify for Character")
                 }
             }
         }

@@ -76,7 +76,7 @@ impl Builder for JunctionBuilder {
         Ok(Junction {
             entrances: self.entrances.into_iter()
                 .map(|entrance| entrance.create())
-                .collect::<Result<Vec<_>,_>>()?,
+                .collect::<Result<Vec<_>>>()?,
             exit: self.exit
                 .ok_or_else(||
                     Error::FieldNotSet {class: JunctionField::CLASSNAME, field: JunctionField::FIELDNAME_EXIT})?

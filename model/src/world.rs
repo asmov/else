@@ -118,13 +118,13 @@ impl Builder for WorldBuilder {
                 .create()?,
             areas: self.areas.into_iter()
                 .map(|area| area.create())
-                .collect::<Result<Vec<_>,_>>()?,
+                .collect::<Result<Vec<_>>>()?,
             routes: self.routes.into_iter()
                 .map(|route| route.create())
-                .collect::<Result<Vec<_>,_>>()?,
+                .collect::<Result<Vec<_>>>()?,
             things: self.things.into_iter()
                 .map(|thing| thing.create())
-                .collect::<Result<Vec<_>,_>>()?,
+                .collect::<Result<Vec<_>>>()?,
             next_id: self.next_id + 1,
         })
     }

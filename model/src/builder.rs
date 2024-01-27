@@ -83,7 +83,9 @@ pub enum FieldValueType {
     ObjectIDArray,
     ObjectArray,
     /// Vec<String>
-    StringArray
+    StringArray,
+    /// Fieldless enum
+    Enum
 }
 
 #[derive(Debug)]

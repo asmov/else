@@ -32,7 +32,8 @@ impl CharacterField {
 #[derive(Debug)]
 pub struct CharacterBuilder {
     builder_mode: BuilderMode,
-    entity: Option<EntityBuilder>
+    entity: Option<EntityBuilder>,
+    cortex: Option<CortexBuilder>
 }
 
 impl Builder for CharacterBuilder {
@@ -41,7 +42,8 @@ impl Builder for CharacterBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            entity: None
+            entity: None,
+            cortex: None
         }
     }
 
@@ -61,7 +63,12 @@ impl Builder for CharacterBuilder {
             entity: self.entity
                 .ok_or_else(||
                     Error::FieldNotSet{class: CharacterField::CLASSNAME, field: CharacterField::FIELDNAME_ENTITY})?
-                .create()?
+                .create()?,
+            cortex: self.cortex
+                .ok_or_else(||
+                    Error::FieldNotSet{class: CharacterField::CLASSNAME, field: CharacterField::FIELDNAME_CORTEX})?
+                .create()?,
+
         })
     }
 
@@ -107,6 +114,29 @@ impl Exists for Character {
 impl ExistsMut for Character {
     fn entity_mut(&mut self) -> &mut Entity {
         &mut self.entity
+    }
+}
+
+impl Sensitive for Character {
+    fn cortex(&self) -> &Cortex {
+        &self.cortex
+    }
+}
+
+impl SensitiveMut for Character {
+    fn cortext_mut(&mut self) -> &mut Cortex {
+        &mut self.cortex
+    }
+}
+
+impl BuildableCortex for CharacterBuilder {
+    fn cortex(&mut self, cortex: CortexBuilder) -> Result<()> {
+        self.cortex = Some(cortex);
+        Ok(())
+    }
+
+    fn get_cortex_builder_mut(&mut self) -> &mut Option<CortexBuilder> {
+        &mut self.cortex
     }
 }
 

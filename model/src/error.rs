@@ -1,5 +1,4 @@
 use thiserror;
-use anyhow;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -13,4 +12,4 @@ pub enum Error {
     FieldNotSetFirst{ class: &'static str, field: &'static str, required_field: &'static str}
 }
 
-pub use anyhow::{bail, Result};
+pub type Result<T> = ::core::result::Result<T, Error>;

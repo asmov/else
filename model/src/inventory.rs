@@ -1,4 +1,4 @@
-use crate::{identity::*, descriptor::*};
+use crate::identity::*;
 
 #[derive(Debug)]
 pub struct Inventory {

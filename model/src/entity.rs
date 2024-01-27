@@ -1,4 +1,4 @@
-use crate::{error::*, identity::*, builder::*, descriptor::*, inventory::*, composition::*};
+use crate::{error::*, identity::*, builder::*, descriptor::*};
 use serde;
 
 

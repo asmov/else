@@ -1,16 +1,17 @@
-use std::{borrow::Cow, fs::{self, File}, io::{self, BufReader}, path::{Path, PathBuf}, sync::Arc};
+use std::{borrow::Cow, fs};
 
 use futures_util::{SinkExt, StreamExt};
 use server::connection_close;
 use tokio::net::TcpStream;
-use tokio_tungstenite::{self, tungstenite::{self, error::Error, protocol::{frame::coding::CloseCode, CloseFrame}, Message}, Connector, MaybeTlsStream, WebSocketStream};
-use elsezone_model::message::*;
-use elsezone_network as elsenet;
-use elsezone_server_common::{self as server, connection_send_error, host_connection_close};
+use tokio_tungstenite::{self, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}, MaybeTlsStream, WebSocketStream};
 use bincode;
 use native_tls as tls;
 use anyhow;
 use tokio_native_tls::{self, TlsStream};
+
+use elsezone_network_common as elsenet;
+use elsezone_model::message::*;
+use elsezone_server_common::{self as server, connection_send_error, host_connection_close};
 
 fn load_certs() -> Vec<tls::Certificate> {
     const FILENAMES: [&'static str; 2] = ["cert.der", "root-ca.der"];

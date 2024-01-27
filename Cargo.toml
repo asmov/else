@@ -8,4 +8,5 @@ members = [
     "common/server",
     "common/network",
     "common/rust",
+    "behavior",
 ]

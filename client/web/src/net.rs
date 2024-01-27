@@ -5,7 +5,7 @@ use reqwasm::websocket::futures::WebSocket;
 use gloo_console::log;
 use elsezone_model as model;
 use bincode;
-use elsezone_network as elsenet;
+use elsezone_network_common as elsenet;
 use yew::Callback;
 
 use crate::ui::terminal::EntryCategory;
