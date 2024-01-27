@@ -68,13 +68,21 @@ impl ModifyResult {
 
 #[derive(Clone, Copy, Debug)]
 pub enum FieldValueType {
-    String,
+    /// String
+    String, 
+    /// i64
     Integer,
+    /// u64
+    UnsignedInteger,
+    /// f64
     Float,
+    /// bool
     Boolean,
     Object,
+    /// Vec<Identity>
     ObjectIDArray,
     ObjectArray,
+    /// Vec<String>
     StringArray
 }
 

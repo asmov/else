@@ -107,9 +107,7 @@ pub struct EntryProps {
 }
 
 #[derive(PartialEq)]
-pub struct Entry {
-
-}
+pub struct Entry { }
 
 pub enum EntryMsg {}
 
@@ -117,7 +115,7 @@ impl Component for Entry {
     type Message = EntryMsg;
     type Properties = EntryProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self{}
     }
 

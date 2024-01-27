@@ -20,6 +20,9 @@ pub mod route;
 pub mod access;
 pub mod world;
 pub mod message;
+pub mod interface;
+pub mod timeframe;
+pub mod cortex;
 
 pub use error::*;
 pub use builder::*;
@@ -35,13 +38,15 @@ pub use area::*;
 pub use route::*;
 pub use world::*;
 pub use message::*;
+pub use interface::*;
+pub use timeframe::*;
+pub use cortex::*;
 
 pub mod testing {
     use crate::s;
     use crate::{self as model, *};
     use bincode;
     use bytes;
-    use serde::Serialize;
 
     pub fn create_world() -> World {
         let mut world_creator = model::World::creator();

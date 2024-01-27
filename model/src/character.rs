@@ -1,25 +1,30 @@
-pub use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*};
+pub use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, cortex::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Character {
     entity: Entity,
+    cortex: Cortex
 }
 
 #[derive(Debug)]
 pub enum CharacterField {
     Entity,
+    Cortex
 }
 
 impl CharacterField {
     pub const CLASSNAME: &'static str = "Character";
     pub const FIELDNAME_ENTITY: &'static str = "entity";
+    pub const FIELDNAME_CORTEX: &'static str = "cortex";
 
     pub const FIELD_ENTITY: Field = Field::new(Self::FIELDNAME_ENTITY, FieldValueType::Object);
+    pub const FIELD_CORTEX: Field = Field::new(Self::FIELDNAME_CORTEX, FieldValueType::Object);
 
     pub const fn field(&self) -> &'static Field {
         match self {
             Self::Entity => &Self::FIELD_ENTITY,
+            Self::Cortex => &Self::FIELD_CORTEX,
         }
     }
 }

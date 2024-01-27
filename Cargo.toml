@@ -4,5 +4,8 @@ members = [
     "model",
     "client/web",
     "server/zone",
-    "server/world", "server/common", "network",
+    "server/world",
+    "common/server",
+    "common/network",
+    "common/rust",
 ]

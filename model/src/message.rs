@@ -1,11 +1,10 @@
 use std::fmt::Display;
 use strum;
 
-use crate::identity::Identity;
+use crate::{identity::*, timeframe::*};
 
 pub type MessageID = u16;
 pub type ErrorCode = u8;
-pub type TimeFrame = u64;
 
 pub enum ErrorCodes {
     IllegalWebsocketFrame = 0x01 
