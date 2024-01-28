@@ -2,7 +2,7 @@ pub mod routine;
 pub mod intelligent;
 
 use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, interface::*,
-    timeframe::*, stimulus::*};
+    timeframe::*};
 use routine::*;
 use intelligent::*;
 use serde;
@@ -39,9 +39,6 @@ pub trait Sensitive {
     fn routine_awareness(&self) -> Awareness {
         self.cortex().routine_awareness()
     }
-    
-    // Perceive a change in environment and (possibly) react to it.
-    //fn stimulate(stimulus: Stimulus);
 }
 
 pub trait SensitiveMut: Sensitive {

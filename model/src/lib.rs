@@ -19,7 +19,6 @@ pub mod message;
 pub mod interface;
 pub mod timeframe;
 pub mod cortex;
-pub mod stimulus;
 
 pub use error::*;
 pub use builder::*;
@@ -38,7 +37,6 @@ pub use message::*;
 pub use interface::*;
 pub use timeframe::*;
 pub use cortex::*;
-pub use stimulus::*;
 
 pub mod testing {
     use crate::s;

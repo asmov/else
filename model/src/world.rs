@@ -295,6 +295,14 @@ impl World {
         self.areas.iter().find(|area| area.key().is_some_and(|k| k == key))
     }
 
+    pub fn things(&self) -> &Vec<Thing> {
+        &self.things
+    }
+
+    pub fn things_mut(&mut self) -> &mut Vec<Thing> {
+        &mut self.things
+    }
+
     pub fn find_things(&self, query: &str) -> Vec<&Thing> {
         self.things.iter()
             .filter(|thing| thing.name() == query)

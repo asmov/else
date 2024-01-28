@@ -1,10 +1,8 @@
 use crate::timeframe::*;
-use serde;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub enum Stimulus {
+pub enum Stimulus<'s> {
     /// Perceive the passafe of time(frame).
-    Time(TimeFrame),
+    Time(&'s TimeFrame),
     /// Perceive a guided action 
     Interface(/*TODO*/)
 }

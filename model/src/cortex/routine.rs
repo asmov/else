@@ -1,5 +1,5 @@
 use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, interface::*,
-    timeframe::*, stimulus::*};
+    timeframe::*};
 use super::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]

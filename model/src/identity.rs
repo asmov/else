@@ -6,7 +6,7 @@ pub type RegionID = u16;
 pub type WorldID = u16;
 pub type UniverseID = u32;
 
-#[derive(PartialEq, Eq, serde::Serialize, serde::Deserialize, Debug)]
+#[derive(PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone, Copy, Debug)]
 pub struct Identity {
     id: ID,
     region_id: RegionID,

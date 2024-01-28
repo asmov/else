@@ -15,4 +15,8 @@ impl TimeFrame {
             timestamp
         }
     }
+
+    pub fn frame(&self) -> Frame {
+        self.frame
+    }
 }
