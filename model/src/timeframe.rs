@@ -2,7 +2,7 @@ use serde;
 
 pub type Frame = u64;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct TimeFrame {
     frame: Frame,
     timestamp: u64,
