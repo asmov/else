@@ -138,6 +138,10 @@ impl WorldRuntime {
         &self.timeframe
     }
 
+    pub fn frame_duration(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(10)
+    }
+
     pub fn tick(&mut self) -> Result<()> {
         self.timeframe.tick();
         let reactions = self.on_timeframe(self.timeframe.clone())?;

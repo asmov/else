@@ -1,7 +1,6 @@
 use std::{borrow::Cow, fs};
 
 use futures_util::{SinkExt, StreamExt};
-use server::connection_close;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{self, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}, MaybeTlsStream, WebSocketStream};
 use bincode;
@@ -11,7 +10,7 @@ use tokio_native_tls::{self, TlsStream};
 
 use elsezone_network_common as elsenet;
 use elsezone_model::message::*;
-use elsezone_server_common::{self as server, connection_send_error, host_connection_close};
+use elsezone_server_common as server;
 
 fn load_certs() -> Vec<tls::Certificate> {
     const FILENAMES: [&'static str; 2] = ["cert.der", "root-ca.der"];
@@ -105,27 +104,27 @@ async fn client_stream_task(who: server::Who, mut websocket_stream: WebSocketStr
                     let response_protocol_header = ProtocolHeader::current(Protocol::Unsupported);
                     let msg = Message::binary(bincode::serialize(&response_protocol_header).unwrap());
                     if let Err(e) = websocket_stream.send(msg).await {
-                        return connection_send_error(&who, e);
+                        return server::connection_send_error(&who, e);
                     }
 
-                    return connection_close(&who, websocket_stream).await;
+                    return server::connection_close(&who, websocket_stream).await;
                 }
 
                 let protocol_header = ProtocolHeader::current(Protocol::ZoneToClient);
                 let msg = Message::binary(bincode::serialize(&protocol_header).unwrap());
                 if let Err(e) = websocket_stream.send(msg).await {
-                        return connection_send_error(&who, e);
+                        return server::connection_send_error(&who, e);
                 }
             },
             Message::Close(_) => {
-                return connection_close(&who, websocket_stream).await;
+                return server::connection_close(&who, websocket_stream).await;
             },
             _ => {
                 return client_payload_error(who, websocket_stream, "Expected ProtocolHeader").await;
             }
         }
     } else {
-        return connection_close(&who, websocket_stream).await;
+        return server::connection_close(&who, websocket_stream).await;
     }
 
     // the client should send a connection request
@@ -143,7 +142,7 @@ async fn client_stream_task(who: server::Who, mut websocket_stream: WebSocketStr
                     ClientToZoneMessage::Connect => {
                         let msg = Message::Binary(bincode::serialize(&ZoneToClientMessage::Connected).unwrap());
                         if let Err(e) = websocket_stream.send(msg).await {
-                            return connection_send_error(&who, e);
+                            return server::connection_send_error(&who, e);
                         }
 
                         server::log!("Session negotiated with {who}.")
@@ -154,17 +153,17 @@ async fn client_stream_task(who: server::Who, mut websocket_stream: WebSocketStr
                 }
             },
             Message::Close(_) => {
-                return connection_close(&who, websocket_stream).await;
+                return server::connection_close(&who, websocket_stream).await;
             }
             _ => {
                 return client_payload_error(who, websocket_stream, "Expected a binary websocket message").await;
             }
         }
     } else {
-        return connection_close(&who, websocket_stream).await;
+        return server::connection_close(&who, websocket_stream).await;
     }
 
-    println!("Communication with {who} finished.");
+    println!("Session has ended with {who}.");
     let _ = websocket_stream.close(None).await;
     Ok(())
 }
@@ -226,7 +225,7 @@ async fn world_stream_task(who: server::Who, mut websocket_stream: WebSocketStre
                     },
                     WorldToZoneMessage::ConnectRejected => {
                         server::log_error!("Connection negotiation rejected by {who}.");
-                        let _ = host_connection_close(&who, websocket_stream).await;
+                        let _ = server::host_connection_close(&who, websocket_stream).await;
                         return Err(());
                     },
                     _ => {

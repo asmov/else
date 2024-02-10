@@ -1,27 +1,20 @@
 
-use std::{borrow::Cow, time::Duration};
-
-use futures_util::{SinkExt, StreamExt, TryFuture, TryFutureExt};
-use server::Connection;
-use tokio::net::TcpStream;
-use tokio_tungstenite::{WebSocketStream, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}};
+use tokio_tungstenite;
 use elsezone_model::message::*;
 use elsezone_network_common as elsenet;
-use bytes::Bytes;
-use bincode;
-use tokio_native_tls::{self, TlsStream};
+use tokio_native_tls;
 use anyhow;
-use elsezone_server_common::{self as server, connection_close, connection_send_error};
+use elsezone_server_common as server;
 use elsezone_behavior as behavior;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let identity_password = String::from("mypass");
+async fn main() {
+    let identity_password = String::from("mypass"); //todo
     let bind_ip = elsenet::LOCALHOST_IP;
     let bind_port = elsenet::ELSE_WORLD_PORT;
     let bind_address = format!("{bind_ip}:{bind_port}");
 
-    let mut runtime = behavior::WorldRuntime::load()?;
+    let mut runtime = behavior::WorldRuntime::load().unwrap();
     
     let tls_acceptor = server::build_tls_acceptor(identity_password);
     let zone_tcp_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
@@ -29,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
     server::log!("Listening for zone server connections on {bind_address}.");
     let _listener_task = tokio::spawn(listener_task(zone_tcp_listener, tls_acceptor));
 
-    let sleep = tokio::time::sleep(Duration::from_secs(10));
+    let sleep = tokio::time::sleep(runtime.frame_duration());
     tokio::pin!(sleep);
 
     loop {
@@ -37,12 +30,10 @@ async fn main() -> anyhow::Result<()> {
             () = &mut sleep => {
                 runtime.tick().unwrap();
                 server::log!("Frame: {}", runtime.timeframe().frame());
-                sleep.as_mut().reset(tokio::time::Instant::now() + Duration::from_secs(10))
+                sleep.as_mut().reset(tokio::time::Instant::now() + runtime.frame_duration());
             }
         }
     }
-
-    Ok(())
 }
 
 async fn listener_task(
@@ -61,106 +52,61 @@ async fn listener_task(
         next_connection_id += 1;
         server::log!("Established connection with {zone_who}.");
 
-        let conn = Connection { who: zone_who.clone(), stream: websocket_stream };
-        let task = tokio::spawn(zone_stream_handshake_task(conn))
-            .and_then(|result| tokio::spawn(zone_stream_task(result.unwrap().unwrap())));
+        let conn = server::Connection::new_incoming(zone_who.clone(), websocket_stream);
+        let task = tokio::spawn(async move {
+            let conn = match negotiate_zone_session(conn).await {
+                Err(e) => {
+                    server::log_error!("{e}");
+                    return Err(());
+                },
+                Ok(conn) => conn
+            };
+
+            server::log!("Negotiated session with {}", conn.who);
+
+            match zone_stream_task(conn).await {
+                Err(e) => {
+                    server::log_error!("{e}");
+                    Err(())
+                },
+                Ok(who) => {
+                    server::log!("Session has ended with {who}.");
+                    Ok(())
+                }
+            }
+        });
+
         zone_stream_tasks.push((zone_who, task));
     }
 
     Ok(())
 }
 
-async fn zone_stream_handshake_task(mut conn: Connection) -> Result<Option<Connection>, ()> {
+async fn negotiate_zone_session(mut conn: server::Connection) -> server::ConnectionResult {
     // Receive a protocol header from the connecting socket
-    if let Some(Ok(received)) = conn.stream.next().await {
-        match received {
-            Message::Binary(bytes) => {
-                let protocol_header: ProtocolHeader = match bincode::deserialize(&bytes) {
-                    Ok(msg) => msg,
-                    Err(_) => {
-                        return payload_error(conn, "Expected ProtocolHeader").await;
-                    }
-                };
+    let their_protocol_header: ProtocolHeader = conn.receive().await?;
 
-                // Send our protocol header regardless
-                let our_protocol_header = ProtocolHeader::current(Protocol::WorldToZone);
-                match conn.stream.send(
-                    Message::binary(bincode::serialize(&our_protocol_header).unwrap())).await
-                {
-                    Ok(_) => {},
-                    Err(e) => {
-                        return connection_send_error(&conn.who, e);
-                    }
-                }
+    // Send our protocol header regardless
+    let our_protocol_header = ProtocolHeader::current(Protocol::WorldToZone);
+    conn.send_binary(our_protocol_header).await?;
 
-                // If their header isn't compatible, disconnect
-                if !protocol_header.compatible(Protocol::ZoneToWorld) {
-                    return payload_error(conn, "Incompatible protocol").await;
-                }
-            },
-            Message::Close(_) => {
-                return connection_close(conn).await;
-            },
-            _ => {
-                return payload_error(conn, "Expected binary websocket frame").await;
-            }
-        }
+    // If their header isn't compatible, disconnect
+    if !their_protocol_header.compatible(Protocol::ZoneToWorld) {
+        return Err(conn.error_payload("compatible protocol").await);
     }
 
-    while let Some(Ok(received)) = conn.stream.next().await {
-        match received {
-            Message::Binary(bytes) => {
-                let msg: ZoneToWorldMessage = match bincode::deserialize(&bytes) {
-                    Ok(msg) => msg,
-                    Err(_) => {
-                        return payload_error(conn, "Expected ZonetoWorldMessage").await;
-                    }
-                };
-
-                match msg {
-                    ZoneToWorldMessage::Connect => {
-                        let response = WorldToZoneMessage::Connected;
-                        if let Err(e) = conn.stream.send(Message::binary(Bytes::from(bincode::serialize(&response).unwrap()))).await {
-                            return connection_send_error(&conn.who, e);
-                        }
-
-                        server::log!("Session negotiated with {}.", conn.who);
-                        return Ok(Some(conn))
-                    },
-                    _ => {
-                        return payload_error(conn, "Expected ZoneToWorldMessage::Connect").await;
-                    }
-                }
-            },
-            Message::Close(_) =>  {
-                return connection_close(conn).await;
-            },
-            _ => {
-                return payload_error(conn, "Expected binary websocket frame").await;
-            }
-        }
+    let msg: ZoneToWorldMessage = conn.receive().await?;
+    match msg {
+        ZoneToWorldMessage::Connect => {
+            let response = WorldToZoneMessage::Connected;
+            conn.send_zone(response).await?;
+            Ok(conn)
+        },
+        _ => Err(conn.error_payload("ZoneToWorldMessage::Connect").await)
     }
-
-    unreachable!("Connection not handled")
 }
 
-async fn zone_stream_task(mut conn: Connection) -> Result<(), ()> {
-    println!("Communication with {} finished.", conn.who);
-    let _ = conn.stream.close(None).await;
-    Ok(())
-}
-
-async fn payload_error(mut conn: Connection, reason: &str) -> Result<Option<Connection>, ()> {
-    connection_error(&conn.who, reason);
-
-    let _ = conn.stream.close(Some(CloseFrame {
-        code: CloseCode::Invalid,
-        reason: Cow::Borrowed(reason) 
-    })).await;
-
-    Err(())
-}
-
-fn connection_error(who: &server::Who, reason: &str) {
-    server::log_error!("Connection with {who} failed :> {reason}");
+async fn zone_stream_task(mut conn: server::Connection) -> Result<server::Who, server::NetworkError> {
+    conn.halt().await;
+    Ok(conn.who.to_owned())
 }

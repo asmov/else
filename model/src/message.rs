@@ -19,6 +19,11 @@ pub enum Protocol {
     ZoneToClient,
 }
 
+pub trait Messaging: Sized + serde::Serialize + serde::de::DeserializeOwned {
+    fn message_type_name() -> &'static str;
+    fn message_name(&self) -> &'static str;
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ProtocolHeader {
     pub protocol: Protocol,
@@ -27,7 +32,19 @@ pub struct ProtocolHeader {
 
 pub const PROTOCOL_VERSION: u8 = 1;
 
+impl Messaging for ProtocolHeader {
+    fn message_name(&self) -> &'static str {
+        Self::MESSAGE_NAME
+    }
+
+    fn message_type_name() -> &'static str {
+        Self::MESSAGE_NAME
+    }
+}
+
 impl ProtocolHeader {
+    pub const MESSAGE_NAME: &'static str = "ProtocolHeader";
+
     pub fn current(protocol: Protocol) -> Self {
         Self {
             protocol,
@@ -43,12 +60,12 @@ impl ProtocolHeader {
 }
 
 impl Display for ProtocolHeader {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} v{}", self.protocol, self.version)
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ClientToZoneMessage {
     Acknowledged(AcknowledgedMsg), // 0
     Error(ErrorMsg), // 1
@@ -73,7 +90,7 @@ pub enum ClientToZoneMessage {
     Go,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ZoneToClientMessage {
     Acknowledged(AuthorityAcknowledgedMsg), // 0
     Error(ErrorMsg), // 1
@@ -91,6 +108,27 @@ pub enum ZoneToClientMessage {
     GoRejected,
 }
 
+impl Messaging for ZoneToClientMessage {
+    fn message_name(&self) -> &'static str {
+        match self {
+            Self::Acknowledged(_) => "ZoneToClientMessage::Acknowledged",
+            Self::Error(_) => "ZoneToClientMessage::Error",
+            Self::TimeFrame(_) => "ZoneToClientMessage::TimeFrame",
+            Self::Connected => "ZoneToClientMessage::Connected",
+            Self::ConnectRejected => "ZoneToClientMessage::ConnectRejected",
+            Self::Transfered => "ZoneToClientMessage::Transfered",
+            Self::TransferRejected => "ZoneToClientMessage::TransferRejected",
+            Self::Disconnect => "ZoneToClientMessage::Disconnect",
+            Self::GoApproved => "ZoneToClientMessage::GoApproved",
+            Self::GoRejected => "ZoneToClientMessage::GoRejected",
+        }
+    }
+
+    fn message_type_name() -> &'static str {
+        "ZoneToClientMessage"
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum ZoneToWorldMessage {
     Acknowledged(AcknowledgedMsg), // 0
@@ -104,6 +142,26 @@ pub enum ZoneToWorldMessage {
     ClientDisconnected
 }
 
+impl Messaging for ZoneToWorldMessage {
+    fn message_type_name() -> &'static str {
+        "ZoneToWorldMessage"
+    }
+
+    fn message_name(&self) -> &'static str {
+        match self {
+            ZoneToWorldMessage::Acknowledged(_) => "ZoneToWorldMessage::",
+            ZoneToWorldMessage::Error(_) => "ZoneToWorldMessage::Error",
+            ZoneToWorldMessage::Connect => "ZoneToWorldMessage::Connect",
+            ZoneToWorldMessage::Disconnect => "ZoneToWorldMessage::Disconnect",
+            ZoneToWorldMessage::ClientApproval => "ZoneToWorldMessage::ClientApproval",
+            ZoneToWorldMessage::ClientConnected => "ZoneToWorldMessage::ClientConnected",
+            ZoneToWorldMessage::ClientTransferring => "ZoneToWorldMessage::ClientTransferring",
+            ZoneToWorldMessage::ClientTransfered => "ZoneToWorldMessage::ClientTransfered",
+            ZoneToWorldMessage::ClientDisconnected => "ZoneToWorldMessage::ClientDisconnected",
+        }
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum WorldToZoneMessage {
     Acknowledged(AuthorityAcknowledgedMsg), // 0
@@ -114,6 +172,25 @@ pub enum WorldToZoneMessage {
     Disconnect,
     ClientApproved,
     ClientRejected,
+}
+
+impl Messaging for WorldToZoneMessage {
+    fn message_type_name() -> &'static str {
+        "WorldToZoneMessage"
+    }
+
+    fn message_name(&self) -> &'static str {
+        match self {
+            WorldToZoneMessage::Acknowledged(_) => "WorldToZoneMessage::Acknowledged",
+            WorldToZoneMessage::Error(_) => "WorldToZoneMessage::Error",
+            WorldToZoneMessage::TimeFrame(_) => "WorldToZoneMessage::TimeFrame",
+            WorldToZoneMessage::Connected => "WorldToZoneMessage::Connected",
+            WorldToZoneMessage::ConnectRejected => "WorldToZoneMessage::ConnectRejected",
+            WorldToZoneMessage::Disconnect => "WorldToZoneMessage::Disconnect",
+            WorldToZoneMessage::ClientApproved => "WorldToZoneMessage::ClientApproved",
+            WorldToZoneMessage::ClientRejected => "WorldToZoneMessage::ClientRejected",
+        }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
