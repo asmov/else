@@ -1,7 +1,8 @@
 
 use std::{borrow::Cow, time::Duration};
 
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{SinkExt, StreamExt, TryFuture, TryFutureExt};
+use server::Connection;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{WebSocketStream, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}};
 use elsezone_model::message::*;
@@ -60,93 +61,99 @@ async fn listener_task(
         next_connection_id += 1;
         server::log!("Established connection with {zone_who}.");
 
-        let task = tokio::spawn(zone_stream_task(zone_who.clone(), websocket_stream));
+        let conn = Connection { who: zone_who.clone(), stream: websocket_stream };
+        let task = tokio::spawn(zone_stream_handshake_task(conn))
+            .and_then(|result| tokio::spawn(zone_stream_task(result.unwrap().unwrap())));
         zone_stream_tasks.push((zone_who, task));
     }
 
     Ok(())
-
 }
 
-async fn zone_stream_task(who: server::Who, mut websocket_stream: WebSocketStream<TlsStream<TcpStream>>) -> Result<(), ()> {
+async fn zone_stream_handshake_task(mut conn: Connection) -> Result<Option<Connection>, ()> {
     // Receive a protocol header from the connecting socket
-    if let Some(Ok(received)) = websocket_stream.next().await {
+    if let Some(Ok(received)) = conn.stream.next().await {
         match received {
             Message::Binary(bytes) => {
                 let protocol_header: ProtocolHeader = match bincode::deserialize(&bytes) {
                     Ok(msg) => msg,
                     Err(_) => {
-                        return payload_error(&who, websocket_stream, "Expected ProtocolHeader").await;
+                        return payload_error(conn, "Expected ProtocolHeader").await;
                     }
                 };
 
                 // Send our protocol header regardless
                 let our_protocol_header = ProtocolHeader::current(Protocol::WorldToZone);
-                match websocket_stream.send(
+                match conn.stream.send(
                     Message::binary(bincode::serialize(&our_protocol_header).unwrap())).await
                 {
                     Ok(_) => {},
                     Err(e) => {
-                        return connection_send_error(&who, e);
+                        return connection_send_error(&conn.who, e);
                     }
                 }
 
                 // If their header isn't compatible, disconnect
                 if !protocol_header.compatible(Protocol::ZoneToWorld) {
-                    return payload_error(&who, websocket_stream, "Incompatible protocol").await;
+                    return payload_error(conn, "Incompatible protocol").await;
                 }
             },
             Message::Close(_) => {
-                return connection_close(&who, websocket_stream).await;
+                return connection_close(conn).await;
             },
             _ => {
-                return payload_error(&who, websocket_stream, "Expected binary websocket frame").await;
+                return payload_error(conn, "Expected binary websocket frame").await;
             }
         }
     }
 
-    while let Some(Ok(received)) = websocket_stream.next().await {
+    while let Some(Ok(received)) = conn.stream.next().await {
         match received {
             Message::Binary(bytes) => {
                 let msg: ZoneToWorldMessage = match bincode::deserialize(&bytes) {
                     Ok(msg) => msg,
                     Err(_) => {
-                        return payload_error(&who, websocket_stream, "Expected ZonetoWorldMessage").await;
+                        return payload_error(conn, "Expected ZonetoWorldMessage").await;
                     }
                 };
 
                 match msg {
                     ZoneToWorldMessage::Connect => {
                         let response = WorldToZoneMessage::Connected;
-                        if let Err(e) = websocket_stream.send(Message::binary(Bytes::from(bincode::serialize(&response).unwrap()))).await {
-                            return connection_send_error(&who, e);
+                        if let Err(e) = conn.stream.send(Message::binary(Bytes::from(bincode::serialize(&response).unwrap()))).await {
+                            return connection_send_error(&conn.who, e);
                         }
 
-                        server::log!("Session negotiated with {who}.")
+                        server::log!("Session negotiated with {}.", conn.who);
+                        return Ok(Some(conn))
                     },
                     _ => {
-                        return payload_error(&who, websocket_stream, "Expected ZoneToWorldMessage::Connect").await;
+                        return payload_error(conn, "Expected ZoneToWorldMessage::Connect").await;
                     }
                 }
             },
             Message::Close(_) =>  {
-                return connection_close(&who, websocket_stream).await;
+                return connection_close(conn).await;
             },
             _ => {
-                return payload_error(&who, websocket_stream, "Expected binary websocket frame").await;
+                return payload_error(conn, "Expected binary websocket frame").await;
             }
         }
     }
 
-    println!("Communication with {who} finished.");
-    let _ = websocket_stream.close(None).await;
+    unreachable!("Connection not handled")
+}
+
+async fn zone_stream_task(mut conn: Connection) -> Result<(), ()> {
+    println!("Communication with {} finished.", conn.who);
+    let _ = conn.stream.close(None).await;
     Ok(())
 }
 
-async fn payload_error(who: &server::Who, mut websocket_stream: WebSocketStream<TlsStream<TcpStream>>, reason: &str) -> Result<(), ()> {
-    connection_error(who, reason);
+async fn payload_error(mut conn: Connection, reason: &str) -> Result<Option<Connection>, ()> {
+    connection_error(&conn.who, reason);
 
-    let _ = websocket_stream.close(Some(CloseFrame {
+    let _ = conn.stream.close(Some(CloseFrame {
         code: CloseCode::Invalid,
         reason: Cow::Borrowed(reason) 
     })).await;

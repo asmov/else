@@ -145,7 +145,7 @@ impl WorldRuntime {
         Ok(())
     }
 
-    pub fn on_timeframe(&mut self, timeframe: TimeFrame) -> Result<Vec<Reaction>> {
+    fn on_timeframe(&mut self, timeframe: TimeFrame) -> Result<Vec<Reaction>> {
         let mut reactions = Vec::new();
 
         for routine in &mut self.character_routines {
@@ -159,7 +159,7 @@ impl WorldRuntime {
         Ok(reactions)
     }
 
-    pub fn react(&mut self, reactions: Vec<Reaction>) -> Result<()> {
+    fn react(&mut self, reactions: Vec<Reaction>) -> Result<()> {
         for reaction in reactions {
             reaction.react(&mut self.world)?
         }

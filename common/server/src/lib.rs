@@ -45,18 +45,20 @@ pub fn build_tls_acceptor(identity_password: String) -> tokio_native_tls::TlsAcc
     tokio_native_tls::TlsAcceptor::from(acceptor)
 }
 
-pub fn connection_send_error(who: &Who, error: tokio_tungstenite::tungstenite::error::Error) -> Result<(),()> {
+pub struct Connection {
+    pub who: Who,
+    pub stream: WebSocketStream<TlsStream<TcpStream>>
+}
+
+pub fn connection_send_error(who: &Who, error: tokio_tungstenite::tungstenite::error::Error) -> Result<Option<Connection>,()> {
     log_error!("Connection with {who} failed :> Error while sending data :> {}", error.to_string());
     Err(())
 }
 
-pub async fn connection_close(
-    who: &Who,
-    mut websocket_stream: WebSocketStream<TlsStream<TcpStream>>
-) -> Result<(),()> {
-    log!("Closed connection with {who}.");
-    let _ = websocket_stream.close(None).await;
-    Ok(())
+pub async fn connection_close(mut conn: Connection) -> Result<Option<Connection>,()> {
+    log!("Closed connection with {}.", conn.who);
+    let _ = conn.stream.close(None).await;
+    Ok(None)
 }
 
 pub async fn host_connection_close(
