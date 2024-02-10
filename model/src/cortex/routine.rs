@@ -18,6 +18,18 @@ impl Sensory for RoutineCortex {
     }
 }
 
+impl RoutineCortex {
+    pub fn routine_id(&mut self, routine_id: RoutineID) -> Result<()> {
+        self.routine_id = routine_id;
+        Ok(())
+    }
+
+    pub fn routine_awareness(&mut self, routine_awarness: Awareness) -> Result<()> {
+        self.routine_awareness = routine_awarness;
+        Ok(())
+    } 
+}
+
 #[derive(Debug)]
 pub enum RoutineCortexField {
     RoutineID,
@@ -87,18 +99,6 @@ impl Builder for RoutineCortexBuilder {
     }
 }
 
-impl RoutineCortex {
-    pub fn routine_id(&mut self, routine_id: RoutineID) -> Result<()> {
-        self.routine_id = routine_id;
-        Ok(())
-    }
-
-    pub fn routine_awareness(&mut self, routine_awarness: Awareness) -> Result<()> {
-        self.routine_awareness = routine_awarness;
-        Ok(())
-    } 
-}
-
 impl CortexBuilderTrait for RoutineCortexBuilder {
     fn create_cortex(self) -> Result<Cortex> {
         Ok(Cortex::Routine(self.create()?))
@@ -110,5 +110,17 @@ impl CortexBuilderTrait for RoutineCortexBuilder {
 
     fn cortex_builder(self) -> CortexBuilder {
         CortexBuilder::Routine(self)
+    }
+}
+
+impl RoutineCortexBuilder {
+    pub fn routine_id(&mut self, routine_id: RoutineID) -> Result<()> {
+        self.routine_id = Some(routine_id);
+        Ok(())
+    }
+
+    pub fn routine_awareness(&mut self, awareness: Awareness) -> Result<()> {
+        self.routine_awareness = Some(awareness);
+        Ok(())
     }
 }

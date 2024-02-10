@@ -44,6 +44,8 @@ pub mod testing {
     use bincode;
     use bytes;
 
+    use self::routine::RoutineCortexBuilder;
+
     pub fn create_world() -> World {
         let mut world_creator = model::World::creator();
 
@@ -96,6 +98,12 @@ pub mod testing {
 
         world_creator.add_thing({
             let mut character_creator = model::Character::creator();
+            character_creator.cortex({
+                let mut routine_cortex_creator = RoutineCortexBuilder::creator();
+                routine_cortex_creator.routine_id(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
+                routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
+                routine_cortex_creator.cortex_builder()
+            }).unwrap();
             let descriptor_creator = character_creator.entity_builder().descriptor_builder();
             descriptor_creator.key(s!("black_cat")).unwrap();
             descriptor_creator.name(s!("Black Cat")).unwrap();
@@ -184,6 +192,12 @@ mod tests {
         let area = world.find_area("cat_house").unwrap();
 
         let mut character_creator = model::Character::creator();
+        character_creator.cortex({
+            let mut routine_cortex_creator = model::RoutineCortexBuilder::creator();
+            routine_cortex_creator.routine_id(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
+            routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
+            routine_cortex_creator.cortex_builder()
+        }).unwrap();
         character_creator.entity({
             let mut entity_creator = model::Entity::creator();
             entity_creator.descriptor({
@@ -211,6 +225,12 @@ mod tests {
             .id();
 
         let mut gray_cat = model::Character::creator();
+        gray_cat.cortex({
+            let mut routine_cortex_creator = model::RoutineCortexBuilder::creator();
+            routine_cortex_creator.routine_id(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
+            routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
+            routine_cortex_creator.cortex_builder()
+        }).unwrap();
         gray_cat.entity({
             let mut entity = model::Entity::creator();
             entity.descriptor({

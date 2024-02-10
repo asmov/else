@@ -7,6 +7,9 @@ use routine::*;
 use intelligent::*;
 use serde;
 
+pub use routine::*;
+
+
 pub type RoutineID = u8;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
