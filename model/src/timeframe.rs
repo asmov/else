@@ -16,6 +16,16 @@ impl TimeFrame {
         }
     }
 
+    pub fn tick(&mut self) {
+        self.frame += 1;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap()
+            .as_secs();
+
+
+        self.timestamp = now;
+    }
+
     pub fn frame(&self) -> Frame {
         self.frame
     }

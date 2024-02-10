@@ -1,5 +1,5 @@
 
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Duration};
 
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
@@ -11,19 +11,45 @@ use bincode;
 use tokio_native_tls::{self, TlsStream};
 use anyhow;
 use elsezone_server_common::{self as server, connection_close, connection_send_error};
+use elsezone_behavior as behavior;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut zone_stream_tasks = Vec::new();
     let identity_password = String::from("mypass");
     let bind_ip = elsenet::LOCALHOST_IP;
     let bind_port = elsenet::ELSE_WORLD_PORT;
     let bind_address = format!("{bind_ip}:{bind_port}");
-    let mut next_connection_id: usize = 1;
 
+    let mut runtime = behavior::WorldRuntime::load()?;
+    
     let tls_acceptor = server::build_tls_acceptor(identity_password);
     let zone_tcp_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
+    
     server::log!("Listening for zone server connections on {bind_address}.");
+    let _listener_task = tokio::spawn(listener_task(zone_tcp_listener, tls_acceptor));
+
+    let sleep = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(sleep);
+
+    loop {
+        tokio::select! {
+            () = &mut sleep => {
+                runtime.tick().unwrap();
+                server::log!("Frame: {}", runtime.timeframe().frame());
+                sleep.as_mut().reset(tokio::time::Instant::now() + Duration::from_secs(10))
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn listener_task(
+    zone_tcp_listener: tokio::net::TcpListener,
+    tls_acceptor: tokio_native_tls::TlsAcceptor
+) -> anyhow::Result<()> {
+    let mut next_connection_id: usize = 1;
+    let mut zone_stream_tasks = Vec::new();
 
     while let Ok((tcp_stream, addr)) = zone_tcp_listener.accept().await {
         let acceptor = tls_acceptor.clone();
@@ -39,6 +65,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+
 }
 
 async fn zone_stream_task(who: server::Who, mut websocket_stream: WebSocketStream<TlsStream<TcpStream>>) -> Result<(), ()> {

@@ -50,9 +50,9 @@ pub trait SensitiveMut: Sensitive {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone)]
 pub enum Awareness {
+    Shock,
     Conscious,
     Subconscious,
-    Shock
 }
 
 impl Sensitive for Cortex {

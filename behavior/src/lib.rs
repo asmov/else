@@ -123,11 +123,26 @@ impl WorldRuntime {
             .map(|character| CharacterRoutine::new(character))
             .collect();
 
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap()
+            .as_secs();
+
         Ok(Self {
-            timeframe: TimeFrame::new(0, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()),
+            timeframe: TimeFrame::new(0, now),
             world,
             character_routines
         })
+    }
+
+    pub fn timeframe(&self) -> &TimeFrame {
+        &self.timeframe
+    }
+
+    pub fn tick(&mut self) -> Result<()> {
+        self.timeframe.tick();
+        let reactions = self.on_timeframe(self.timeframe.clone())?;
+        self.react(reactions)?;
+        Ok(())
     }
 
     pub fn on_timeframe(&mut self, timeframe: TimeFrame) -> Result<Vec<Reaction>> {
