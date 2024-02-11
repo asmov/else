@@ -1,4 +1,6 @@
 
+use std::sync::Arc;
+
 use tokio_tungstenite;
 use elsezone_model::message::*;
 use elsezone_network_common as elsenet;
@@ -6,6 +8,7 @@ use tokio_native_tls;
 use anyhow;
 use elsezone_server_common as server;
 use elsezone_behavior as behavior;
+use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() {
@@ -14,23 +17,28 @@ async fn main() {
     let bind_port = elsenet::ELSE_WORLD_PORT;
     let bind_address = format!("{bind_ip}:{bind_port}");
 
-    let mut runtime = behavior::WorldRuntime::load().unwrap();
+    let mut runtime = Arc::new(Mutex::new(behavior::WorldRuntime::load().unwrap()));
     
     let tls_acceptor = server::build_tls_acceptor(identity_password);
     let zone_tcp_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
     
     server::log!("Listening for zone server connections on {bind_address}.");
-    let _listener_task = tokio::spawn(listener_task(zone_tcp_listener, tls_acceptor));
+    let _listener_task = tokio::spawn(listener_task(zone_tcp_listener, tls_acceptor, Arc::clone(&runtime)));
 
-    let sleep = tokio::time::sleep(runtime.frame_duration());
+    let sleep = {
+        let runtime_lock = runtime.lock().await;
+        tokio::time::sleep(runtime_lock.frame_duration())
+    };
+        
     tokio::pin!(sleep);
 
     loop {
         tokio::select! {
             () = &mut sleep => {
-                runtime.tick().unwrap();
-                server::log!("Frame: {}", runtime.timeframe().frame());
-                sleep.as_mut().reset(tokio::time::Instant::now() + runtime.frame_duration());
+                let mut runtime_lock = runtime.lock().await;
+                runtime_lock.tick().unwrap();
+                server::log!("Frame: {}", runtime_lock.timeframe().frame());
+                sleep.as_mut().reset(tokio::time::Instant::now() + runtime_lock.frame_duration());
             }
         }
     }
@@ -38,7 +46,8 @@ async fn main() {
 
 async fn listener_task(
     zone_tcp_listener: tokio::net::TcpListener,
-    tls_acceptor: tokio_native_tls::TlsAcceptor
+    tls_acceptor: tokio_native_tls::TlsAcceptor,
+    runtime: Arc<Mutex<behavior::WorldRuntime>>
 ) -> anyhow::Result<()> {
     let mut next_connection_id: usize = 1;
     let mut zone_stream_tasks = Vec::new();
@@ -53,6 +62,7 @@ async fn listener_task(
         server::log!("Established connection with {zone_who}.");
 
         let conn = server::Connection::new_incoming(zone_who.clone(), websocket_stream);
+        let runtime_clone = Arc::clone(&runtime);
         let task = tokio::spawn(async move {
             let conn = match negotiate_zone_session(conn).await {
                 Err(e) => {
@@ -64,7 +74,7 @@ async fn listener_task(
 
             server::log!("Negotiated session with {}", conn.who);
 
-            match zone_stream_task(conn).await {
+            match zone_stream_task(conn, runtime_clone).await {
                 Err(e) => {
                     server::log_error!("{e}");
                     Err(())
@@ -100,13 +110,26 @@ async fn negotiate_zone_session(mut conn: server::Connection) -> server::Connect
         ZoneToWorldMessage::Connect => {
             let response = WorldToZoneMessage::Connected;
             conn.send_zone(response).await?;
-            Ok(conn)
         },
-        _ => Err(conn.error_payload("ZoneToWorldMessage::Connect").await)
+        _ => return Err(conn.error_payload("ZoneToWorldMessage::Connect").await)
     }
+
+    Ok(conn)
 }
 
-async fn zone_stream_task(mut conn: server::Connection) -> Result<server::Who, server::NetworkError> {
+async fn zone_stream_task(
+    mut conn: server::Connection,
+    runtime: Arc<Mutex<behavior::WorldRuntime>>
+) -> Result<server::Who, server::NetworkError> {
+
+    let world_bytes = {
+        let runtime_lock = runtime.lock().await;
+        bincode::serialize(runtime_lock.world()).unwrap()
+    };
+
+    let msg = WorldToZoneMessage::WorldBytes(world_bytes);
+    conn.send_zone(msg).await?;
+
     conn.halt().await;
     Ok(conn.who.to_owned())
 }

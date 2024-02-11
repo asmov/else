@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use strum;
 
-use crate::{identity::*, timeframe::*};
+use crate::{identity::*, timeframe::*, world::World};
 
 pub type MessageID = u16;
 pub type ErrorCode = u8;
@@ -172,6 +172,7 @@ pub enum WorldToZoneMessage {
     Disconnect,
     ClientApproved,
     ClientRejected,
+    WorldBytes(Vec<u8>)
 }
 
 impl Messaging for WorldToZoneMessage {
@@ -181,14 +182,15 @@ impl Messaging for WorldToZoneMessage {
 
     fn message_name(&self) -> &'static str {
         match self {
-            WorldToZoneMessage::Acknowledged(_) => "WorldToZoneMessage::Acknowledged",
-            WorldToZoneMessage::Error(_) => "WorldToZoneMessage::Error",
-            WorldToZoneMessage::TimeFrame(_) => "WorldToZoneMessage::TimeFrame",
-            WorldToZoneMessage::Connected => "WorldToZoneMessage::Connected",
-            WorldToZoneMessage::ConnectRejected => "WorldToZoneMessage::ConnectRejected",
-            WorldToZoneMessage::Disconnect => "WorldToZoneMessage::Disconnect",
-            WorldToZoneMessage::ClientApproved => "WorldToZoneMessage::ClientApproved",
-            WorldToZoneMessage::ClientRejected => "WorldToZoneMessage::ClientRejected",
+            Self::Acknowledged(_) => "WorldToZoneMessage::Acknowledged",
+            Self::Error(_) => "WorldToZoneMessage::Error",
+            Self::TimeFrame(_) => "WorldToZoneMessage::TimeFrame",
+            Self::Connected => "WorldToZoneMessage::Connected",
+            Self::ConnectRejected => "WorldToZoneMessage::ConnectRejected",
+            Self::Disconnect => "WorldToZoneMessage::Disconnect",
+            Self::ClientApproved => "WorldToZoneMessage::ClientApproved",
+            Self::ClientRejected => "WorldToZoneMessage::ClientRejected",
+            Self::WorldBytes(_) => "WorldToZoneMessage::WorldBytes",
         }
     }
 }

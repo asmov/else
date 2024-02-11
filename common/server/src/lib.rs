@@ -101,6 +101,7 @@ pub enum NetworkError {
 }
 
 pub type SendResult = Result<(), NetworkError>;
+pub type ReceiveResult<M> = Result<M, NetworkError>;
 pub type ConnectionResult = Result<Connection, NetworkError>;
 
 enum Stream {
@@ -206,7 +207,7 @@ impl Connection {
         }
     }
 
-    pub async fn receive<M: Messaging>(&mut self) -> Result<M, NetworkError> {
+    pub async fn receive<M: Messaging>(&mut self) -> ReceiveResult<M> {
         let result = match self.stream {
             Stream::Outgoing(ref mut s) => s.next().await,
             Stream::Incoming(ref mut s) => s.next().await,

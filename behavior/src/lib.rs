@@ -134,6 +134,10 @@ impl WorldRuntime {
         })
     }
 
+    pub fn world(&self) -> &World {
+        &self.world
+    }
+
     pub fn timeframe(&self) -> &TimeFrame {
         &self.timeframe
     }
