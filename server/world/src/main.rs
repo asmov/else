@@ -1,14 +1,9 @@
-
 use std::sync::Arc;
-
-use tokio_tungstenite;
+use tokio;
+use tokio_native_tls;
 use elsezone_model::message::*;
 use elsezone_network_common as elsenet;
-use tokio_native_tls;
-use anyhow;
 use elsezone_server_common as server;
-use elsezone_behavior as behavior;
-use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() {
@@ -17,7 +12,7 @@ async fn main() {
     let bind_port = elsenet::ELSE_WORLD_PORT;
     let bind_address = format!("{bind_ip}:{bind_port}");
 
-    let mut runtime = Arc::new(Mutex::new(behavior::WorldRuntime::load().unwrap()));
+    let runtime = server::load_runtime().unwrap();
     
     let tls_acceptor = server::build_tls_acceptor(identity_password);
     let zone_tcp_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
@@ -47,7 +42,7 @@ async fn main() {
 async fn listener_task(
     zone_tcp_listener: tokio::net::TcpListener,
     tls_acceptor: tokio_native_tls::TlsAcceptor,
-    runtime: Arc<Mutex<behavior::WorldRuntime>>
+    runtime: server::WorldRuntimeSync
 ) -> anyhow::Result<()> {
     let mut next_connection_id: usize = 1;
     let mut zone_stream_tasks = Vec::new();
@@ -98,7 +93,7 @@ async fn negotiate_zone_session(mut conn: server::Connection) -> server::Connect
 
     // Send our protocol header regardless
     let our_protocol_header = ProtocolHeader::current(Protocol::WorldToZone);
-    conn.send_binary(our_protocol_header).await?;
+    conn.send(our_protocol_header).await?;
 
     // If their header isn't compatible, disconnect
     if !their_protocol_header.compatible(Protocol::ZoneToWorld) {
@@ -109,7 +104,7 @@ async fn negotiate_zone_session(mut conn: server::Connection) -> server::Connect
     match msg {
         ZoneToWorldMessage::Connect => {
             let response = WorldToZoneMessage::Connected;
-            conn.send_zone(response).await?;
+            conn.send(response).await?;
         },
         _ => return Err(conn.error_payload("ZoneToWorldMessage::Connect").await)
     }
@@ -119,7 +114,7 @@ async fn negotiate_zone_session(mut conn: server::Connection) -> server::Connect
 
 async fn zone_stream_task(
     mut conn: server::Connection,
-    runtime: Arc<Mutex<behavior::WorldRuntime>>
+    runtime: server::WorldRuntimeSync
 ) -> Result<server::Who, server::NetworkError> {
 
     let world_bytes = {
@@ -128,8 +123,11 @@ async fn zone_stream_task(
     };
 
     let msg = WorldToZoneMessage::WorldBytes(world_bytes);
-    conn.send_zone(msg).await?;
+    conn.send(msg).await?;
 
-    conn.halt().await;
+    while let Ok(message) = conn.receive::<ZoneToWorldMessage>().await {
+        server::log!("Received a message! {:?}", message);
+    }
+
     Ok(conn.who.to_owned())
 }

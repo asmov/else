@@ -4,7 +4,8 @@ use native_tls as tls;
 use tokio::net::TcpStream;
 use tokio_native_tls::TlsStream;
 use tokio_tungstenite::{self, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}, MaybeTlsStream, WebSocketStream};
-use elsezone_model::message::*;
+use elsezone_model::{self as model, message::*};
+use elsezone_behavior as behavior;
 use bincode;
 use futures_util::{SinkExt, StreamExt};
 use thiserror;
@@ -103,6 +104,12 @@ pub enum NetworkError {
 pub type SendResult = Result<(), NetworkError>;
 pub type ReceiveResult<M> = Result<M, NetworkError>;
 pub type ConnectionResult = Result<Connection, NetworkError>;
+pub type StreamResult = Result<Who, NetworkError>;
+pub type WorldRuntimeSync = std::sync::Arc<tokio::sync::Mutex<behavior::WorldRuntime>>;
+
+pub fn load_runtime() -> model::Result<WorldRuntimeSync> {
+    Ok(std::sync::Arc::new(tokio::sync::Mutex::new(behavior::WorldRuntime::load()?)))
+}
 
 enum Stream {
     Outgoing(WebSocketStream<MaybeTlsStream<TcpStream>>),
@@ -178,19 +185,7 @@ impl Connection {
         }
     }
 
-    pub async fn send_zone(&mut self, message: WorldToZoneMessage) -> SendResult {
-        let bytes = bincode::serialize(&message).unwrap();
-        let msg = Message::Binary(bytes);
-        match self.incoming_stream().send(msg).await {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                self.halt().await;
-                Err(NetworkError::Send{who: self.who.clone(), msg_name: message.message_name(), reason: e.to_string()})
-            }
-        }
-    }
-
-    pub async fn send_binary<M: Messaging>(&mut self, serializable: M) -> SendResult {
+    pub async fn send<M: Messaging>(&mut self, serializable: M) -> SendResult {
         let bytes = bincode::serialize(&serializable).unwrap();
         let msg = Message::Binary(bytes);
         let result = match self.stream {
