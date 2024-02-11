@@ -21,7 +21,7 @@ async fn main() {
     let zone_tcp_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
     
     server::log!("Listening for zone server connections on {bind_address}.");
-    let _listener_task = tokio::spawn(listener_task(zone_tcp_listener, tls_acceptor, Arc::clone(&runtime)));
+    let _listener_task = tokio::spawn(zone_listener_task(zone_tcp_listener, tls_acceptor, Arc::clone(&runtime)));
 
     let sleep = {
         let runtime_lock = runtime.lock().await;
@@ -46,18 +46,39 @@ async fn main() {
     }
 }
 
-async fn listener_task(
+async fn zone_listener_task(
     zone_tcp_listener: tokio::net::TcpListener,
     tls_acceptor: tokio_native_tls::TlsAcceptor,
     runtime: WorldRuntimeSync
-) -> anyhow::Result<()> {
+) {
     let mut next_connection_id: usize = 1;
     let mut zone_stream_tasks = Vec::new();
 
-    while let Ok((tcp_stream, addr)) = zone_tcp_listener.accept().await {
+    loop {
+        let (tcp_stream, addr) = match zone_tcp_listener.accept().await {
+            Ok(r) => r,
+            Err(e) => {
+                server::log_error!("Unable to accept connection from zone. :> {e}");
+                continue
+            }
+        };
+
         let acceptor = tls_acceptor.clone();
-        let tls_stream = acceptor.accept(tcp_stream).await.unwrap();
-        let websocket_stream = tokio_tungstenite::accept_async(tls_stream).await?;
+        let tls_stream = match acceptor.accept(tcp_stream).await {
+            Ok(s) => s,
+            Err(e) => {
+                server::log_error!("Unable to accept TLS connection from zone ({addr}). :> {e}");
+                continue
+            }
+        };
+
+        let websocket_stream = match tokio_tungstenite::accept_async(tls_stream).await {
+            Ok(s) => s,
+            Err(e) => {
+                server::log_error!("Unable to accept TLS websocket connection from zone ({addr}). :> {e}");
+                continue
+            }
+        };
 
         let zone_who = server::Who::Zone(next_connection_id, format!("{}:{}", addr.ip(), addr.port()));
         next_connection_id += 1;
@@ -76,7 +97,7 @@ async fn listener_task(
 
             server::log!("Negotiated session with {}", conn.who);
 
-            match zone_stream_task(conn, runtime_clone).await {
+            match zone_stream_loop(conn, runtime_clone).await {
                 Err(e) => {
                     server::log_error!("{e}");
                     Err(())
@@ -90,8 +111,6 @@ async fn listener_task(
 
         zone_stream_tasks.push((zone_who, task));
     }
-
-    Ok(())
 }
 
 async fn negotiate_zone_session(mut conn: server::Connection) -> server::ConnectionResult {
@@ -119,7 +138,7 @@ async fn negotiate_zone_session(mut conn: server::Connection) -> server::Connect
     Ok(conn)
 }
 
-async fn zone_stream_task(
+async fn zone_stream_loop(
     mut conn: server::Connection,
     runtime: WorldRuntimeSync
 ) -> Result<server::Who, server::NetworkError> {

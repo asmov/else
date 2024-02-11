@@ -4,8 +4,7 @@ use native_tls as tls;
 use tokio::net::TcpStream;
 use tokio_native_tls::TlsStream;
 use tokio_tungstenite::{self, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}, MaybeTlsStream, WebSocketStream};
-use elsezone_model::{self as model, message::*};
-use elsezone_behavior as behavior;
+use elsezone_model::message::*;
 use bincode;
 use futures_util::{SinkExt, StreamExt};
 use thiserror;
@@ -108,6 +107,7 @@ pub type SendResult = Result<(), NetworkError>;
 pub type ReceiveResult<M> = Result<M, NetworkError>;
 pub type ConnectionResult = Result<Connection, NetworkError>;
 pub type StreamResult = Result<Who, NetworkError>;
+pub type TaskResult = Result<(),()>;
 
 enum Stream {
     Outgoing(WebSocketStream<MaybeTlsStream<TcpStream>>),

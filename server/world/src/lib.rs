@@ -53,7 +53,7 @@ impl WorldRuntime {
         self.timeframe.tick();
         let reactions = self.on_timeframe(self.timeframe.clone())?;
         self.react(reactions)?;
-        self.timeframe_channel_tx.send(self.timeframe.clone()).unwrap();
+        let _ = self.timeframe_channel_tx.send(self.timeframe.clone());
         Ok(())
     }
 

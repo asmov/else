@@ -1,82 +1,11 @@
-use std::{borrow::Cow, fs, sync::Arc};
+use std::sync::Arc;
 
-use futures_util::{SinkExt, StreamExt};
-use tokio::net::TcpStream;
-use tokio_tungstenite::{self, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}, MaybeTlsStream, WebSocketStream};
-use native_tls as tls;
-use tokio_native_tls::{self, TlsStream};
-use bincode;
+use tokio_tungstenite;
 
 use elsezone_network_common as elsenet;
-use elsezone_model::{self as model, message::*};
+use elsezone_model::message::*;
 use elsezone_server_common as server;
-
-fn load_certs() -> Vec<tls::Certificate> {
-    const FILENAMES: [&'static str; 2] = ["cert.der", "root-ca.der"];
-    let certs_dir = server::certs_dir();
-    let mut certs = Vec::new();
-
-    for filename in FILENAMES {
-        let bytes = &fs::read(certs_dir.join(filename)).unwrap();
-        let cert = tls::Certificate::from_der(bytes).unwrap();
-        certs.push(cert);
-    }
-
-    certs
-}
-
-fn build_tls_connector() -> tokio_tungstenite::Connector {
-    let mut native_tls_connector_builder = tls::TlsConnector::builder();
-
-    #[cfg(debug_assertions)]
-    native_tls_connector_builder.danger_accept_invalid_hostnames(true);
-
-    for cert in load_certs() {
-        native_tls_connector_builder.add_root_certificate(cert);
-    }
-    
-    let native_tls_connector = native_tls_connector_builder.build().unwrap();
-    tokio_tungstenite::Connector::NativeTls(native_tls_connector)
-}
-
-struct ZoneRuntime {
-    world: Option<model::World>,
-    timeframe: Option<model::TimeFrame>
-}
-
-impl ZoneRuntime {
-    pub fn new() -> Self {
-        Self {
-            world: None,
-            timeframe: None
-        }
-    }
-
-    pub fn ready(&self) -> bool {
-        self.world.is_some()
-    }
-
-    pub fn timeframe(&self) -> Option<&model::TimeFrame> {
-        self.timeframe.as_ref()
-    }
-
-    pub fn world(&self) -> Option<&model::World> {
-        self.world.as_ref()
-    }
-
-    pub fn sync_world(&mut self, bytes: Vec<u8>) -> Result<&model::World, ()> {
-        let world: model::World = bincode::deserialize(&bytes)
-            .map_err(|e| ())?;
-        self.world = Some(world);
-        Ok(self.world.as_ref().unwrap())
-    }
-
-    pub fn sync_timeframe(&mut self, timeframe: model::TimeFrame) {
-        self.timeframe = Some(timeframe);
-    }
-}
-
-type ZoneRuntimeSync = std::sync::Arc<tokio::sync::Mutex<ZoneRuntime>>;
+use elsezone_zone_server::*;
 
 #[tokio::main]
 async fn main() {
@@ -98,24 +27,38 @@ async fn main() {
     }
 }
 
-async fn world_connector_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
+async fn world_connector_task(runtime: ZoneRuntimeSync) {
     let mut next_world_connection_num: usize = 1;
     let world_server_ip = elsenet::LOCALHOST_IP;
     let world_server_port = elsenet::ELSE_WORLD_PORT;
     let world_server_url = format!("wss://{world_server_ip}:{world_server_port}");
+    let mut reconnect_attempts: i32 = -1;
 
     loop {
-        if next_world_connection_num > 1 {
-            tokio::time::sleep(tokio::time::Duration::from_secs(20)).await;
+        if reconnect_attempts > -1 {
+            let wait = 15 + 3 * reconnect_attempts as u64;
+            server::log!("Reconnecting in {wait} seconds ...");
+            tokio::time::sleep(tokio::time::Duration::from_secs(15 + wait)).await;
+            reconnect_attempts += 1;
+        } else {
+            reconnect_attempts = 0;
         }
 
         let tls_connector = build_tls_connector();
-        let (world_websocket_stream, _) = tokio_tungstenite::connect_async_tls_with_config(
+        let result = tokio_tungstenite::connect_async_tls_with_config(
             world_server_url.clone(),
             None,
             false,
             Some(tls_connector)
-        ).await.unwrap();
+        ).await;
+
+        let world_websocket_stream = match result {
+            Ok((stream, _)) => stream,
+            Err(e) => {
+                server::log_error!("Unable to connect to world server at {world_server_url} :> {e}");
+                continue
+            }
+        };
 
         let world_server_who = server::Who::World(next_world_connection_num, format!("{world_server_ip}:{world_server_port}"));
         next_world_connection_num += 1;
@@ -130,6 +73,8 @@ async fn world_connector_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
             Ok(conn) => conn
         };
 
+        reconnect_attempts = 0; // reset after a successful handshake
+
         match world_stream_task(conn, Arc::clone(&runtime)).await {
             Err(e) => {
                 server::log_error!("{e}");
@@ -141,10 +86,26 @@ async fn world_connector_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
     }
 }
 
-async fn client_listener_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
+async fn bind_client_listener() -> std::io::Result<tokio::net::TcpListener> {
     let bind_ip = elsenet::LOCALHOST_IP;
     let bind_port = elsenet::ELSE_ZONE_PORT;
     let bind_address = format!("{bind_ip}:{bind_port}");
+    tokio::net::TcpListener::bind(&bind_address).await
+        .and_then(|listener| {
+            server::log!("Listening for client connections on {bind_address}.");
+            Ok(listener)
+        })
+        .map_err(|e| {
+            server::log_error!("Unable to bind to address {bind_address}. :> {e}");
+            e
+        })
+}
+
+async fn client_listener_task(runtime: ZoneRuntimeSync) {
+    let bind_ip = elsenet::LOCALHOST_IP;
+    let bind_port = elsenet::ELSE_ZONE_PORT;
+    let bind_address = format!("{bind_ip}:{bind_port}");
+ 
     let mut next_client_connection_num: usize = 1;
     let mut client_websocket_stream_tasks = Vec::new();
 
@@ -154,10 +115,31 @@ async fn client_listener_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
     let client_websocket_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
     server::log!("Listening for client connections on {bind_address}.");
 
-    while let Ok((tcp_stream, addr)) = client_websocket_listener.accept().await {
+    loop {
+        let (tcp_stream, addr) = match client_websocket_listener.accept().await {
+            Ok(r) => r,
+            Err(e) => {
+                server::log_error!("Unable to accept client connection :> {e}");
+                break;
+            }
+        };
+
         let acceptor = tls_acceptor.clone();
-        let tls_stream = acceptor.accept(tcp_stream).await.unwrap();
-        let websocket_stream = tokio_tungstenite::accept_async(tls_stream).await.unwrap();
+        let tls_stream = match acceptor.accept(tcp_stream).await {
+            Ok(s) => s,
+            Err(e) => {
+                server::log_error!("Unable to accept TLS connection from client ({addr}). :> {e}");
+                continue
+            }
+        };
+
+        let websocket_stream = match tokio_tungstenite::accept_async(tls_stream).await {
+            Ok(s) => s,
+            Err(e) => {
+                server::log_error!("Unable to accept TLS websocket connection from client ({addr}). :> {e}");
+                continue
+            }
+        };
 
         let client_who = server::Who::Client(next_client_connection_num, format!("{}:{}", addr.ip(), addr.port()));
         next_client_connection_num += 1;
@@ -169,7 +151,7 @@ async fn client_listener_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
             let conn = match negotiate_client_session(conn).await {
                 Err(e) => {
                     server::log_error!("{e}");
-                    return Err(())
+                    return
                 },
                 Ok(conn) => {
                     server::log!("Negotiated session with {}", conn.who);
@@ -180,19 +162,17 @@ async fn client_listener_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
             match client_stream_task(conn, runtime_clone).await {
                 Ok(who) => {
                     server::log!("Session finished with {who}");
-                    Ok(())
+                    return
                 },
                 Err(e) => {
                     server::log_error!("{e}");
-                    Err(())
+                    return
                 }
             }
         });
 
         client_websocket_stream_tasks.push((client_who, task));
     }
-
-    Ok(())
 }
 
 async fn negotiate_world_session(mut conn: server::Connection) -> server::ConnectionResult {
@@ -235,7 +215,7 @@ async fn world_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSyn
                 let frame = timeframe.frame();
                 {
                     let mut runtime_lock = runtime.lock().await;
-                    runtime_lock.sync_world(bytes).unwrap();
+                    runtime_lock.sync_world(bytes).unwrap(); //todo: Don't Panic
                     runtime_lock.sync_timeframe(timeframe);
                 }
 
