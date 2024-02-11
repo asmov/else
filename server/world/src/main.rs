@@ -125,8 +125,18 @@ async fn zone_stream_task(
     let msg = WorldToZoneMessage::WorldBytes(world_bytes);
     conn.send(msg).await?;
 
-    while let Ok(message) = conn.receive::<ZoneToWorldMessage>().await {
-        server::log!("Received a message! {:?}", message);
+    loop {
+        let message = conn.receive::<ZoneToWorldMessage>().await?;
+
+        match message {
+            ZoneToWorldMessage::Disconnect => {
+                conn.halt().await;
+                break;
+            },
+            _ =>  {
+                server::log!("Received a message! {:?}", message);
+            },
+        }
     }
 
     Ok(conn.who.to_owned())
