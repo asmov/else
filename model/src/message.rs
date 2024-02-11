@@ -90,6 +90,26 @@ pub enum ClientToZoneMessage {
     Go,
 }
 
+impl Messaging for ClientToZoneMessage {
+    fn message_type_name() -> &'static str {
+        "ClientToZoneMessage"
+    }
+
+    fn message_name(&self) -> &'static str {
+        match self {
+            ClientToZoneMessage::Acknowledged(_) => "ClientToZoneMessage::Acknowledge",
+            ClientToZoneMessage::Error(_) => "ClientToZoneMessage::Error",
+            ClientToZoneMessage::Connect => "ClientToZoneMessage::Connect",
+            ClientToZoneMessage::Transfer => "ClientToZoneMessage::Transfer",
+            ClientToZoneMessage::Transferring => "ClientToZoneMessage::Transferring",
+            ClientToZoneMessage::TransferDenied => "ClientToZoneMessage::TransferDenied",
+            ClientToZoneMessage::Transfered => "ClientToZoneMessage::Transfered",
+            ClientToZoneMessage::Disconnect => "ClientToZoneMessage::Disconnect",
+            ClientToZoneMessage::Go => "ClientToZoneMessage::Go",
+        }
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ZoneToClientMessage {
     Acknowledged(AuthorityAcknowledgedMsg), // 0

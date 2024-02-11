@@ -83,7 +83,7 @@ async fn main() {
     let runtime = Arc::new(tokio::sync::Mutex::new(ZoneRuntime::new()));
 
     let _world_connector_task = tokio::spawn(world_connector_task(Arc::clone(&runtime)));
-    let _client_listener_task = tokio::spawn(client_listener_task());
+    let _client_listener_task = tokio::spawn(client_listener_task(Arc::clone(&runtime)));
 
     let default_duration = tokio::time::Duration::from_secs(30);
     let sleep = tokio::time::sleep(default_duration);
@@ -141,7 +141,7 @@ async fn world_connector_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
     }
 }
 
-async fn client_listener_task() -> Result<(), ()> {
+async fn client_listener_task(runtime: ZoneRuntimeSync) -> Result<(), ()> {
     let bind_ip = elsenet::LOCALHOST_IP;
     let bind_port = elsenet::ELSE_ZONE_PORT;
     let bind_address = format!("{bind_ip}:{bind_port}");
@@ -163,7 +163,32 @@ async fn client_listener_task() -> Result<(), ()> {
         next_client_connection_num += 1;
         server::log!("Established connection with {client_who}.");
 
-        let task = tokio::spawn(client_stream_task(client_who.clone(), websocket_stream));
+        let conn = server::Connection::new_incoming(client_who.clone(), websocket_stream);
+        let runtime_clone = Arc::clone(&runtime);
+        let task = tokio::spawn(async move {
+            let conn = match negotiate_client_session(conn).await {
+                Err(e) => {
+                    server::log_error!("{e}");
+                    return Err(())
+                },
+                Ok(conn) => {
+                    server::log!("Negotiated session with {}", conn.who);
+                    conn
+                }
+            };
+
+            match client_stream_task(conn, runtime_clone).await {
+                Ok(who) => {
+                    server::log!("Session finished with {who}");
+                    Ok(())
+                },
+                Err(e) => {
+                    server::log_error!("{e}");
+                    Err(())
+                }
+            }
+        });
+
         client_websocket_stream_tasks.push((client_who, task));
     }
 
@@ -233,94 +258,42 @@ async fn world_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSyn
     }
 }
 
-async fn client_payload_error(who: server::Who, mut websocket_stream: WebSocketStream<TlsStream<TcpStream>>, reason: &str) -> Result<(),()> {
-    server::log_error!("Connection with {who} failed :> {reason}");
-    let _ = websocket_stream.close(Some(CloseFrame {
-        code: CloseCode::Invalid,
-        reason: Cow::Borrowed(reason) 
-    })).await;
+async fn negotiate_client_session(mut conn: server::Connection) -> server::ConnectionResult {
+    // protocol verification: connector sends their protocol header to us
+    let their_protocol_header: ProtocolHeader = conn.receive().await?;
+    // send our protocol header regardless
+    let our_protocol_header = ProtocolHeader::current(Protocol::ZoneToClient);
+    conn.send(our_protocol_header).await?;
 
-    Err(())
+    if !their_protocol_header.compatible(Protocol::ClientToZone) {
+        return Err(conn.error_payload("compatible protocol").await);
+    }
+
+    let msg: ClientToZoneMessage = conn.receive().await?; 
+    match msg {
+        ClientToZoneMessage::Connect => {
+            let msg = ZoneToClientMessage::Connected;
+            conn.send(msg).await?;
+            Ok(conn)
+        },
+        _ => {
+            Err(conn.error_payload("ClientToZoneMessage::Connect").await)
+        }
+    }
 }
 
-async fn client_stream_task(who: server::Who, mut websocket_stream: WebSocketStream<TlsStream<TcpStream>>) -> Result<(), ()> {
-    // protocol verification: connector sends their protocol header to us
-    if let Some(Ok(message)) = websocket_stream.next().await {
-        match message {
-            Message::Binary(bytes) => {
-                let protocol_header: ProtocolHeader = match bincode::deserialize(&bytes) {
-                    Ok(msg) => msg,
-                    Err(_) => {
-                        return client_payload_error(who, websocket_stream, "Expected ProtocolHeader").await;
-                    }
-                };
-
-                if !protocol_header.compatible(Protocol::ClientToZone) {
-                    server::log_error!("Connection protocol `{protocol_header}` for {who} is incompatible.");
-                    let response_protocol_header = ProtocolHeader::current(Protocol::Unsupported);
-                    let msg = Message::binary(bincode::serialize(&response_protocol_header).unwrap());
-                    if let Err(e) = websocket_stream.send(msg).await {
-                        return server::connection_send_error(&who, e);
-                    }
-
-                    return server::connection_close(&who, websocket_stream).await;
-                }
-
-                let protocol_header = ProtocolHeader::current(Protocol::ZoneToClient);
-                let msg = Message::binary(bincode::serialize(&protocol_header).unwrap());
-                if let Err(e) = websocket_stream.send(msg).await {
-                        return server::connection_send_error(&who, e);
-                }
-            },
-            Message::Close(_) => {
-                return server::connection_close(&who, websocket_stream).await;
-            },
-            _ => {
-                return client_payload_error(who, websocket_stream, "Expected ProtocolHeader").await;
-            }
-        }
-    } else {
-        return server::connection_close(&who, websocket_stream).await;
-    }
-
-    // the client should send a connection request
-    if let Some(Ok(message)) = websocket_stream.next().await {
-        match message {
-            Message::Binary(bytes) => {
-                let msg: ClientToZoneMessage = match bincode::deserialize(&bytes) {
-                    Ok(msg) => msg,
-                    Err(_) => {
-                        return client_payload_error(who, websocket_stream, "Expected ClientToZoneMessage").await;
-                    }
-                };
-
+async fn client_stream_task(mut conn: server::Connection, _runtime: ZoneRuntimeSync) -> server::StreamResult {
+    loop {
+        tokio::select! {
+            result = conn.receive::<ClientToZoneMessage>() => {
+                let msg = result?;
                 match msg {
-                    ClientToZoneMessage::Connect => {
-                        let msg = Message::Binary(bincode::serialize(&ZoneToClientMessage::Connected).unwrap());
-                        if let Err(e) = websocket_stream.send(msg).await {
-                            return server::connection_send_error(&who, e);
-                        }
-
-                        server::log!("Session negotiated with {who}.")
-                    },
                     _ => {
-                        return client_payload_error(who, websocket_stream, "Expected ClientToZoneMessage::Connect").await;
+                        server::log!("Message received {:?}", msg)
                     }
                 }
-            },
-            Message::Close(_) => {
-                return server::connection_close(&who, websocket_stream).await;
-            }
-            _ => {
-                return client_payload_error(who, websocket_stream, "Expected a binary websocket message").await;
             }
         }
-    } else {
-        return server::connection_close(&who, websocket_stream).await;
     }
-
-    println!("Session has ended with {who}.");
-    let _ = websocket_stream.close(None).await;
-    Ok(())
 }
 
