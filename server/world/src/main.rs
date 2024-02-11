@@ -1,9 +1,12 @@
 use std::sync::Arc;
 use tokio;
 use tokio_native_tls;
-use elsezone_model::message::*;
+use elsezone_model::{self as model, message::*};
 use elsezone_network_common as elsenet;
 use elsezone_server_common as server;
+use elsezone_world_server::*;
+
+pub type WorldRuntimeSync = std::sync::Arc<tokio::sync::Mutex<WorldRuntime>>;
 
 #[tokio::main]
 async fn main() {
@@ -12,7 +15,7 @@ async fn main() {
     let bind_port = elsenet::ELSE_WORLD_PORT;
     let bind_address = format!("{bind_ip}:{bind_port}");
 
-    let runtime = server::load_runtime().unwrap();
+    let runtime = Arc::new(tokio::sync::Mutex::new(WorldRuntime::load().unwrap()));
     
     let tls_acceptor = server::build_tls_acceptor(identity_password);
     let zone_tcp_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
@@ -46,7 +49,7 @@ async fn main() {
 async fn listener_task(
     zone_tcp_listener: tokio::net::TcpListener,
     tls_acceptor: tokio_native_tls::TlsAcceptor,
-    runtime: server::WorldRuntimeSync
+    runtime: WorldRuntimeSync
 ) -> anyhow::Result<()> {
     let mut next_connection_id: usize = 1;
     let mut zone_stream_tasks = Vec::new();
@@ -118,28 +121,41 @@ async fn negotiate_zone_session(mut conn: server::Connection) -> server::Connect
 
 async fn zone_stream_task(
     mut conn: server::Connection,
-    runtime: server::WorldRuntimeSync
+    runtime: WorldRuntimeSync
 ) -> Result<server::Who, server::NetworkError> {
 
-    let world_bytes = {
+    let (timeframe, world_bytes) = {
         let runtime_lock = runtime.lock().await;
-        bincode::serialize(runtime_lock.world()).unwrap()
+        (runtime_lock.timeframe().clone(), bincode::serialize(runtime_lock.world()).unwrap())
     };
 
-    let msg = WorldToZoneMessage::WorldBytes(world_bytes);
+    let msg = WorldToZoneMessage::WorldBytes(timeframe, world_bytes);
     conn.send(msg).await?;
 
-    loop {
-        let message = conn.receive::<ZoneToWorldMessage>().await?;
+    let mut timeframe_subscriber = {
+        let mut runtime_lock = runtime.lock().await;
+        runtime_lock.subscribe_timeframe()
+    };
 
-        match message {
-            ZoneToWorldMessage::Disconnect => {
-                conn.halt().await;
-                break;
-            },
-            _ =>  {
-                server::log!("Received a message! {:?}", message);
-            },
+    loop {
+        tokio::select! {
+            result = conn.receive::<ZoneToWorldMessage>() => {
+                let message = result?;
+                match message {
+                    ZoneToWorldMessage::Disconnect => {
+                        conn.halt().await;
+                        break;
+                    },
+                    _ =>  {
+                        server::log!("Received a message! {:?}", message);
+                    },
+                }
+            }
+            _result = timeframe_subscriber.changed() => {
+                let timeframe: model::TimeFrame = timeframe_subscriber.borrow_and_update().clone();
+                let msg = WorldToZoneMessage::TimeFrame(NewTimeFrameMsg{timeframe});
+                conn.send(msg).await?;
+            }
         }
     }
 

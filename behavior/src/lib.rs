@@ -1,7 +1,8 @@
 pub mod stimulus;
 
 use elsezone_model::*;
-use stimulus::*;
+
+pub use stimulus::*;
 
 
 pub trait Stimulation {
@@ -106,72 +107,3 @@ impl CharacterRoutine {
     }
 }
 
-pub struct WorldRuntime {
-    timeframe: TimeFrame,
-    world: World,
-    character_routines: Vec<CharacterRoutine>,
-}
-
-impl WorldRuntime {
-    pub fn load() -> Result<Self> {
-        let world = testing::create_world();
-        let character_routines = world.things().iter()
-            .filter_map(|thing| match thing {
-                Thing::Character(c) => Some(c),
-                _ => None
-            })
-            .map(|character| CharacterRoutine::new(character))
-            .collect();
-
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH).unwrap()
-            .as_secs();
-
-        Ok(Self {
-            timeframe: TimeFrame::new(0, now),
-            world,
-            character_routines
-        })
-    }
-
-    pub fn world(&self) -> &World {
-        &self.world
-    }
-
-    pub fn timeframe(&self) -> &TimeFrame {
-        &self.timeframe
-    }
-
-    pub fn frame_duration(&self) -> std::time::Duration {
-        std::time::Duration::from_secs(10)
-    }
-
-    pub fn tick(&mut self) -> Result<()> {
-        self.timeframe.tick();
-        let reactions = self.on_timeframe(self.timeframe.clone())?;
-        self.react(reactions)?;
-        Ok(())
-    }
-
-    fn on_timeframe(&mut self, timeframe: TimeFrame) -> Result<Vec<Reaction>> {
-        let mut reactions = Vec::new();
-
-        for routine in &mut self.character_routines {
-            let world = &mut self.world;
-            let result = routine.stimulate(Stimulus::Time(&timeframe), world)?;
-            if let Some(mut results) = result {
-                reactions.append(&mut results);
-            }
-        }
-
-        Ok(reactions)
-    }
-
-    fn react(&mut self, reactions: Vec<Reaction>) -> Result<()> {
-        for reaction in reactions {
-            reaction.react(&mut self.world)?
-        }
-
-        Ok(())
-    }
-}

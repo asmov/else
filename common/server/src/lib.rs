@@ -97,6 +97,9 @@ pub enum NetworkError {
     #[error("Unexpected response received from {who} when expecting a {expected}.")]
     UnexpectedResponse{who: Who, expected: String},
 
+    #[error("Connection rejected from {who}.")]
+    Rejected{who: Who},
+
     #[error("Abrupt disconnection from {who}")]
     Disconnected{who: Who}
 }
@@ -105,11 +108,6 @@ pub type SendResult = Result<(), NetworkError>;
 pub type ReceiveResult<M> = Result<M, NetworkError>;
 pub type ConnectionResult = Result<Connection, NetworkError>;
 pub type StreamResult = Result<Who, NetworkError>;
-pub type WorldRuntimeSync = std::sync::Arc<tokio::sync::Mutex<behavior::WorldRuntime>>;
-
-pub fn load_runtime() -> model::Result<WorldRuntimeSync> {
-    Ok(std::sync::Arc::new(tokio::sync::Mutex::new(behavior::WorldRuntime::load()?)))
-}
 
 enum Stream {
     Outgoing(WebSocketStream<MaybeTlsStream<TcpStream>>),

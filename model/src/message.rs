@@ -172,7 +172,7 @@ pub enum WorldToZoneMessage {
     Disconnect,
     ClientApproved,
     ClientRejected,
-    WorldBytes(Vec<u8>)
+    WorldBytes(TimeFrame, Vec<u8>)
 }
 
 impl Messaging for WorldToZoneMessage {
@@ -190,7 +190,7 @@ impl Messaging for WorldToZoneMessage {
             Self::Disconnect => "WorldToZoneMessage::Disconnect",
             Self::ClientApproved => "WorldToZoneMessage::ClientApproved",
             Self::ClientRejected => "WorldToZoneMessage::ClientRejected",
-            Self::WorldBytes(_) => "WorldToZoneMessage::WorldBytes",
+            Self::WorldBytes(_,_) => "WorldToZoneMessage::WorldBytes",
         }
     }
 }
