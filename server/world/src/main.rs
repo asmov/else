@@ -30,10 +30,14 @@ async fn main() {
     loop {
         tokio::select! {
             () = &mut sleep => {
-                let mut runtime_lock = runtime.lock().await;
-                runtime_lock.tick().unwrap();
-                server::log!("Frame: {}", runtime_lock.timeframe().frame());
-                sleep.as_mut().reset(tokio::time::Instant::now() + runtime_lock.frame_duration());
+                let (frame_duration, frame) = {
+                    let mut runtime_lock = runtime.lock().await;
+                    runtime_lock.tick().unwrap();
+                    (runtime_lock.frame_duration(), runtime_lock.timeframe().frame())
+                };
+
+                server::log!("Frame: {}", frame);
+                sleep.as_mut().reset(tokio::time::Instant::now() + frame_duration);
             }
         }
     }
