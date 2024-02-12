@@ -1,6 +1,8 @@
-use std::sync::Arc;
+use std::{self, process, sync::Arc};
 
+use server::ConnectionTrait;
 use tokio_tungstenite;
+use tokio_native_tls as tls;
 
 use elsezone_network_common as elsenet;
 use elsezone_model::message::*;
@@ -8,11 +10,16 @@ use elsezone_server_common as server;
 use elsezone_zone_server::*;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> process::ExitCode {
     let runtime = Arc::new(tokio::sync::Mutex::new(ZoneRuntime::new()));
 
+    let client_listening = match prepare_client_listening().await {
+        Ok(c) => c,
+        Err(_) => return process::ExitCode::FAILURE
+    };
+
     let _world_connector_task = tokio::spawn(world_connector_task(Arc::clone(&runtime)));
-    let _client_listener_task = tokio::spawn(client_listener_task(Arc::clone(&runtime)));
+    let _client_listener_task = tokio::spawn(client_listener_task(client_listening, Arc::clone(&runtime)));
 
     let default_duration = tokio::time::Duration::from_secs(30);
     let sleep = tokio::time::sleep(default_duration);
@@ -36,7 +43,7 @@ async fn world_connector_task(runtime: ZoneRuntimeSync) {
 
     loop {
         if reconnect_attempts > -1 {
-            let wait = 15 + 3 * reconnect_attempts as u64;
+            let wait = std::cmp::min(server::MAX_RECONNECT_WAIT, 15 + 3 * reconnect_attempts as u64);
             server::log!("Reconnecting in {wait} seconds ...");
             tokio::time::sleep(tokio::time::Duration::from_secs(15 + wait)).await;
             reconnect_attempts += 1;
@@ -64,7 +71,7 @@ async fn world_connector_task(runtime: ZoneRuntimeSync) {
         next_world_connection_num += 1;
         server::log!("Established connection with {world_server_who}.");
 
-        let conn = server::Connection::new_outgoing(world_server_who, world_websocket_stream);
+        let conn = server::Connection::new(world_server_who, server::Stream::Outgoing(world_websocket_stream));
         let conn = match negotiate_world_session(conn).await {
             Err(e) => {
                 server::log_error!("{e}");
@@ -86,7 +93,7 @@ async fn world_connector_task(runtime: ZoneRuntimeSync) {
     }
 }
 
-async fn bind_client_listener() -> std::io::Result<tokio::net::TcpListener> {
+async fn bind_client_listener() -> server::LoggedResult<tokio::net::TcpListener> {
     let bind_ip = elsenet::LOCALHOST_IP;
     let bind_port = elsenet::ELSE_ZONE_PORT;
     let bind_address = format!("{bind_ip}:{bind_port}");
@@ -97,23 +104,34 @@ async fn bind_client_listener() -> std::io::Result<tokio::net::TcpListener> {
         })
         .map_err(|e| {
             server::log_error!("Unable to bind to address {bind_address}. :> {e}");
-            e
+            ()
         })
 }
 
-async fn client_listener_task(runtime: ZoneRuntimeSync) {
-    let bind_ip = elsenet::LOCALHOST_IP;
-    let bind_port = elsenet::ELSE_ZONE_PORT;
-    let bind_address = format!("{bind_ip}:{bind_port}");
- 
+fn read_identity_password() -> server::LoggedResult<String> {
+    let filepath = server::certs_dir().join("passwd");
+    std::fs::read_to_string(&filepath)
+        .and_then(|s| Ok(s.trim().to_owned()))
+        .map_err(|e| {
+            server::log_error!("Unable to load TLS certification password from `{}`. :> {e}",
+                filepath.to_str().unwrap());
+            ()
+        })
+}
+
+type ClientListening = (tls::TlsAcceptor, tokio::net::TcpListener);
+
+async fn prepare_client_listening() -> server::LoggedResult<ClientListening> {
+    let tls_acceptor = server::build_tls_acceptor(read_identity_password()?);
+    let client_websocket_listener = bind_client_listener().await?;
+
+    Ok((tls_acceptor, client_websocket_listener))
+}
+
+async fn client_listener_task(listening: ClientListening, runtime: ZoneRuntimeSync) {
     let mut next_client_connection_num: usize = 1;
     let mut client_websocket_stream_tasks = Vec::new();
-
-    let identity_password = String::from("mypass");
-    let tls_acceptor = server::build_tls_acceptor(identity_password);
-
-    let client_websocket_listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
-    server::log!("Listening for client connections on {bind_address}.");
+    let (tls_acceptor, client_websocket_listener) = listening;
 
     loop {
         let (tcp_stream, addr) = match client_websocket_listener.accept().await {
@@ -145,7 +163,7 @@ async fn client_listener_task(runtime: ZoneRuntimeSync) {
         next_client_connection_num += 1;
         server::log!("Established connection with {client_who}.");
 
-        let conn = server::Connection::new_incoming(client_who.clone(), websocket_stream);
+        let conn = server::Connection::new(client_who.clone(), server::Stream::Incoming(websocket_stream));
         let runtime_clone = Arc::clone(&runtime);
         let task = tokio::spawn(async move {
             let conn = match negotiate_client_session(conn).await {
@@ -154,7 +172,7 @@ async fn client_listener_task(runtime: ZoneRuntimeSync) {
                     return
                 },
                 Ok(conn) => {
-                    server::log!("Negotiated session with {}", conn.who);
+                    server::log!("Negotiated session with {}", conn.who());
                     conn
                 }
             };
@@ -195,13 +213,13 @@ async fn negotiate_world_session(mut conn: server::Connection) -> server::Connec
     let msg: WorldToZoneMessage = conn.receive().await?;
     match msg {
         WorldToZoneMessage::Connected => {
-            server::log!("Connection negotiated with {}.", conn.who);
+            server::log!("Connection negotiated with {}.", conn.who());
             Ok(conn)
         },
         WorldToZoneMessage::ConnectRejected => {
-            server::log_error!("Connection negotiation rejected by {}.", conn.who);
+            server::log_error!("Connection negotiation rejected by {}.", conn.who());
             conn.halt().await;
-            Err(server::NetworkError::Rejected{who: conn.who.clone()})
+            Err(server::NetworkError::Rejected{who: conn.who().clone()})
         },
         _ => Err(conn.error_payload("WorldToZoneMessage::[Connected, ConnectRejected]").await)
     }
@@ -231,8 +249,14 @@ async fn world_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSyn
 
                 server::log!("Frame: {frame}");
             },
+            WorldToZoneMessage::Disconnect => {
+                server::log!("Disconnected from {}", conn.who());
+                conn.halt().await;
+                return Ok(conn.who().clone());
+            },
             _ => {
-                server::log!("Received message ::: {:?}", msg);
+                return Err(elsenet::NetworkError::UnexpectedResponse{
+                    who: conn.who().clone(), expected: "appropriate WorldToZone".to_string()})
             }
         }
     }
@@ -267,9 +291,16 @@ async fn client_stream_task(mut conn: server::Connection, _runtime: ZoneRuntimeS
         tokio::select! {
             result = conn.receive::<ClientToZoneMessage>() => {
                 let msg = result?;
+                
                 match msg {
+                    ClientToZoneMessage::Disconnect => {
+                        server::log!("Disconnection from {}", conn.who());
+                        conn.halt().await;
+                        return Ok(conn.who().clone());
+                    },
                     _ => {
-                        server::log!("Message received {:?}", msg)
+                        return Err(elsenet::NetworkError::UnexpectedResponse{
+                            who: conn.who().clone(), expected: "appropriate WorldToZone".to_string()})
                     }
                 }
             }

@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use server::ConnectionTrait;
 use tokio;
 use tokio_native_tls;
 use elsezone_model::{self as model, message::*};
@@ -84,7 +85,7 @@ async fn zone_listener_task(
         next_connection_id += 1;
         server::log!("Established connection with {zone_who}.");
 
-        let conn = server::Connection::new_incoming(zone_who.clone(), websocket_stream);
+        let conn = server::Connection::new(zone_who.clone(), server::Stream::Incoming(websocket_stream));
         let runtime_clone = Arc::clone(&runtime);
         let task = tokio::spawn(async move {
             let conn = match negotiate_zone_session(conn).await {
@@ -95,7 +96,7 @@ async fn zone_listener_task(
                 Ok(conn) => conn
             };
 
-            server::log!("Negotiated session with {}", conn.who);
+            server::log!("Negotiated session with {}", conn.who());
 
             match zone_stream_loop(conn, runtime_clone).await {
                 Err(e) => {
@@ -178,5 +179,5 @@ async fn zone_stream_loop(
         }
     }
 
-    Ok(conn.who.to_owned())
+    Ok(conn.who().clone())
 }

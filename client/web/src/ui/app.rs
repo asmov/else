@@ -1,6 +1,6 @@
 use yew::{prelude::*, virtual_dom::VChild};
 use gloo_console::log;
-use crate::{net, ui::terminal::{Entry, EntryCategory, EntryProps, Terminal}, input::ParsedInput};
+use crate::{net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
 
 use super::terminal;
 
@@ -63,7 +63,7 @@ impl Component for App {
         app
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         let stats: Vec<AttrValue> = vec![
             AttrValue::Static("/dev/tty/a0f24d3e"),
             AttrValue::Static("LH: Empty"),
