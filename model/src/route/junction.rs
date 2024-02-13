@@ -52,6 +52,7 @@ pub struct JunctionBuilder {
 
 impl Builder for JunctionBuilder {
     type Type = Junction;
+    type BuilderType = PointBuilder;
 
     fn creator() -> Self {
         Self {
@@ -85,7 +86,7 @@ impl Builder for JunctionBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
         if !self.entrances.is_empty() {
@@ -101,7 +102,7 @@ impl Builder for JunctionBuilder {
             fields_changed.push(JunctionField::Exit.field())
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new(PointBuilder::Junction(self), fields_changed))
     }
 }
 

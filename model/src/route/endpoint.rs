@@ -49,6 +49,7 @@ pub struct EndpointBuilder {
 
 impl Builder for EndpointBuilder {
     type Type = Endpoint;
+    type BuilderType = PointBuilder;
 
     fn creator() -> Self {
         Self {
@@ -86,7 +87,7 @@ impl Builder for EndpointBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
         if let Some(area_identity) = self.area_identity {
@@ -102,7 +103,7 @@ impl Builder for EndpointBuilder {
             fields_changed.push(EndpointField::Direction.field())
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new(PointBuilder::Endpoint(self), fields_changed))
     }
 }
 

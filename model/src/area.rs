@@ -77,6 +77,7 @@ pub struct AreaBuilder {
 
 impl Builder for AreaBuilder {
     type Type = Area;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {
@@ -110,7 +111,7 @@ impl Builder for AreaBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
         Ok(Modification::new(self, Vec::new()))
     }
 }

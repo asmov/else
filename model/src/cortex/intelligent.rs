@@ -61,6 +61,7 @@ pub struct IntelligentCortexBuilder {
 
 impl Builder for IntelligentCortexBuilder {
     type Type = IntelligentCortex;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {

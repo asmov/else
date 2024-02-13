@@ -137,6 +137,7 @@ pub enum CortexBuilder {
 
 impl Builder for CortexBuilder {
     type Type = Cortex;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         panic!("Cannot call CortexBuilder::creator() directly")
@@ -160,7 +161,7 @@ impl Builder for CortexBuilder {
         }
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
         panic!("Cannot call CortexBuilder::modify() directly")
         /*match self {
             CortexBuilder::Routine(builder) => {

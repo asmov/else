@@ -2,9 +2,9 @@ use crate::{error::*, builder::*};
 use serde;
 
 pub type ID = u64;
-pub type RegionID = u16;
+pub type RegionID = u32;
 pub type WorldID = u16;
-pub type UniverseID = u32;
+pub type UniverseID = u16;
 
 #[derive(PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone, Copy, Debug)]
 pub struct Identity {
@@ -91,6 +91,7 @@ pub struct IdentityBuilder {
 
 impl Builder for IdentityBuilder {
     type Type = Identity;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {

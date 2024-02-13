@@ -61,6 +61,7 @@ pub struct RoutineCortexBuilder {
 
 impl Builder for RoutineCortexBuilder {
     type Type = RoutineCortex;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {

@@ -133,6 +133,7 @@ pub struct DescriptorBuilder {
 
 impl Builder for DescriptorBuilder {
     type Type = Descriptor;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {
@@ -169,19 +170,19 @@ impl Builder for DescriptorBuilder {
         })
     }
 
-    fn modify(self, original: &mut Descriptor) -> Result<Modification<Self>> {
+    fn modify(self, original: &mut Descriptor) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
-        if let Some(name) = self.name {
-            original.name = name;
+        if let Some(name) = &self.name {
+            original.name = name.clone();
             fields_changed.push(DescriptorField::Name.field());
         }
         if self.description.is_some() {
-            original.description = self.description;
+            original.description = self.description.clone();
             fields_changed.push(DescriptorField::Description.field());
         }
         if self.notes.is_some() {
-            original.notes = self.notes;
+            original.notes = self.notes.clone();
             fields_changed.push(DescriptorField::Notes.field());
         }
 

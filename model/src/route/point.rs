@@ -15,6 +15,7 @@ pub enum PointBuilder {
 
 impl Builder for PointBuilder {
     type Type = Point;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         panic!("PointBuilder::creator() should not be called directly")
@@ -38,9 +39,8 @@ impl Builder for PointBuilder {
         }
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
-        panic!("Cannot call CortexBuilder::modify() directly");
-        /*match self {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
+        match self {
             PointBuilder::Endpoint(builder) => {
                 if let Point::Endpoint(orig_endpoint) = original {
                     builder.modify(orig_endpoint)
@@ -55,7 +55,7 @@ impl Builder for PointBuilder {
                     unreachable!("Dispatch mismatch for PointBuilder::modify(Junction)");
                 }
             }
-        }*/
+        }
     }
 }
 

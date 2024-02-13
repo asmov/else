@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, identity::*, descriptor::*, entity::*, thing::*, area::*, route::*};
+use crate::{error::*, builder::*, identity::*, descriptor::*, entity::*, character::*, area::*, route::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -58,6 +58,7 @@ pub struct WorldBuilder {
 
 impl Builder for WorldBuilder {
     type Type = World;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {
@@ -129,7 +130,7 @@ impl Builder for WorldBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify(mut self, original: &mut Self::Type) -> Result<Modification<Self>> {
         for mut area in self.areas {
             if !area.has_identity() {
                 let identity_builder = area.identity_builder();
@@ -155,6 +156,8 @@ impl Builder for WorldBuilder {
         }
 
         for mut thing in self.things {
+            assert!(thing.builder_mode() == BuilderMode::Creator);
+
             if !thing.entity_builder().has_identity() {
                 let identity_builder = thing.entity_builder().identity_builder();
                 identity_builder.universe_id(original.identity().universe_id())?;
@@ -163,7 +166,8 @@ impl Builder for WorldBuilder {
                 identity_builder.id(original.generate_id())?;
             }
 
-            original.things.push(thing.create()?);
+            let thing = thing.create()?;
+            original.things.push(thing);
         }
 
 

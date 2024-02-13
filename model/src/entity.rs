@@ -57,6 +57,7 @@ pub struct EntityBuilder {
 
 impl Builder for EntityBuilder {
     type Type = Entity;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {
@@ -93,14 +94,9 @@ impl Builder for EntityBuilder {
     fn modify(self, original: &mut Entity) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
-        // todo: this should throw an error if it's not the same, no?
-        // the purpose of setting an identity on a modification should be reserved for serializing modifications
         if let Some(descriptor) = self.descriptor.as_ref() {
-            if descriptor.builder_mode() == BuilderMode::Creator {
-                original.descriptor = descriptor.clone().create()?;
-            } else {
-            }
-
+            assert!(descriptor.builder_mode() == BuilderMode::Creator);
+            original.descriptor = descriptor.clone().create()?;
             fields_changed.push(EntityField::Descriptor.field())
         }
 

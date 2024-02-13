@@ -95,6 +95,7 @@ pub struct RouteBuilder {
 
 impl Builder for RouteBuilder {
     type Type = Route;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {

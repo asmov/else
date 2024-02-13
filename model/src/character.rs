@@ -38,6 +38,7 @@ pub struct CharacterBuilder {
 
 impl Builder for CharacterBuilder {
     type Type = Character;
+    type BuilderType = ThingBuilder;
 
     fn creator() -> Self {
         Self {
@@ -72,8 +73,8 @@ impl Builder for CharacterBuilder {
         })
     }
 
-    fn modify(self, _original: &mut Self::Type) -> Result<Modification<Self>> {
-        Ok(Modification::new(self, Vec::new()))
+    fn modify(self, _original: &mut Self::Type) -> Result<Modification<ThingBuilder>> {
+        Ok(Modification::new(ThingBuilder::Character(self), Vec::new()))
     }
 }
 
@@ -160,7 +161,7 @@ impl BuildableThing for CharacterBuilder {
         Ok(Thing::Character(self.create()?))
     }
 
-    fn modify_thing(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify_thing(self, original: &mut Self::Type) -> Result<Modification<ThingBuilder>> {
         Ok(self.modify(original)?)
     }
 

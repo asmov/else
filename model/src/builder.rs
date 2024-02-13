@@ -1,7 +1,16 @@
 use crate::error::*;
 
-pub trait Builder: Sized + serde::Serialize + serde::de::DeserializeOwned {
+/// Performs all write operations for game data objects. Nothing is mutated directly on the object itself.  
+/// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
+/// - BuilderMode::Creator => creator() and create()
+/// - BuilderMode::Editor  => editor() and modify()
+pub trait Builder: Sized {
+    /// The model struct that this builder ultimately creates. If the model is a variant of an enum (like Thing), then
+    /// BuilderType is that enum instead.
     type Type;
+    /// The builder struct that is returned on creation and modification. Typically, Self, unless we're a variant of
+    /// of a Builder enum (like ThingBuilder). In which case, typically, the BuilderType is that enum instead.
+    type BuilderType: Builder;
 
     fn creator() -> Self;
 
@@ -18,14 +27,14 @@ pub trait Builder: Sized + serde::Serialize + serde::de::DeserializeOwned {
 
     fn create(self) -> Result<Self::Type>; 
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>>; 
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>>; 
 
     fn set(&mut self, raw_field: &str, raw_value: String) -> Result<()> {
         todo!()
     }
 }
 
-/// Provides the static creator() and editor() methods.
+/// Provides the static creator() and editor() methods for a data type.
 pub trait Built {
     type BuilderType: Builder;
 
@@ -42,14 +51,35 @@ pub trait Built {
     }
 }
 
+/// Determines wheter a new data object is being created or an existing one is being modified.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BuilderMode {
     Creator,
     Editor
 }
 
-#[derive(Debug)]
+/// The result of a Builder::create() call. It is what is serialized and sync'd out to any mirrors, if necessary.
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct Creation<B: Builder> {
+    builder: B
+}
+
+impl<B: Builder> Creation<B> {
+    pub fn new(builder: B) -> Self {
+        Self {
+            builder
+        }
+    }
+
+    pub fn builder(&self) -> &B {
+        &self.builder
+    }
+}
+
+/// The result of a Builder::modify() call. It is what is serialized and sync'd out to any mirrors, if necessary.
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Modification<B: Builder> {
+    #[serde(skip)]
     fields_changed: Vec<&'static Field>,
     builder: B
 }
@@ -69,13 +99,11 @@ impl<B: Builder> Modification<B> {
     pub fn builder(&self) -> &B {
         &self.builder
     }
-
-    pub fn take_builder(self) -> B {
-        self.builder
-    }
 }
 
-#[derive(Clone, Copy, Debug)]
+
+/// Represents data types for model fields that are available to APIs.
+#[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
 pub enum FieldValueType {
     /// String
     String, 
@@ -97,7 +125,8 @@ pub enum FieldValueType {
     Enum
 }
 
-#[derive(Debug)]
+/// Represents a specific field of a model that is available to APIs
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Field {
     name: &'static str,
     value_type: FieldValueType
