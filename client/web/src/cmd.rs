@@ -1,7 +1,7 @@
 pub mod global;
 
 //use shellwords;
-use crate::{error::*, cmd::global::*, input::{self, TextInput}};
+use crate::{error::*, cmd::global::*, input::TextInput};
 
 
 #[derive(Debug, PartialEq, Eq)]

@@ -1,5 +1,4 @@
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VChild};
-use gloo_console::log;
 use crate::{net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
 use elsezone_model as model;
 
@@ -89,13 +88,8 @@ impl Component for App {
 
                 spawn_local(net::zone_connector_task(connection_callback, log_callback));
 
-               
-                //log!("READY");
-
                 //let mut input = ParsedInput::parse("go".to_string())?;
                 //log!(input.parse().unwrap_err().to_string());
- 
-                //self.log.push(AttrValue::Static("Ready."));
             },
             AppMsg::Connected => {
                 self.terminal_output("Synchronizing with zone server.".to_string(), EntryCategory::Debug);
