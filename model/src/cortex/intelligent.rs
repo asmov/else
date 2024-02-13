@@ -51,7 +51,7 @@ impl IntelligentCortexField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct IntelligentCortexBuilder {
     builder_mode: BuilderMode,
     interface_id: Option<InterfaceID>,
@@ -99,7 +99,7 @@ impl Builder for IntelligentCortexBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         todo!()
     }
 }
@@ -121,7 +121,7 @@ impl CortexBuilderTrait for IntelligentCortexBuilder {
         Ok(Cortex::Intelligent(self.create()?))
     }
 
-    fn modify_cortex(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify_cortex(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         self.modify(original)
     }
 

@@ -43,7 +43,7 @@ impl JunctionField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct JunctionBuilder {
     builder_mode: BuilderMode,
     entrances: Vec<EndpointBuilder>,
@@ -85,7 +85,7 @@ impl Builder for JunctionBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
         if !self.entrances.is_empty() {
@@ -101,7 +101,7 @@ impl Builder for JunctionBuilder {
             fields_changed.push(JunctionField::Exit.field())
         }
 
-        Ok(ModifyResult::new(fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 }
 

@@ -65,11 +65,11 @@ impl Something for Thing {}
 
 pub trait BuildableThing: Builder + BuildableEntity {
     fn create_thing(self) -> Result<Thing>;
-    fn modify_thing(self, original: &mut Self::Type) -> Result<ModifyResult>; 
+    fn modify_thing(self, original: &mut Self::Type) -> Result<Modification<Self>>; 
     fn thing_builder(self) -> ThingBuilder;
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum ThingBuilder {
     Character(CharacterBuilder),
 }
@@ -97,8 +97,9 @@ impl Builder for ThingBuilder {
         }
     }
 
-    fn modify(self, original: &mut Thing) -> Result<ModifyResult> {
-        match self {
+    fn modify(self, original: &mut Thing) -> Result<Modification<Self>> {
+        panic!("Cannot call ThingBuilder::modify() directly")
+        /*match self {
             ThingBuilder::Character(character_builder) => {
                 if let Thing::Character(character) = original {
                     character_builder.modify_thing(character)
@@ -106,7 +107,7 @@ impl Builder for ThingBuilder {
                     unreachable!("Dispatch type mismatch in ThingBuilder::modify for Character")
                 }
             }
-        }
+        }*/
     }
 }
 

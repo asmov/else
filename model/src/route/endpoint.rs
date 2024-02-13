@@ -39,7 +39,7 @@ impl EndpointField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct EndpointBuilder {
     builder_mode: BuilderMode,
     area_identity: Option<IdentityBuilder>,
@@ -86,7 +86,7 @@ impl Builder for EndpointBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
         if let Some(area_identity) = self.area_identity {
@@ -102,7 +102,7 @@ impl Builder for EndpointBuilder {
             fields_changed.push(EndpointField::Direction.field())
         }
 
-        Ok(ModifyResult::new(fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 }
 

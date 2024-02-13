@@ -7,7 +7,7 @@ pub enum Point {
     Junction (Junction)
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum PointBuilder {
     Endpoint (EndpointBuilder),
     Junction (JunctionBuilder)
@@ -38,8 +38,9 @@ impl Builder for PointBuilder {
         }
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
-        match self {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+        panic!("Cannot call CortexBuilder::modify() directly");
+        /*match self {
             PointBuilder::Endpoint(builder) => {
                 if let Point::Endpoint(orig_endpoint) = original {
                     builder.modify(orig_endpoint)
@@ -54,7 +55,7 @@ impl Builder for PointBuilder {
                     unreachable!("Dispatch mismatch for PointBuilder::modify(Junction)");
                 }
             }
-        }
+        }*/
     }
 }
 

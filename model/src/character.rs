@@ -29,7 +29,7 @@ impl CharacterField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct CharacterBuilder {
     builder_mode: BuilderMode,
     entity: Option<EntityBuilder>,
@@ -72,8 +72,8 @@ impl Builder for CharacterBuilder {
         })
     }
 
-    fn modify(self, _original: &mut Self::Type) -> Result<ModifyResult> {
-        Ok(ModifyResult::new(Vec::new()))
+    fn modify(self, _original: &mut Self::Type) -> Result<Modification<Self>> {
+        Ok(Modification::new(self, Vec::new()))
     }
 }
 
@@ -160,7 +160,7 @@ impl BuildableThing for CharacterBuilder {
         Ok(Thing::Character(self.create()?))
     }
 
-    fn modify_thing(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify_thing(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         Ok(self.modify(original)?)
     }
 

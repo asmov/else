@@ -1,6 +1,6 @@
 use crate::error::*;
 
-pub trait Builder: Sized {
+pub trait Builder: Sized + serde::Serialize + serde::de::DeserializeOwned {
     type Type;
 
     fn creator() -> Self;
@@ -18,8 +18,7 @@ pub trait Builder: Sized {
 
     fn create(self) -> Result<Self::Type>; 
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult>; 
-
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>>; 
 
     fn set(&mut self, raw_field: &str, raw_value: String) -> Result<()> {
         todo!()
@@ -43,26 +42,36 @@ pub trait Built {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BuilderMode {
     Creator,
     Editor
 }
 
 #[derive(Debug)]
-pub struct ModifyResult {
-    fields_changed: Vec<&'static Field>
+pub struct Modification<B: Builder> {
+    fields_changed: Vec<&'static Field>,
+    builder: B
 }
 
-impl ModifyResult {
-    pub fn new(fields_changed: Vec<&'static Field>) -> Self {
+impl<B: Builder> Modification<B> {
+    pub fn new(builder: B, fields_changed: Vec<&'static Field>) -> Self {
         Self {
             fields_changed,
+            builder
         }
     }
 
     pub fn fields_changed(&self) -> &Vec<&'static Field> {
         &self.fields_changed
+    }
+
+    pub fn builder(&self) -> &B {
+        &self.builder
+    }
+
+    pub fn take_builder(self) -> B {
+        self.builder
     }
 }
 

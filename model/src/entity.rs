@@ -48,7 +48,7 @@ impl EntityField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct EntityBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
@@ -90,19 +90,21 @@ impl Builder for EntityBuilder {
         })
     }
 
-    fn modify(self, original: &mut Entity) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Entity) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
-        if let Some(identity) = self.identity {
-            original.identity = identity.create()?;
-            fields_changed.push(EntityField::Identity.field())
-        }
-        if let Some(descriptor) = self.descriptor {
-            original.descriptor = descriptor.create()?;
+        // todo: this should throw an error if it's not the same, no?
+        // the purpose of setting an identity on a modification should be reserved for serializing modifications
+        if let Some(descriptor) = self.descriptor.as_ref() {
+            if descriptor.builder_mode() == BuilderMode::Creator {
+                original.descriptor = descriptor.clone().create()?;
+            } else {
+            }
+
             fields_changed.push(EntityField::Descriptor.field())
         }
 
-        Ok(ModifyResult::new(fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 }
 

@@ -52,7 +52,7 @@ impl RoutineCortexField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct RoutineCortexBuilder {
     builder_mode: BuilderMode,
     routine_id: Option<RoutineID>,
@@ -94,7 +94,7 @@ impl Builder for RoutineCortexBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         todo!()
     }
 }
@@ -104,7 +104,7 @@ impl CortexBuilderTrait for RoutineCortexBuilder {
         Ok(Cortex::Routine(self.create()?))
     }
 
-    fn modify_cortex(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify_cortex(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         self.modify(original)
     }
 

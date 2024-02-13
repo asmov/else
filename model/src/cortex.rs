@@ -125,11 +125,11 @@ pub trait BuildableCortex: Builder {
 
 pub trait CortexBuilderTrait: Builder {
     fn create_cortex(self) -> Result<Cortex>;
-    fn modify_cortex(self, original: &mut Self::Type) -> Result<ModifyResult>; 
+    fn modify_cortex(self, original: &mut Self::Type) -> Result<Modification<Self>>; 
     fn cortex_builder(self) -> CortexBuilder;
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum CortexBuilder {
     Routine(RoutineCortexBuilder),
     Intelligent(IntelligentCortexBuilder)
@@ -160,8 +160,9 @@ impl Builder for CortexBuilder {
         }
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
-        match self {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+        panic!("Cannot call CortexBuilder::modify() directly")
+        /*match self {
             CortexBuilder::Routine(builder) => {
                 if let Cortex::Routine(original_routine_cortex) = original {
                     builder.modify_cortex(original_routine_cortex)
@@ -176,7 +177,7 @@ impl Builder for CortexBuilder {
                     unreachable!("Dispatch mismatch in CortexBuilder::modify() for IntelligentCortex")
                 }
             }
-        }
+        }*/
     }
 }
 

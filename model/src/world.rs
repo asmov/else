@@ -45,7 +45,7 @@ impl WorldField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct WorldBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
@@ -129,7 +129,7 @@ impl Builder for WorldBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         for mut area in self.areas {
             if !area.has_identity() {
                 let identity_builder = area.identity_builder();
@@ -171,7 +171,7 @@ impl Builder for WorldBuilder {
             original.descriptor = descriptor.create()?;
         }
 
-        Ok(ModifyResult::new(Vec::new()))
+        Ok(Modification::new(self, Vec::new()))
     }
 }
 

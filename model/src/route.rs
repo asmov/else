@@ -84,7 +84,7 @@ impl RouteField {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct RouteBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
@@ -138,7 +138,7 @@ impl Builder for RouteBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
         if let Some(identity) = self.identity {
@@ -158,7 +158,7 @@ impl Builder for RouteBuilder {
             fields_changed.push(RouteField::PointB.field())
         }
 
-        Ok(ModifyResult::new(fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 }
 

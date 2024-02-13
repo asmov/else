@@ -80,7 +80,7 @@ impl IdentityField {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct IdentityBuilder {
     builder_mode: BuilderMode,
     id: Option<ID>,
@@ -126,7 +126,7 @@ impl Builder for IdentityBuilder {
         })
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<ModifyResult> {
+    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
         if let Some(id) = self.id {
@@ -146,7 +146,7 @@ impl Builder for IdentityBuilder {
             fields_changed.push(IdentityField::UniverseID.field());
         }
 
-        Ok(ModifyResult::new(fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 }
 
