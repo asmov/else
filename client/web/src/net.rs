@@ -1,9 +1,9 @@
 use std::time::Duration;
 
+use model::ZoneToClientMessage;
 use reqwasm::websocket;
 use futures::{SinkExt, StreamExt};
 use reqwasm::websocket::futures::WebSocket;
-use gloo_console::log;
 use elsezone_model as model;
 use yew::Callback;
 use elsezone_network_common::*;
@@ -12,6 +12,13 @@ use crate::ui::terminal::EntryCategory;
 
 pub enum Stream {
     Outgoing(WebSocket),
+}
+
+pub enum Status {
+    Connected,
+    Disconnected,
+    Frame(model::Frame),
+    Synchronized
 }
 
 impl StreamTrait for Stream {
@@ -96,18 +103,17 @@ impl ConnectionTrait for Connection {
 }
 
 pub type ConnectionResult = Result<Connection, NetworkError>;
+pub type LogCallback = Callback<(String, EntryCategory)>;
 
-async fn negotiate_session(mut conn: Connection, log: &Callback<(String, EntryCategory)>) -> ConnectionResult {
+async fn negotiate_session(mut conn: Connection, log: &LogCallback) -> ConnectionResult {
     // Send the protocol header
     let our_protocol_header = model::ProtocolHeader::current(model::Protocol::ClientToZone);
     conn.send(our_protocol_header).await?;
     
     // The server should send a protocol header back
     let their_protocol_header: model::ProtocolHeader = conn.receive().await?;
-    log.emit((format!("Got protocol :> {:?}", their_protocol_header).to_string(), EntryCategory::Debug));
-
     if !their_protocol_header.compatible(model::Protocol::ZoneToClient) {
-        log!(format!("Incompatible protocol: {:?}", their_protocol_header));
+        log.emit((format!("Incompatible protocol: {:?}", their_protocol_header), EntryCategory::Error));
         return Err(conn.error_payload("compatible protocol").await);
     }
 
@@ -132,14 +138,18 @@ async fn negotiate_session(mut conn: Connection, log: &Callback<(String, EntryCa
     }
 }
 
-pub async fn connect(log: Callback<(String,EntryCategory)>) -> TaskResult {
+pub async fn zone_connector_task(status: Callback<Status>, log: Callback<(String,EntryCategory)>) {
     let mut connect_attempts: isize = -1;
+
     loop {
         if connect_attempts > -1 {
+            status.emit(Status::Disconnected);
             let wait = std::cmp::min(MAX_RECONNECT_WAIT, 15 + 3 * connect_attempts as u64);
+            log.emit((format!("Reconnecting to zone server in {wait} seconds ..."), EntryCategory::Debug));
             yew::platform::time::sleep(Duration::from_secs(wait)).await;
             connect_attempts += 1;
         } else {
+            log.emit((format!("Establishing connection to zone server ({ELSE_LOCALHOST_ZONE_URL})."), EntryCategory::Debug));
             connect_attempts = 0;
         }
 
@@ -154,24 +164,46 @@ pub async fn connect(log: Callback<(String,EntryCategory)>) -> TaskResult {
         let who = Who::Zone(1, ELSE_LOCALHOST_ZONE_URL.to_string());
         let conn = Connection::new(who.clone(), Stream::Outgoing(websocket));
 
-        log.emit((format!("Connected to {who}"), EntryCategory::Debug));
+        log.emit((format!("Connected to {who}."), EntryCategory::Debug));
 
-        let mut conn = match negotiate_session(conn, &log).await {
+        let conn = match negotiate_session(conn, &log).await {
             Ok(conn) => {
-                log.emit((format!("Negotiated session with {who}."), EntryCategory::Debug));
+                log.emit((format!("Negotiated session with {}.", who.what()), EntryCategory::Debug));
                 conn
             },
             Err(e) => {
                 log.emit((e.to_string(), EntryCategory::Error));
-                return Err(())
+                continue;
             },
         };
 
+        status.emit(Status::Connected);
         connect_attempts = 0; // reset now that we're connected
-        conn.send(model::ClientToZoneMessage::Disconnect).await.unwrap();
-        conn.halt().await;
-        break; //todo: message loop
-    }
 
-    Ok(())
+        match zone_stream_loop(conn, &status, &log).await {
+            Ok(who) => {
+                log.emit((format!("Finished session with {who}."), EntryCategory::Debug));
+            },
+            Err(e) => {
+                log.emit((format!("{e}"), EntryCategory::Error));
+            }
+        }
+    }
+}
+
+pub async fn zone_stream_loop(mut conn: Connection, status: &Callback<Status>, log: &LogCallback) -> StreamResult {
+    loop {
+        let msg: ZoneToClientMessage = conn.receive().await?;
+        match msg {
+            ZoneToClientMessage::TimeFrame(newtimeframe) => {
+                let timeframe = newtimeframe.timeframe;
+                let frame = timeframe.frame();
+                status.emit(Status::Frame(frame));
+                status.emit(Status::Synchronized);
+            },
+            _ => {
+                log.emit((format!("Received message: {:?}", msg), EntryCategory::Debug))
+            }
+        }
+    }
 }

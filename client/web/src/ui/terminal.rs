@@ -34,20 +34,20 @@ impl Component for Terminal {
                 </Output>
                 <input type="input" class="hover:shadow-md rounded border px-4" placeholder="input text ..." title="Input" />
                 <div class="terminal-stats flex justify-between items-center px-6 text-sm">
-                { ctx.props().stats.iter()
-                        .map(|s| html!{
-                            <span class="border rounded px-1">{s.clone()}</span>
-                        })
-                        .collect::<Html>() }
+                {
+                    ctx.props().stats.iter()
+                        .map(|s| html!{ <span class="border rounded px-1">{s.clone()}</span> })
+                        .collect::<Html>()
+                }
                 </div>
             </div>
         }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             TerminalMsg::NewEntry(text, category) => {
-                let entry_props = EntryProps{
+                let _entry_props = EntryProps{
                     text: AttrValue::Rc(text.into()),
                     category,
                 };
@@ -121,8 +121,12 @@ impl Component for Entry {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         match ctx.props().category {
-            EntryCategory::Standard => html!{
-                <p>{ctx.props().text.clone()}</p>
+            EntryCategory::Standard => {
+                    if ctx.props().text.is_empty() {
+                        html!{<p><br/></p>}
+                    } else {
+                        html!{<p>{ctx.props().text.clone()}</p>}
+                    }
             },
             EntryCategory::Error => html!{
                 <p class="text-red-800">{ctx.props().text.clone()}</p>

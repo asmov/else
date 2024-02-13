@@ -5,14 +5,16 @@ use elsezone_server_common as server;
 
 pub struct ZoneRuntime {
     world: Option<model::World>,
-    timeframe: Option<model::TimeFrame>
+    timeframe: Option<model::TimeFrame>,
+    timeframe_channel_tx: tokio::sync::watch::Sender<model::TimeFrame> 
 }
 
 impl ZoneRuntime {
     pub fn new() -> Self {
         Self {
             world: None,
-            timeframe: None
+            timeframe: None,
+            timeframe_channel_tx: tokio::sync::watch::channel(model::TimeFrame::new(0,0)).0
         }
     }
 
@@ -37,7 +39,14 @@ impl ZoneRuntime {
 
     pub fn sync_timeframe(&mut self, timeframe: model::TimeFrame) {
         self.timeframe = Some(timeframe);
+        let _ = self.timeframe_channel_tx.send(self.timeframe.as_ref().unwrap().clone());
     }
+
+    pub fn subscribe_timeframe(&mut self) -> tokio::sync::watch::Receiver<model::TimeFrame> {
+        self.timeframe_channel_tx.subscribe()
+    }
+
+
 }
 
 pub type ZoneRuntimeSync = std::sync::Arc<tokio::sync::Mutex<ZoneRuntime>>;

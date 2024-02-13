@@ -54,6 +54,16 @@ pub enum Who {
     World (usize, String)
 }
 
+impl Who {
+    pub fn what(&self) -> &'static str {
+        match self {
+            Self::Client(_,_) => "client",
+            Self::Zone(_,_) => "zone server",
+            Self::World(_,_) => "world server",
+        }
+    }
+}
+
 impl std::fmt::Display for Who {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

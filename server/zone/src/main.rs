@@ -5,7 +5,7 @@ use tokio_tungstenite;
 use tokio_native_tls as tls;
 
 use elsezone_network_common as elsenet;
-use elsezone_model::message::*;
+use elsezone_model::{self as model, message::*};
 use elsezone_server_common as server;
 use elsezone_zone_server::*;
 
@@ -286,7 +286,12 @@ async fn negotiate_client_session(mut conn: server::Connection) -> server::Conne
     }
 }
 
-async fn client_stream_task(mut conn: server::Connection, _runtime: ZoneRuntimeSync) -> server::StreamResult {
+async fn client_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSync) -> server::StreamResult {
+    let mut timeframe_subscriber = {
+        let mut runtime_lock = runtime.lock().await;
+        runtime_lock.subscribe_timeframe()
+    };
+
     loop {
         tokio::select! {
             result = conn.receive::<ClientToZoneMessage>() => {
@@ -303,6 +308,12 @@ async fn client_stream_task(mut conn: server::Connection, _runtime: ZoneRuntimeS
                             who: conn.who().clone(), expected: "appropriate WorldToZone".to_string()})
                     }
                 }
+            }
+
+            _result = timeframe_subscriber.changed() => {
+                let timeframe: model::TimeFrame = timeframe_subscriber.borrow_and_update().clone();
+                let msg = ZoneToClientMessage::TimeFrame(NewTimeFrameMsg{timeframe});
+                conn.send(msg).await?;
             }
         }
     }
