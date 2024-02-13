@@ -111,7 +111,7 @@ pub mod testing {
             character_creator.thing_builder()
         }).unwrap();
 
-        let mut world = world_creator.create().unwrap();
+        let (_, mut world) = world_creator.create().unwrap().split();
         let mut world_editor = World::editor();
 
         world_editor.add_route({

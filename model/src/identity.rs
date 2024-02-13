@@ -90,7 +90,7 @@ pub struct IdentityBuilder {
 }
 
 impl Builder for IdentityBuilder {
-    type Type = Identity;
+    type ModelType = Identity;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -114,8 +114,8 @@ impl Builder for IdentityBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Self::Type> {
-        Ok(Identity {
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
+        let identity = Identity {
             id: self.id.ok_or_else(||
                 Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_ID})?,
             region_id: self.region_id.ok_or_else(||
@@ -124,10 +124,11 @@ impl Builder for IdentityBuilder {
                 Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_WORLD_ID})?,
             universe_id: self.universe_id.ok_or_else(||
                 Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_UNIVERSE_ID})?
-        })
+        };
+        Ok(Creation::new(self, identity))
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
         if let Some(id) = self.id {

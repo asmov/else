@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, identity::*, descriptor::*, entity::*};
+use crate::{builder::*, descriptor::{self, *}, entity::*, error::*, identity::*};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -76,7 +76,7 @@ pub struct AreaBuilder {
 }
 
 impl Builder for AreaBuilder {
-    type Type = Area;
+    type ModelType = Area;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -98,20 +98,21 @@ impl Builder for AreaBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Self::Type> {
-        Ok(Area {
-            identity: self.identity.ok_or_else(||
-                    Error::FieldNotSet {class: AreaField::CLASSNAME, field: AreaField::FIELDNAME_IDENTITY})?
-                .create()?,
-            descriptor: self.descriptor.ok_or_else(||
-                    Error::FieldNotSet {class: AreaField::CLASSNAME, field: AreaField::FIELDNAME_DESCRIPTOR})?
-                .create()?,
-            route_id_map: Vec::new(),
-            occupant_thing_ids: Vec::new(),
-        })
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let identity = Creation::try_assign(&mut self.identity, AreaField::CLASSNAME, AreaField::FIELDNAME_IDENTITY)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, AreaField::CLASSNAME, AreaField::FIELDNAME_DESCRIPTOR)?;
+
+        let area = Area {
+            identity,
+            descriptor,
+            route_id_map: Vec::new(), //todo
+            occupant_thing_ids: Vec::new(), //todo
+        };
+
+        Ok(Creation::new(self, area))
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         Ok(Modification::new(self, Vec::new()))
     }
 }

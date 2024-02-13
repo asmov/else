@@ -64,8 +64,8 @@ impl ExistsMut for Thing {
 impl Something for Thing {}
 
 pub trait BuildableThing: Builder + BuildableEntity {
-    fn create_thing(self) -> Result<Thing>;
-    fn modify_thing(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>>; 
+    //fn create_thing(self) -> Result<Creation<ThingBuilder>>;
+    //fn modify_thing(self, original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>>; 
     fn thing_builder(self) -> ThingBuilder;
 }
 
@@ -75,7 +75,7 @@ pub enum ThingBuilder {
 }
 
 impl Builder for ThingBuilder {
-    type Type = Thing;
+    type ModelType = Thing;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -92,9 +92,9 @@ impl Builder for ThingBuilder {
         }
     }
 
-    fn create(self) -> Result<Thing> {
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
         match self {
-            ThingBuilder::Character(b) => b.create_thing()
+            ThingBuilder::Character(b) => b.create()
         }
     }
 
@@ -102,7 +102,7 @@ impl Builder for ThingBuilder {
         match self {
             ThingBuilder::Character(character_builder) => {
                 if let Thing::Character(character) = original {
-                    character_builder.modify_thing(character)
+                    character_builder.modify(character)
                 } else {
                     unreachable!("Dispatch type mismatch in ThingBuilder::modify for Character")
                 }
@@ -122,6 +122,26 @@ impl BuildableEntity for ThingBuilder {
         match self {
             ThingBuilder::Character(character_builder) => character_builder.entity_builder()
         }
+    }
+}
+
+impl BuildableIdentity for ThingBuilder {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+        match self {
+            ThingBuilder::Character(character_builder) => character_builder.entity_builder().identity(identity)
+        }
+    }
+
+    fn identity_builder(&mut self) -> &mut IdentityBuilder {
+        match self {
+            ThingBuilder::Character(character_builder) => character_builder.entity_builder().identity_builder()
+        }
+    }
+
+    fn get_identity(&self) -> Option<&IdentityBuilder> {
+        todo!()/*match self {
+            ThingBuilder::Character(character_builder) => character_builder.entity_builder().get_identity()
+        }*/
     }
 }
 

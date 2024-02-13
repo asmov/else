@@ -132,7 +132,7 @@ pub struct DescriptorBuilder {
 }
 
 impl Builder for DescriptorBuilder {
-    type Type = Descriptor;
+    type ModelType = Descriptor;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -158,16 +158,22 @@ impl Builder for DescriptorBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Descriptor> {
-        Ok(Descriptor {
-            name: self.name.ok_or_else(||
-                Error::FieldNotSet { class: DescriptorField::CLASSNAME, field: DescriptorField::FIELDNAME_NAME})?,
-            keywords: self.keywords.unwrap_or_else(|| Vec::new()),
-            key: self.key,
-            short_description: self.short_description,
-            description: self.description,
-            notes: self.notes
-        })
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
+        let descriptor = Descriptor {
+            name: self.name
+                .as_ref()
+                .ok_or_else(|| Error::FieldNotSet { class: DescriptorField::CLASSNAME, field: DescriptorField::FIELDNAME_NAME})?
+                .clone(),
+            keywords: self.keywords
+                .as_ref()
+                .and_then(|k| Some(k.clone()))
+                .unwrap_or_else(|| Vec::new()),
+            key: self.key.clone(),
+            short_description: self.short_description.clone(),
+            description: self.description.clone(),
+            notes: self.notes.clone()
+        };
+        Ok(Creation::new(self, descriptor))
     }
 
     fn modify(self, original: &mut Descriptor) -> Result<Modification<Self::BuilderType>> {

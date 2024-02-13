@@ -124,8 +124,8 @@ pub trait BuildableCortex: Builder {
 
 
 pub trait CortexBuilderTrait: Builder {
-    fn create_cortex(self) -> Result<Cortex>;
-    fn modify_cortex(self, original: &mut Self::Type) -> Result<Modification<Self>>; 
+    //fn create_cortex(self) -> Result<Cortex>;
+    //fn modify_cortex(self, original: &mut Self::ModelType) -> Result<Modification<Self>>; 
     fn cortex_builder(self) -> CortexBuilder;
 }
 
@@ -136,7 +136,7 @@ pub enum CortexBuilder {
 }
 
 impl Builder for CortexBuilder {
-    type Type = Cortex;
+    type ModelType = Cortex;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -154,14 +154,14 @@ impl Builder for CortexBuilder {
         }
     }
 
-    fn create(self) -> Result<Self::Type> {
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
         match self {
-            CortexBuilder::Routine(builder) => builder.create_cortex(),
-            CortexBuilder::Intelligent(builder) => builder.create_cortex(),
+            CortexBuilder::Routine(builder) => builder.create(),
+            CortexBuilder::Intelligent(builder) => builder.create(),
         }
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         panic!("Cannot call CortexBuilder::modify() directly")
         /*match self {
             CortexBuilder::Routine(builder) => {

@@ -94,7 +94,7 @@ pub struct RouteBuilder {
 }
 
 impl Builder for RouteBuilder {
-    type Type = Route;
+    type ModelType = Route;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -118,8 +118,8 @@ impl Builder for RouteBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Self::Type> {
-        Ok(Route {
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
+        todo!()/*let route = Route {
             identity: self.identity
                 .ok_or_else(||
                     Error::FieldNotSet{class: RouteField::CLASSNAME, field: RouteField::FIELDNAME_IDENTITY})?
@@ -136,11 +136,12 @@ impl Builder for RouteBuilder {
                 .ok_or_else(||
                     Error::FieldNotSet{class: RouteField::CLASSNAME, field: RouteField::FIELDNAME_POINT_B})?
                 .create()?,
-        })
+        };
+        Ok(Creation::new(self, route))*/
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
-        let mut fields_changed = Vec::new();
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
+        todo!()/*let mut fields_changed = Vec::new();
 
         if let Some(identity) = self.identity {
             original.identity = identity.create()?;
@@ -159,7 +160,7 @@ impl Builder for RouteBuilder {
             fields_changed.push(RouteField::PointB.field())
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))*/
     }
 }
 

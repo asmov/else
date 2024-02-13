@@ -56,7 +56,7 @@ pub struct EntityBuilder {
 }
 
 impl Builder for EntityBuilder {
-    type Type = Entity;
+    type ModelType = Entity;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -78,25 +78,23 @@ impl Builder for EntityBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Self::Type> {
-        Ok(Entity {
-            identity: self.identity
-                .ok_or_else(||
-                    Error::FieldNotSet{class:EntityField::CLASSNAME, field: EntityField::FIELDNAME_IDENTITY})?
-                .create()?,
-            descriptor: self.descriptor
-                .ok_or_else(||
-                    Error::FieldNotSet{class:EntityField::CLASSNAME, field: EntityField::FIELDNAME_DESCRIPTOR})?
-                .create()?,
-        })
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let identity = Creation::try_assign(&mut self.identity, EntityField::CLASSNAME, EntityField::FIELDNAME_IDENTITY)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, EntityField::CLASSNAME, EntityField::FIELDNAME_DESCRIPTOR)?;
+
+        let entity = Entity {
+            identity: identity,
+            descriptor: descriptor,
+        };
+
+        Ok(Creation::new(self, entity))
     }
 
-    fn modify(self, original: &mut Entity) -> Result<Modification<Self>> {
+    fn modify(mut self, original: &mut Entity) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
-        if let Some(descriptor) = self.descriptor.as_ref() {
-            assert!(descriptor.builder_mode() == BuilderMode::Creator);
-            original.descriptor = descriptor.clone().create()?;
+        if self.descriptor.is_some() { 
+            original.descriptor = Creation::assign(&mut self.descriptor)?;
             fields_changed.push(EntityField::Descriptor.field())
         }
 

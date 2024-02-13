@@ -60,8 +60,8 @@ pub struct IntelligentCortexBuilder {
 }
 
 impl Builder for IntelligentCortexBuilder {
-    type Type = IntelligentCortex;
-    type BuilderType = Self;
+    type ModelType = IntelligentCortex;
+    type BuilderType = CortexBuilder;
 
     fn creator() -> Self {
         Self {
@@ -83,7 +83,8 @@ impl Builder for IntelligentCortexBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Self::Type> {
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
+        todo!();/*
         Ok(IntelligentCortex {
             interface_id: self.interface_id
                 .ok_or_else(|| Error::FieldNotSet {
@@ -97,10 +98,10 @@ impl Builder for IntelligentCortexBuilder {
                 .ok_or_else(|| Error::FieldNotSet {
                     class: IntelligentCortexField::CLASSNAME,
                     field: IntelligentCortexField::FIELDNAME_ROUTINE_AWARENESS})?,
-        })
+        })*/
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         todo!()
     }
 }
@@ -118,13 +119,13 @@ impl IntelligentCortex {
 }
 
 impl CortexBuilderTrait for IntelligentCortexBuilder {
-    fn create_cortex(self) -> Result<Cortex> {
+    /*fn create_cortex(self) -> Result<Cortex> {
         Ok(Cortex::Intelligent(self.create()?))
     }
 
-    fn modify_cortex(self, original: &mut Self::Type) -> Result<Modification<Self>> {
+    fn modify_cortex(self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
         self.modify(original)
-    }
+    }*/
 
     fn cortex_builder(self) -> CortexBuilder {
         CortexBuilder::Intelligent(self)

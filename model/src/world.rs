@@ -57,7 +57,7 @@ pub struct WorldBuilder {
 }
 
 impl Builder for WorldBuilder {
-    type Type = World;
+    type ModelType = World;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -83,97 +83,67 @@ impl Builder for WorldBuilder {
         self.builder_mode
     }
 
-    fn create(mut self) -> Result<Self::Type> {
-        let identity = self.identity.as_ref()
-            .ok_or_else(|| Error::FieldNotSet {class: WorldField::CLASSNAME, field: WorldField::FIELDNAME_IDENTITY})?
-            .clone()
-            .create()?;
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let identity = Creation::try_assign(&mut self.identity, WorldField::CLASSNAME, WorldField::FIELDNAME_IDENTITY)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, WorldField::CLASSNAME, WorldField::FIELDNAME_DESCRIPTOR)?;
 
         let mut next_id = self.generate_id();
+        let (universe_id, world_id, region_id) = {
+            (identity.universe_id(), identity.world_id(), identity.region_id())
+        };
 
+        // set IDs for areas
         for area in &mut self.areas {
             let identity_builder = area.identity_builder();
-            identity_builder.universe_id(identity.universe_id())?;
-            identity_builder.world_id(identity.world_id())?;
-            identity_builder.region_id(identity.region_id())?;
+            identity_builder.universe_id(universe_id)?;
+            identity_builder.world_id(world_id)?;
+            identity_builder.region_id(region_id)?;
             identity_builder.id(next_id)?;
             next_id += 1;
         }
 
+        // set IDs for things
         for thing in &mut self.things {
             let identity_builder = thing.entity_builder().identity_builder();
-            identity_builder.universe_id(identity.universe_id())?;
-            identity_builder.world_id(identity.world_id())?;
-            identity_builder.region_id(identity.region_id())?;
+            identity_builder.universe_id(universe_id)?;
+            identity_builder.world_id(world_id)?;
+            identity_builder.region_id(region_id)?;
             identity_builder.id(next_id)?;
             next_id += 1;
         }
 
         self.next_id = next_id;
 
-        Ok(World {
-            identity,
-            descriptor: self.descriptor
-                .ok_or_else(||
-                    Error::FieldNotSet {class: WorldField::CLASSNAME, field: WorldField::FIELDNAME_IDENTITY})?
-                .create()?,
-            areas: self.areas.into_iter()
-                .map(|area| area.create())
-                .collect::<Result<Vec<_>>>()?,
-            routes: self.routes.into_iter()
-                .map(|route| route.create())
-                .collect::<Result<Vec<_>>>()?,
-            things: self.things.into_iter()
-                .map(|thing| thing.create())
-                .collect::<Result<Vec<_>>>()?,
+        let world = World {
+            identity: identity,
+            descriptor: descriptor,
+            areas: Creation::assign_vec(&mut self.areas)?,
+            routes: Creation::assign_vec(&mut self.routes)?,
+            things: Creation::assign_vec(&mut self.things)?,
             next_id: self.next_id + 1,
-        })
+        };
+
+        Ok(Creation::new(self, world))
     }
 
-    fn modify(mut self, original: &mut Self::Type) -> Result<Modification<Self>> {
-        for mut area in self.areas {
-            if !area.has_identity() {
-                let identity_builder = area.identity_builder();
-                identity_builder.universe_id(original.identity().universe_id())?;
-                identity_builder.world_id(original.identity().world_id())?;
-                identity_builder.region_id(original.identity().region_id())?;
-                identity_builder.id(original.generate_id())?;
-            }
-
-            original.areas.push(area.create()?);
+    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        if self.descriptor.is_some() {
+            original.descriptor = Creation::assign(&mut self.descriptor)?;
         }
 
-        for mut route in self.routes {
-            if !route.has_identity() {
-                let identity_builder = route.identity_builder();
-                identity_builder.universe_id(original.identity().universe_id())?;
-                identity_builder.world_id(original.identity().world_id())?;
-                identity_builder.region_id(original.identity().region_id())?;
-                identity_builder.id(original.generate_id())?;
-            }
+        let (universe_id, world_id, region_id) = {
+            let identity = original.identity();
+            (identity.universe_id(), identity.world_id(), identity.region_id())
+        };
 
-            original.routes.push(route.create()?);
-        }
+        // build identities
+        Self::build_local_identities(original, &mut self.areas, universe_id, world_id, region_id)?;
+        Self::build_local_identities(original, &mut self.routes, universe_id, world_id, region_id)?;
+        Self::build_local_identities(original, &mut self.things, universe_id, world_id, region_id)?;
 
-        for mut thing in self.things {
-            assert!(thing.builder_mode() == BuilderMode::Creator);
-
-            if !thing.entity_builder().has_identity() {
-                let identity_builder = thing.entity_builder().identity_builder();
-                identity_builder.universe_id(original.identity().universe_id())?;
-                identity_builder.world_id(original.identity().world_id())?;
-                identity_builder.region_id(original.identity().region_id())?;
-                identity_builder.id(original.generate_id())?;
-            }
-
-            let thing = thing.create()?;
-            original.things.push(thing);
-        }
-
-
-        if let Some(descriptor) = self.descriptor {
-            original.descriptor = descriptor.create()?;
-        }
+        Creation::modify_vec(&mut self.areas, &mut original.areas)?;
+        Creation::modify_vec(&mut self.routes, &mut original.routes)?;
+        Creation::modify_vec(&mut self.things, &mut original.things)?;
 
         Ok(Modification::new(self, Vec::new()))
     }
@@ -240,6 +210,26 @@ impl WorldBuilder {
         self.next_id += 1;
         id
     }
+
+    fn build_local_identities(
+        original: &mut World,
+        builders: &mut Vec<impl BuildableIdentity>,
+        universe_id: UniverseID, world_id: WorldID, region_id: RegionID
+    ) -> Result<()> {
+        for builder in builders {
+            if builder.has_identity() {
+                return Ok(())
+            }
+
+            let identity_builder = builder.identity_builder();
+            identity_builder.universe_id(universe_id)?;
+            identity_builder.world_id(world_id)?;
+            identity_builder.region_id(region_id)?;
+            identity_builder.id(original.generate_id())?;
+        }
+        Ok(())
+    }
+
 }
 
 impl Built for World {
@@ -322,7 +312,7 @@ impl World {
     }
 
     pub fn spawn_thing(&mut self, mut thing: ThingBuilder, area_id: ID) -> Result<ID> {
-        let area = self.area(area_id).expect("Area not found");
+        let _area = self.area(area_id).expect("Area not found");
         let thing_id = self.generate_id();
 
         thing.entity_builder().identity_builder().guid(

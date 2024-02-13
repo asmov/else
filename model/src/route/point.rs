@@ -14,7 +14,7 @@ pub enum PointBuilder {
 }
 
 impl Builder for PointBuilder {
-    type Type = Point;
+    type ModelType = Point;
     type BuilderType = Self;
 
     fn creator() -> Self {
@@ -32,14 +32,14 @@ impl Builder for PointBuilder {
         }
     }
 
-    fn create(self) -> Result<Self::Type> {
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
         match self {
-            PointBuilder::Endpoint(b) => Ok(Point::Endpoint(b.create()?)),
-            PointBuilder::Junction(b) => Ok(Point::Junction(b.create()?)),
+            PointBuilder::Endpoint(b) => b.create(),
+            PointBuilder::Junction(b) => b.create(),
         }
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         match self {
             PointBuilder::Endpoint(builder) => {
                 if let Point::Endpoint(orig_endpoint) = original {

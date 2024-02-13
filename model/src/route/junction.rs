@@ -51,7 +51,7 @@ pub struct JunctionBuilder {
 }
 
 impl Builder for JunctionBuilder {
-    type Type = Junction;
+    type ModelType = Junction;
     type BuilderType = PointBuilder;
 
     fn creator() -> Self {
@@ -73,7 +73,8 @@ impl Builder for JunctionBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Self::Type> {
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
+        todo!()/* 
         Ok(Junction {
             entrances: self.entrances.into_iter()
                 .map(|entrance| entrance.create())
@@ -83,11 +84,11 @@ impl Builder for JunctionBuilder {
                     Error::FieldNotSet {class: JunctionField::CLASSNAME, field: JunctionField::FIELDNAME_EXIT})?
                 .create()?,
 
-        })
+        })*/
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        todo!()/*let mut fields_changed = Vec::new();
 
         if !self.entrances.is_empty() {
             fields_changed.push(JunctionField::Entrances.field())
@@ -102,7 +103,7 @@ impl Builder for JunctionBuilder {
             fields_changed.push(JunctionField::Exit.field())
         }
 
-        Ok(Modification::new(PointBuilder::Junction(self), fields_changed))
+        Ok(Modification::new(PointBuilder::Junction(self), fields_changed))*/
     }
 }
 

@@ -48,7 +48,7 @@ pub struct EndpointBuilder {
 }
 
 impl Builder for EndpointBuilder {
-    type Type = Endpoint;
+    type ModelType = Endpoint;
     type BuilderType = PointBuilder;
 
     fn creator() -> Self {
@@ -71,8 +71,8 @@ impl Builder for EndpointBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Self::Type> {
-        Ok(Endpoint {
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
+        todo!()/*Ok(Endpoint {
             area_identity: self.area_identity
                 .ok_or_else(||
                     Error::FieldNotSet{class: EndpointField::CLASSNAME, field: EndpointField::FIELDNAME_AREA_IDENTITY})?
@@ -84,11 +84,11 @@ impl Builder for EndpointBuilder {
             direction: self.direction
                 .ok_or_else(||
                     Error::FieldNotSet{class: EndpointField::CLASSNAME, field: EndpointField::FIELDNAME_DIRECTION})?
-        })
+        })*/
     }
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        todo!()/*let mut fields_changed = Vec::new();
 
         if let Some(area_identity) = self.area_identity {
             original.area_identity = area_identity.create()?;
@@ -103,7 +103,7 @@ impl Builder for EndpointBuilder {
             fields_changed.push(EndpointField::Direction.field())
         }
 
-        Ok(Modification::new(PointBuilder::Endpoint(self), fields_changed))
+        Ok(Modification::new(PointBuilder::Endpoint(self), fields_changed))*/
     }
 }
 

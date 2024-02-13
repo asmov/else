@@ -7,7 +7,7 @@ use crate::error::*;
 pub trait Builder: Sized {
     /// The model struct that this builder ultimately creates. If the model is a variant of an enum (like Thing), then
     /// BuilderType is that enum instead.
-    type Type;
+    type ModelType: Sized;
     /// The builder struct that is returned on creation and modification. Typically, Self, unless we're a variant of
     /// of a Builder enum (like ThingBuilder). In which case, typically, the BuilderType is that enum instead.
     type BuilderType: Builder;
@@ -25,11 +25,11 @@ pub trait Builder: Sized {
 
     fn builder_mode(&self) -> BuilderMode;
 
-    fn create(self) -> Result<Self::Type>; 
+    fn create(self) -> Result<Creation<Self::BuilderType>>; 
 
-    fn modify(self, original: &mut Self::Type) -> Result<Modification<Self::BuilderType>>; 
+    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>>; 
 
-    fn set(&mut self, raw_field: &str, raw_value: String) -> Result<()> {
+    fn set(&mut self, _raw_field: &str, _raw_value: String) -> Result<()> {
         todo!()
     }
 }
@@ -59,21 +59,82 @@ pub enum BuilderMode {
 }
 
 /// The result of a Builder::create() call. It is what is serialized and sync'd out to any mirrors, if necessary.
+/// The creation is designed to be consumed by the caller, leaving None in its place.
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Creation<B: Builder> {
-    builder: B
+    builder: B,
+    model: B::ModelType   
 }
 
-impl<B: Builder> Creation<B> {
-    pub fn new(builder: B) -> Self {
+impl<B: Builder<BuilderType = B>> Creation<B> {
+    pub fn new(builder: B, model: B::ModelType) -> Self {
         Self {
-            builder
+            builder,
+            model
         }
     }
 
     pub fn builder(&self) -> &B {
         &self.builder
     }
+
+    pub fn model(&self) -> &B::ModelType {
+        &self.model
+    }
+
+    pub fn split_option(self) -> (Option<B>, B::ModelType) {
+        (Some(self.builder), self.model)
+    }
+
+    pub fn split(self) -> (B, B::ModelType) {
+        (self.builder, self.model)
+    }
+
+    pub fn try_assign(creator: &mut Option<B>, classname: &'static str, fieldname: &'static str) -> Result<B::ModelType> {
+        let (builder, model)= creator.take()
+            .ok_or_else(|| Error::FieldNotSet {class: classname, field: fieldname})?
+            .create()?
+            .split();
+
+        let _ = creator.insert(builder);
+        Ok(model)
+    }
+
+    pub fn assign(creator_option: &mut Option<B>) -> Result<B::ModelType> {
+        let (builder, model) = creator_option.take().unwrap()
+            .create()?
+            .split();
+        let _ = creator_option.insert(builder);
+        Ok(model)
+    }
+
+    pub fn assign_vec(creators: &mut Vec<B>) -> Result<Vec<B::ModelType>> {
+        Ok(creators
+            .drain(0..)
+            .map(|creator| creator.create())
+            .collect::<Result<Vec<_>>>()?
+            .into_iter()
+            .map(|creation| {
+                let (builder, model) = creation.split();
+                creators.push(builder);
+                model
+            })
+            .collect())
+    }
+
+    pub fn modify_vec(creators: &mut Vec<B>, originals: &mut Vec<B::ModelType>) -> Result<()> {
+       Ok(creators 
+            .drain(0..)
+            .map(|creator| creator.create())
+            .collect::<Result<Vec<_>>>()?
+            .into_iter()
+            .for_each(|creation| {
+                let (builder, model) = creation.split();
+                originals.push(model);
+                creators.push(builder);
+            }))
+    }
+
 }
 
 /// The result of a Builder::modify() call. It is what is serialized and sync'd out to any mirrors, if necessary.

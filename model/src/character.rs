@@ -37,7 +37,7 @@ pub struct CharacterBuilder {
 }
 
 impl Builder for CharacterBuilder {
-    type Type = Character;
+    type ModelType = Character;
     type BuilderType = ThingBuilder;
 
     fn creator() -> Self {
@@ -59,21 +59,19 @@ impl Builder for CharacterBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Character> {
-        Ok(Character {
-            entity: self.entity
-                .ok_or_else(||
-                    Error::FieldNotSet{class: CharacterField::CLASSNAME, field: CharacterField::FIELDNAME_ENTITY})?
-                .create()?,
-            cortex: self.cortex
-                .ok_or_else(||
-                    Error::FieldNotSet{class: CharacterField::CLASSNAME, field: CharacterField::FIELDNAME_CORTEX})?
-                .create()?,
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let entity = Creation::try_assign(&mut self.entity, CharacterField::CLASSNAME, CharacterField::FIELDNAME_ENTITY)?;
+        let cortex = Creation::try_assign(&mut self.cortex, CharacterField::CLASSNAME, CharacterField::FIELDNAME_CORTEX)?;
 
-        })
+        let character = Character {
+            entity: entity,
+            cortex: cortex
+        };
+
+        Ok(Creation::new(ThingBuilder::Character(self), Thing::Character(character)))
     }
 
-    fn modify(self, _original: &mut Self::Type) -> Result<Modification<ThingBuilder>> {
+    fn modify(self, _original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
         Ok(Modification::new(ThingBuilder::Character(self), Vec::new()))
     }
 }
@@ -157,13 +155,13 @@ impl BuildableEntity for CharacterBuilder {
 }
 
 impl BuildableThing for CharacterBuilder {
-    fn create_thing(self) -> Result<Thing> {
-        Ok(Thing::Character(self.create()?))
+    /*fn create_thing(self) -> Result<Creation<ThingBuilder>> {
+        self.create()
     }
 
-    fn modify_thing(self, original: &mut Self::Type) -> Result<Modification<ThingBuilder>> {
+    fn modify_thing(self, original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
         Ok(self.modify(original)?)
-    }
+    }*/
 
     fn thing_builder(self) -> ThingBuilder {
         ThingBuilder::Character(self)
