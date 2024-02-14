@@ -8,19 +8,19 @@ pub struct Descriptor {
     /// The title
     name: String,
     /// Any term that might be used to reference this
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     keywords: Vec<String>,
     /// Unique to the World. Should be used to permanently reference objects (never use ID).
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     key: Option<String>,
     /// A one-liner summary. If `description` is not available, this should be used instead.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     short_description: Option<String>,
     /// A detailed and narrative description.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     description: Option<String>,
     /// Development notes from authors and editors. Not seen during normal play.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     notes: Option<String>
 }
 
@@ -117,17 +117,17 @@ impl DescriptorField {
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct DescriptorBuilder {
     builder_mode: BuilderMode,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     keywords: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     key: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     short_description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     notes: Option<String>
 }
 

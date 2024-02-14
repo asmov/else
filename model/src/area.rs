@@ -69,9 +69,9 @@ impl AreaField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct AreaBuilder {
     builder_mode: BuilderMode,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     identity: Option<IdentityBuilder>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     descriptor: Option<DescriptorBuilder>,
 }
 
