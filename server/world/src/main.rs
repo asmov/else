@@ -146,7 +146,7 @@ async fn zone_stream_loop(
 
     let (timeframe, world_bytes) = {
         let runtime_lock = runtime.lock().await;
-        (runtime_lock.timeframe().clone(), bincode::serialize(runtime_lock.world()).unwrap())
+        (runtime_lock.timeframe().clone(), bincode::serde::encode_to_vec(runtime_lock.world(), bincode::config::standard()).unwrap())
     };
 
     let msg = WorldToZoneMessage::WorldBytes(timeframe, world_bytes);

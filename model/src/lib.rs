@@ -165,7 +165,7 @@ pub mod testing {
     }
 
     pub fn world_to_binary(world: &model::World) -> Result<Vec<u8>> {
-        let bytes = bincode::serialize(&world).unwrap();
+        let bytes = bincode::serde::encode_to_vec(&world, bincode::config::standard()).unwrap();
         Ok(bytes)
     }
 
@@ -174,7 +174,7 @@ pub mod testing {
     }
 
     pub fn world_from_binary(world_bytes: Vec<u8>) -> Result<World> {
-        Ok(bincode::deserialize(&world_bytes).unwrap())
+        Ok(bincode::serde::decode_from_slice(&world_bytes, bincode::config::standard()).unwrap().0)
     }
 }
 

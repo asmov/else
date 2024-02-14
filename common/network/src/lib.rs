@@ -94,7 +94,8 @@ pub trait ConnectionTrait {
     fn stream(&mut self) -> &mut Self::StreamType;
 
     async fn send<M: model::Messaging>(&mut self, serializable: M) -> SendResult {
-        let bytes = bincode::serialize(&serializable).unwrap();
+        let config = bincode::config::standard();
+        let bytes = bincode::serde::encode_to_vec(&serializable, config).unwrap();
         let result = self.stream().send(bytes).await;
         match result {
             Ok(_) => Ok(()),
@@ -108,8 +109,8 @@ pub trait ConnectionTrait {
     async fn receive<M: model::Messaging>(&mut self) -> ReceiveResult<M> {
         match self.stream().receive().await {
             Ok(bytes) => {
-                let msg: M = match bincode::deserialize(&bytes) {
-                    Ok(m) => m,
+                let msg: M = match bincode::serde::decode_from_slice(&bytes, bincode::config::standard()) {
+                    Ok(m) => m.0,
                     Err(_) => return Err(self.error_payload(M::message_type_name()).await)
                 };
 

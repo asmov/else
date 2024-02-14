@@ -6,7 +6,7 @@ use elsezone_server_common as server;
 pub struct ZoneRuntime {
     world: Option<model::World>,
     timeframe: Option<model::TimeFrame>,
-    timeframe_channel_tx: tokio::sync::watch::Sender<model::TimeFrame> 
+    timeframe_channel_tx: tokio::sync::watch::Sender<model::TimeFrame>,
 }
 
 impl ZoneRuntime {
@@ -31,8 +31,9 @@ impl ZoneRuntime {
     }
 
     pub fn sync_world(&mut self, bytes: Vec<u8>) -> Result<&model::World, ()> {
-        let world: model::World = bincode::deserialize(&bytes)
-            .map_err(|_| ())?;
+        let world: model::World = bincode::serde::decode_from_slice(&bytes, bincode::config::standard())
+            .map_err(|_| ())?
+            .0;
         self.world = Some(world);
         Ok(self.world.as_ref().unwrap())
     }

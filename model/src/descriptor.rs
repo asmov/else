@@ -1,5 +1,6 @@
 use crate::{s, error::*, builder::*};
 use serde;
+use bincode;
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`
@@ -8,21 +9,53 @@ pub struct Descriptor {
     /// The title
     name: String,
     /// Any term that might be used to reference this
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     keywords: Vec<String>,
     /// Unique to the World. Should be used to permanently reference objects (never use ID).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     key: Option<String>,
     /// A one-liner summary. If `description` is not available, this should be used instead.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     short_description: Option<String>,
     /// A detailed and narrative description.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     description: Option<String>,
     /// Development notes from authors and editors. Not seen during normal play.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     notes: Option<String>
 }
+
+/* 
+impl bincode::Encode for Descriptor {
+    fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> std::prelude::v1::Result<(), bincode::error::EncodeError> {
+        bincode::Encode::encode(&self.name, encoder)?;
+        Ok(())
+    }
+}
+
+impl bincode::Decode for Descriptor {
+    fn decode<D: bincode::de::Decoder>(decoder: &mut D) -> std::prelude::v1::Result<Self, bincode::error::DecodeError> {
+        Ok(Self{
+            name: bincode::Decode::decode(decoder)?,
+            keywords: bincode::Decode::decode(decoder)?,
+            key: None,//bincode::Decode::decode(decoder)?,
+            short_description: bincode::Decode::decode(decoder)?,
+            description: bincode::Decode::decode(decoder)?,
+            notes: bincode::Decode::decode(decoder)?
+        })
+    }
+}
+*/
+    
+
+impl<'de> bincode::BorrowDecode<'de> for Descriptor {
+    fn borrow_decode<D: bincode::de::BorrowDecoder<'de>>(decoder: &mut D) -> std::prelude::v1::Result<Self, bincode::error::DecodeError> {
+        Ok(Self{
+            name: bincode::BorrowDecode::borrow_decode(decoder)?,
+            keywords: bincode::BorrowDecode::borrow_decode(decoder)?,
+            key: bincode::BorrowDecode::borrow_decode(decoder)?,
+            short_description: bincode::BorrowDecode::borrow_decode(decoder)?,
+            description: bincode::BorrowDecode::borrow_decode(decoder)?,
+            notes: bincode::BorrowDecode::borrow_decode(decoder)?
+        })
+    }
+}
+
 
 /// The trait that provides standard immutable access to a `Descriptor` struct
 pub trait Descriptive {
@@ -117,17 +150,11 @@ impl DescriptorField {
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct DescriptorBuilder {
     builder_mode: BuilderMode,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     keywords: Option<Vec<String>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     key: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     short_description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     notes: Option<String>
 }
 
