@@ -82,18 +82,16 @@ impl Builder for RoutineCortexBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Creation<Self::BuilderType>> {
-        todo!()/*
-        Ok(RoutineCortex{
-            routine_id: self.routine_id
-                .ok_or_else(|| Error::FieldNotSet {
-                    class: RoutineCortexField::CLASSNAME,
-                    field: RoutineCortexField::FIELDNAME_ROUTINE_ID})?,
-            routine_awareness: self.routine_awareness
-                .ok_or_else(|| Error::FieldNotSet {
-                    class: RoutineCortexField::CLASSNAME,
-                    field: RoutineCortexField::FIELDNAME_ROUTINE_AWARENESS})?,
-        })*/
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let routine_id = Self::try_assign_value(&mut self.routine_id, RoutineCortexField::CLASSNAME, RoutineCortexField::FIELDNAME_ROUTINE_ID)?;
+        let routine_awareness = Self::try_assign_value(&mut self.routine_awareness, RoutineCortexField::CLASSNAME, RoutineCortexField::FIELDNAME_ROUTINE_AWARENESS)?;
+
+        let routine_cortex = RoutineCortex{
+            routine_id: routine_id,
+            routine_awareness: routine_awareness,
+        };
+
+        Ok(Creation::new(CortexBuilder::Routine(self), Cortex::Routine(routine_cortex)))
     }
 
     fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
@@ -101,15 +99,7 @@ impl Builder for RoutineCortexBuilder {
     }
 }
 
-impl CortexBuilderTrait for RoutineCortexBuilder {
-    /*fn create_cortex(self) -> Result<Cortex> {
-        Ok(Cortex::Routine(self.create()?))
-    }
-
-    fn modify_cortex(self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
-        self.modify(original)
-    }*/
-
+impl CortexBuilderVariant for RoutineCortexBuilder {
     fn cortex_builder(self) -> CortexBuilder {
         CortexBuilder::Routine(self)
     }

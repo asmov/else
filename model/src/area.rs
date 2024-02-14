@@ -112,8 +112,10 @@ impl Builder for AreaBuilder {
         Ok(Creation::new(self, area))
     }
 
-    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        Ok(Modification::new(self, Vec::new()))
+    fn modify(self, _original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        let fields_changed = Vec::new();
+        //todo
+        Ok(Modification::new(self, fields_changed))
     }
 }
 

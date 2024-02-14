@@ -118,7 +118,7 @@ impl IntelligentCortex {
     } 
 }
 
-impl CortexBuilderTrait for IntelligentCortexBuilder {
+impl CortexBuilderVariant for IntelligentCortexBuilder {
     /*fn create_cortex(self) -> Result<Cortex> {
         Ok(Cortex::Intelligent(self.create()?))
     }

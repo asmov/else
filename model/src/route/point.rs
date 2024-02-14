@@ -59,7 +59,7 @@ impl Builder for PointBuilder {
     }
 }
 
-pub trait BuildablePoint: Builder {
+pub trait PointBuilderVariant: Builder {
     fn point_builder(self) -> PointBuilder;
 }
 

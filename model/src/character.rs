@@ -152,17 +152,13 @@ impl BuildableEntity for CharacterBuilder {
 
         self.entity.as_mut().unwrap()
     }
+
+    fn get_entity(&self) -> Option<&EntityBuilder> {
+        self.entity.as_ref()
+    }
 }
 
-impl BuildableThing for CharacterBuilder {
-    /*fn create_thing(self) -> Result<Creation<ThingBuilder>> {
-        self.create()
-    }
-
-    fn modify_thing(self, original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
-        Ok(self.modify(original)?)
-    }*/
-
+impl ThingBuilderVariant for CharacterBuilder {
     fn thing_builder(self) -> ThingBuilder {
         ThingBuilder::Character(self)
     }

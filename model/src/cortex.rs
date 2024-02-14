@@ -123,9 +123,7 @@ pub trait BuildableCortex: Builder {
 }
 
 
-pub trait CortexBuilderTrait: Builder {
-    //fn create_cortex(self) -> Result<Cortex>;
-    //fn modify_cortex(self, original: &mut Self::ModelType) -> Result<Modification<Self>>; 
+pub trait CortexBuilderVariant: Builder {
     fn cortex_builder(self) -> CortexBuilder;
 }
 
@@ -162,23 +160,22 @@ impl Builder for CortexBuilder {
     }
 
     fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        panic!("Cannot call CortexBuilder::modify() directly")
-        /*match self {
+        match self {
             CortexBuilder::Routine(builder) => {
                 if let Cortex::Routine(original_routine_cortex) = original {
-                    builder.modify_cortex(original_routine_cortex)
+                    builder.modify(original_routine_cortex)
                 } else {
                     unreachable!("Dispatch mismatch in CortexBuilder::modify() for RoutineCortex")
                 }
             },
             CortexBuilder::Intelligent(builder) => {
                 if let Cortex::Intelligent(original_intelligent_cortex) = original {
-                    builder.modify_cortex(original_intelligent_cortex)
+                    builder.modify(original_intelligent_cortex)
                 } else {
                     unreachable!("Dispatch mismatch in CortexBuilder::modify() for IntelligentCortex")
                 }
             }
-        }*/
+        }
     }
 }
 

@@ -63,9 +63,7 @@ impl ExistsMut for Thing {
 
 impl Something for Thing {}
 
-pub trait BuildableThing: Builder + BuildableEntity {
-    //fn create_thing(self) -> Result<Creation<ThingBuilder>>;
-    //fn modify_thing(self, original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>>; 
+pub trait ThingBuilderVariant: Builder + BuildableEntity {
     fn thing_builder(self) -> ThingBuilder;
 }
 
@@ -123,25 +121,26 @@ impl BuildableEntity for ThingBuilder {
             ThingBuilder::Character(character_builder) => character_builder.entity_builder()
         }
     }
+    
+    fn get_entity(&self) -> Option<&EntityBuilder> {
+       match self {
+            ThingBuilder::Character(character_builder) => character_builder.get_entity()
+        } 
+    }
 }
 
 impl BuildableIdentity for ThingBuilder {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
-        match self {
-            ThingBuilder::Character(character_builder) => character_builder.entity_builder().identity(identity)
-        }
+        self.entity_builder().identity(identity)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        match self {
-            ThingBuilder::Character(character_builder) => character_builder.entity_builder().identity_builder()
-        }
+        self.entity_builder().identity_builder()
     }
 
     fn get_identity(&self) -> Option<&IdentityBuilder> {
-        todo!()/*match self {
-            ThingBuilder::Character(character_builder) => character_builder.entity_builder().get_identity()
-        }*/
+        self.get_entity()
+            .and_then(|entity_builder| entity_builder.get_identity())
     }
 }
 

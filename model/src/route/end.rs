@@ -5,23 +5,23 @@ use serde;
 /// All fields are from the point-of-view of the Area, describing the Route that this connects to.
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct End {
-    /// The identity Area that this endpoint provides an exit/entrance for.
+    /// The identity Area that this end provides an exit/entrance for.
     area_identity: Identity,
-    /// The description of the Route that this endpoint connects to, from the point-of-view of the Area.
+    /// The description of the Route that this end connects to, from the point-of-view of the Area.
     descriptor: Descriptor,
-    /// The direction that this endpoint is found at, from the point-of-view of the Area.
+    /// The direction that this end is found at, from the point-of-view of the Area.
     direction: Direction
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum EndpointField {
+pub enum EndField {
     AreaIdentity,
     Descriptor,
     Direction
 }
 
-impl EndpointField {
-    pub const CLASSNAME: &'static str = "Endpoint";
+impl EndField {
+    pub const CLASSNAME: &'static str = "End";
     pub const FIELDNAME_AREA_IDENTITY: &'static str = "area_identity";
     pub const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     pub const FIELDNAME_DIRECTION: &'static str = "direction";
@@ -40,16 +40,16 @@ impl EndpointField {
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct EndpointBuilder {
+pub struct EndBuilder {
     builder_mode: BuilderMode,
     area_identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
     direction: Option<Direction>
 }
 
-impl Builder for EndpointBuilder {
-    type ModelType = Endpoint;
-    type BuilderType = PointBuilder;
+impl Builder for EndBuilder {
+    type ModelType = End;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {
@@ -72,18 +72,18 @@ impl Builder for EndpointBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let area_identity = Creation::try_assign(&mut self.area_identity, EndpointField::CLASSNAME, EndpointField::FIELDNAME_AREA_IDENTITY)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, EndpointField::CLASSNAME, EndpointField::FIELDNAME_DESCRIPTOR)?;
+        let area_identity = Creation::try_assign(&mut self.area_identity, EndField::CLASSNAME, EndField::FIELDNAME_AREA_IDENTITY)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, EndField::CLASSNAME, EndField::FIELDNAME_DESCRIPTOR)?;
         let direction = self.direction.as_ref()
-            .ok_or_else(|| Error::FieldNotSet { class: EndpointField::CLASSNAME, field: EndpointField::FIELDNAME_DIRECTION })?
+            .ok_or_else(|| Error::FieldNotSet { class: EndField::CLASSNAME, field: EndField::FIELDNAME_DIRECTION })?
             .clone();
 
-        let endpoint = Endpoint {
+        let end = End {
             area_identity,
             descriptor,
             direction };
 
-        Ok(Creation::new(PointBuilder::Endpoint(self), Point::Endpoint(endpoint)))
+        Ok(Creation::new(self, end))
     }
 
     fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
@@ -91,51 +91,51 @@ impl Builder for EndpointBuilder {
 
         if self.area_identity.is_some() {
             original.area_identity = Creation::assign(&mut self.area_identity)?;
-            fields_changed.push(EndpointField::AreaIdentity.field())
+            fields_changed.push(EndField::AreaIdentity.field())
         }
         if self.descriptor.is_some() {
             original.descriptor = Creation::assign(&mut self.descriptor)?;
-            fields_changed.push(EndpointField::Descriptor.field())
+            fields_changed.push(EndField::Descriptor.field())
         }
         if let Some(direction) = &self.direction {
             original.direction = direction.clone();
-            fields_changed.push(EndpointField::Direction.field())
+            fields_changed.push(EndField::Direction.field())
         }
 
-        Ok(Modification::new(PointBuilder::Endpoint(self), fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 }
 
-impl Built for Endpoint {
-    type BuilderType = EndpointBuilder;
+impl Built for End {
+    type BuilderType = EndBuilder;
 }
 
-impl Descriptive for Endpoint {
-    /// The description of the Route that this endpoint connects to, from the point-of-view of the Area.
+impl Descriptive for End {
+    /// The description of the Route that this end connects to, from the point-of-view of the Area.
     fn descriptor(&self) -> &Descriptor {
         &self.descriptor
     }
 }
 
-impl DescriptiveMut for Endpoint {
+impl DescriptiveMut for End {
     fn descriptor_mut(&mut self) -> &mut Descriptor {
         &mut self.descriptor
     }
 }
 
-impl Endpoint {
-    /// The identity of the Area that this endpoint provides an exit/entrance for.
+impl End {
+    /// The identity of the Area that this end provides an exit/entrance for.
     pub fn area_identity(&self) -> &Identity {
         &self.area_identity
     } 
 
-    /// The general direction that this endpoint is found within the Area.
+    /// The general direction that this end is found within the Area.
     pub fn direction(&self) -> Direction {
         self.direction
     }
 }
 
-impl BuildableDescriptor for EndpointBuilder {
+impl BuildableDescriptor for EndBuilder {
     fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
         self.descriptor = Some(descriptor);
         Ok(())
@@ -150,7 +150,7 @@ impl BuildableDescriptor for EndpointBuilder {
     }
 }
 
-impl EndpointBuilder {
+impl EndBuilder {
     pub fn area_identity(&mut self, id: IdentityBuilder) -> Result<()> {
         self.area_identity = Some(id);
         Ok(())
@@ -171,11 +171,5 @@ impl EndpointBuilder {
     pub fn direction(&mut self, direction: Direction) -> Result<()> {
         self.direction = Some(direction);
         Ok(())
-    }
-}
-
-impl point::BuildablePoint for EndpointBuilder {
-    fn point_builder(self) -> PointBuilder {
-        PointBuilder::Endpoint(self)
     }
 }

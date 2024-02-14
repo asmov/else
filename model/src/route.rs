@@ -1,4 +1,5 @@
 pub mod direction;
+pub mod end;
 pub mod endpoint;
 pub mod junction;
 pub mod point;
@@ -6,7 +7,7 @@ pub mod point;
 use crate::{error::*, builder::*, identity::*, descriptor::*};
 use serde;
 
-pub use crate::route::{endpoint::*, junction::*, point::*, direction::*};
+pub use crate::route::{end::*, endpoint::*, junction::*, point::*, direction::*};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Route {

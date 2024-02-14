@@ -32,6 +32,15 @@ pub trait Builder: Sized {
     fn set(&mut self, _raw_field: &str, _raw_value: String) -> Result<()> {
         todo!()
     }
+
+    fn try_assign_value<T: Clone>(builder_option: &mut Option<T>, classname: &'static str, fieldname: &'static str) -> Result<T> {
+        let value = builder_option
+            .as_ref()
+            .ok_or_else(|| Error::FieldNotSet {class: classname, field: fieldname})?
+            .clone();
+
+        Ok(value)
+    }
 }
 
 /// Provides the static creator() and editor() methods for a data type.

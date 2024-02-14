@@ -126,26 +126,34 @@ pub mod testing {
             }).unwrap();
             route_creator.point_a({
                 let mut endpoint_creator = route::Endpoint::creator();
-                endpoint_creator.descriptor({
-                    let mut descriptor_creator = Descriptor::creator();
-                    descriptor_creator.key(s!("backyard_and_dog_house_point_a")).unwrap();
-                    descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
-                    descriptor_creator
+                endpoint_creator.end({
+                    let mut end_creator = route::End::creator();
+                    end_creator.descriptor({
+                        let mut descriptor_creator = Descriptor::creator();
+                        descriptor_creator.key(s!("backyard_and_dog_house_point_a")).unwrap();
+                        descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
+                        descriptor_creator
+                    }).unwrap();
+                    end_creator.area_identity(area_a.identity().to_creator()).unwrap();
+                    end_creator.direction(Direction::West).unwrap();
+                    end_creator
                 }).unwrap();
-                endpoint_creator.area_identity(area_a.identity().to_creator()).unwrap();
-                endpoint_creator.direction(Direction::West).unwrap();
                 endpoint_creator.point_builder()
             }).unwrap();
             route_creator.point_b({
                 let mut endpoint_creator = route::Endpoint::creator();
-                endpoint_creator.descriptor({
-                    let mut descriptor_creator = Descriptor::creator();
-                    descriptor_creator.key(s!("backyard_and_dog_house_point_b")).unwrap();
-                    descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
-                    descriptor_creator
+                endpoint_creator.end({
+                    let mut end_creator = route::End::creator();
+                    end_creator.descriptor({
+                        let mut descriptor_creator = Descriptor::creator();
+                        descriptor_creator.key(s!("backyard_and_dog_house_point_b")).unwrap();
+                        descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
+                        descriptor_creator
+                    }).unwrap();
+                    end_creator.area_identity(area_b.identity().to_creator()).unwrap();
+                    end_creator.direction(Direction::East).unwrap();
+                    end_creator
                 }).unwrap();
-                endpoint_creator.area_identity(area_b.identity().to_creator()).unwrap();
-                endpoint_creator.direction(Direction::East).unwrap();
                 endpoint_creator.point_builder()
             }).unwrap();
             route_creator
