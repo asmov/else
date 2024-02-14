@@ -1,4 +1,5 @@
 use crate::error::*;
+use crate::World;
 
 /// Performs all write operations for game data objects. Nothing is mutated directly on the object itself.  
 /// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
@@ -40,6 +41,10 @@ pub trait Builder: Sized {
             .clone();
 
         Ok(value)
+    }
+
+    fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
+        todo!()
     }
 }
 

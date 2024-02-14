@@ -55,17 +55,12 @@ mod tests {
         assert_eq!(NEW_DESCRIPTION, area_dog_house.description().unwrap());
 
         // "send" the modification downstream 
-        let mod_bytes = bincode::serde::encode_to_vec(modification, binconfig).unwrap();
-        let downstream_modification: model::Modification<model::AreaBuilder>
-            = bincode::serde::decode_from_slice(&mod_bytes, binconfig).unwrap().0;
-        
+        let upstream_sync = model::Sync::Area(model::Operation::Modification(modification));
+        let sync_bytes = bincode::serde::encode_to_vec(upstream_sync, binconfig).unwrap();
+        let downstream_sync: model::Sync  = bincode::serde::decode_from_slice(&sync_bytes, binconfig).unwrap().0;
+
         // update the downstream
-        let area_id = downstream_modification.builder().get_identity().unwrap().get_id().unwrap();
-        let editor = downstream_modification.take_builder();
-        let _modification = {
-            let area_dog_house_mut = world_downstream.area_mut(area_id).unwrap();
-            editor.modify(area_dog_house_mut).unwrap()
-        };
+        downstream_sync.sync(&mut world_downstream).unwrap();
 
         // verify that downstream has been updated
         let area_dog_house = world_downstream.find_area(testing::DOG_HOUSE).unwrap();

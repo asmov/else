@@ -1,4 +1,4 @@
-use crate::{builder::*, descriptor::{self, *}, entity::*, error::*, identity::*};
+use crate::{builder::*, descriptor::{self, *}, entity::*, error::*, identity::*, world::World};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -126,6 +126,12 @@ impl Builder for AreaBuilder {
         }
 
         Ok(Modification::new(self, fields_changed))
+    }
+
+    fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
+        let area_id = self.get_identity().unwrap().get_id().unwrap();
+        let area_dog_house_mut = world.area_mut(area_id).unwrap(); //todo: don't unwrap
+        self.modify(area_dog_house_mut)
     }
 }
 
