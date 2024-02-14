@@ -59,14 +59,22 @@ pub enum BuilderMode {
 }
 
 /// The result of a Builder::create() call. It is what is serialized and sync'd out to any mirrors, if necessary.
-/// The creation is designed to be consumed by the caller, leaving None in its place.
+///
+/// Implementation requires that a Builder and its BuilderType are the same. Thus, when using an enum dispatch pattern,
+/// the variant's Builder::BuilderType should be the enum's Builder (not Self).
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct Creation<B: Builder> {
+pub struct Creation<B>
+where
+    B: Builder
+{
     builder: B,
     model: B::ModelType   
 }
 
-impl<B: Builder<BuilderType = B>> Creation<B> {
+impl<B> Creation<B>
+where
+    B: Builder<BuilderType = B>
+{
     pub fn new(builder: B, model: B::ModelType) -> Self {
         Self {
             builder,
@@ -145,7 +153,10 @@ pub struct Modification<B: Builder> {
     builder: B
 }
 
-impl<B: Builder> Modification<B> {
+impl<B> Modification<B>
+where
+    B: Builder<BuilderType = B>
+{
     pub fn new(builder: B, fields_changed: Vec<&'static Field>) -> Self {
         Self {
             fields_changed,
