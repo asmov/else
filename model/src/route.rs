@@ -13,7 +13,7 @@ pub struct Route {
     identity: Identity,
     descriptor: Descriptor,
     point_a: Point,
-    point_b: Endpoint
+    point_b: Point 
 }
 
 impl Identifiable for Route {
@@ -49,7 +49,7 @@ impl Route {
         &self.point_a
     }
 
-    pub fn point_b(&self) -> &Endpoint {
+    pub fn point_b(&self) -> &Point {
         &self.point_b
     }
 }
@@ -90,7 +90,7 @@ pub struct RouteBuilder {
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
     point_a: Option<PointBuilder>,
-    point_b: Option<EndpointBuilder>
+    point_b: Option<PointBuilder>
 }
 
 impl Builder for RouteBuilder {
@@ -118,49 +118,43 @@ impl Builder for RouteBuilder {
         self.builder_mode
     }
 
-    fn create(self) -> Result<Creation<Self::BuilderType>> {
-        todo!()/*let route = Route {
-            identity: self.identity
-                .ok_or_else(||
-                    Error::FieldNotSet{class: RouteField::CLASSNAME, field: RouteField::FIELDNAME_IDENTITY})?
-                .create()?,
-            descriptor: self.descriptor
-                .ok_or_else(||
-                    Error::FieldNotSet{class: RouteField::CLASSNAME, field: RouteField::FIELDNAME_DESCRIPTOR})?
-                .create()?,
-            point_a: self.point_a
-                .ok_or_else(||
-                    Error::FieldNotSet{class: RouteField::CLASSNAME, field: RouteField::FIELDNAME_POINT_A})?
-                .create()?,
-            point_b: self.point_b
-                .ok_or_else(||
-                    Error::FieldNotSet{class: RouteField::CLASSNAME, field: RouteField::FIELDNAME_POINT_B})?
-                .create()?,
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let identity = Creation::try_assign(&mut self.identity, RouteField::CLASSNAME, RouteField::FIELDNAME_IDENTITY)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, RouteField::CLASSNAME, RouteField::FIELDNAME_DESCRIPTOR)?;
+        let point_a = Creation::try_assign(&mut self.point_a, RouteField::CLASSNAME, RouteField::FIELDNAME_POINT_A)?;
+        let point_b = Creation::try_assign(&mut self.point_b, RouteField::CLASSNAME, RouteField::FIELDNAME_POINT_B)?;
+
+        let route = Route {
+            identity: identity,
+            descriptor: descriptor,
+            point_a: point_a,
+            point_b: point_b,
         };
-        Ok(Creation::new(self, route))*/
+
+        Ok(Creation::new(self, route))
     }
 
-    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
-        todo!()/*let mut fields_changed = Vec::new();
+    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
+        let mut fields_changed = Vec::new();
 
-        if let Some(identity) = self.identity {
-            original.identity = identity.create()?;
+        if self.identity.is_some() {
+            original.identity = Creation::assign(&mut self.identity)?;
             fields_changed.push(RouteField::Identity.field())
         }
-        if let Some(descriptor) = self.descriptor {
-            original.descriptor = descriptor.create()?;
+        if self.descriptor.is_some() {
+            original.descriptor = Creation::assign(&mut self.descriptor)?;
             fields_changed.push(RouteField::Descriptor.field())
         }
-        if let Some(point_a) = self.point_a {
-            original.point_a = point_a.create()?;
+        if self.point_a.is_some() {
+            original.point_a = Creation::assign(&mut self.point_a)?;
             fields_changed.push(RouteField::PointA.field())
         }
-        if let Some(point_b) = self.point_b {
-            original.point_b = point_b.create()?;
+        if self.point_b.is_some() {
+            original.point_b = Creation::assign(&mut self.point_b)?;
             fields_changed.push(RouteField::PointB.field())
         }
 
-        Ok(Modification::new(self, fields_changed))*/
+        Ok(Modification::new(self, fields_changed))
     }
 }
 
@@ -208,12 +202,13 @@ impl RouteBuilder {
         todo!()
     }
 
-    pub fn point_b(&mut self, point_b: EndpointBuilder) -> Result<()> {
+    pub fn point_b(&mut self, point_b: PointBuilder) -> Result<()> {
+        assert!(matches!(point_b, PointBuilder::Endpoint(_)));
         self.point_b = Some(point_b);
         Ok(())
     }
 
-    pub fn point_b_builder(&mut self) -> &mut EndpointBuilder {
+    pub fn point_b_builder(&mut self) -> &mut PointBuilder {
         todo!()
     }
 }

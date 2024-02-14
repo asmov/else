@@ -146,7 +146,7 @@ pub mod testing {
                 }).unwrap();
                 endpoint_creator.area_identity(area_b.identity().to_creator()).unwrap();
                 endpoint_creator.direction(Direction::East).unwrap();
-                endpoint_creator
+                endpoint_creator.point_builder()
             }).unwrap();
             route_creator
         }).unwrap();

@@ -4,7 +4,7 @@ use serde;
 /// Connects a single Area to a Route.  
 /// All fields are from the point-of-view of the Area, describing the Route that this connects to.
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct Endpoint {
+pub struct End {
     /// The identity Area that this endpoint provides an exit/entrance for.
     area_identity: Identity,
     /// The description of the Route that this endpoint connects to, from the point-of-view of the Area.
