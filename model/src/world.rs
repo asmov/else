@@ -279,6 +279,10 @@ impl World {
         self.areas.iter().find(|area| area.id() == id)
     }
 
+    pub fn area_mut(&mut self, id: u64) -> Option<&mut Area> {
+        self.areas.iter_mut().find(|area| area.id() == id)
+    }
+
     pub fn find_areas(&self, query: &str) -> Vec<&Area> {
         self.areas.iter()
             .filter(|area| area.name() == query)

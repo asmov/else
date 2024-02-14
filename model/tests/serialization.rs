@@ -2,12 +2,12 @@
 mod tests {
     use elsezone_model::{self as model, Descriptive};
     use bincode;
+    use model::{testing, BuildableDescriptor, BuildableIdentity, Builder, Built, Identifiable};
     use std::fs::File;
     use std::io::{Write, Read, Seek, SeekFrom};
     use tempfile;
 
-    #[test]
-    fn test_world_binary() {
+    fn setup_world_io() -> (model::World, File, model::World) {
         let bincode_config = bincode::config::standard();
         let world_write = model::testing::create_world();
         let world_bytes_write = bincode::serde::encode_to_vec(&world_write, bincode_config).unwrap();
@@ -16,14 +16,64 @@ mod tests {
         tmpfile.seek(SeekFrom::Start(0)).unwrap();
         let mut world_bytes_read = Vec::new();
         tmpfile.read_to_end(&mut world_bytes_read).unwrap();
+        tmpfile.seek(SeekFrom::Start(0)).unwrap();
         let world_read: model::World = bincode::serde::decode_from_slice(&world_bytes_read, bincode_config).unwrap().0;
+        (world_write, tmpfile, world_read)
+    }
+
+    #[test]
+    fn test_world_binary() {
+        let (world_write, _tempfile, world_read) = setup_world_io();
 
         assert_eq!(world_write.description(), world_read.description());
         assert_eq!(
-            world_write.find_area("dog_house").unwrap().name(),
-            world_read.find_area("dog_house").unwrap().name());
+            world_write.find_area(testing::DOG_HOUSE).unwrap().name(),
+            world_read.find_area(testing::DOG_HOUSE).unwrap().name());
         assert_eq!(
             world_write.find_thing("black_cat").unwrap().name(),
             world_read.find_thing("black_cat").unwrap().name());
+    }
+
+    #[test]
+    fn test_modification_binary() {
+        const NEW_DESCRIPTION: &'static str = "We have changed the description";
+        let binconfig = bincode::config::standard();
+
+        let (mut world_upstream, _tempfile, mut world_downstream) = setup_world_io();
+
+        // change the area description on the upstream world
+        let area_dog_house = world_upstream.find_area(testing::DOG_HOUSE).unwrap();
+        let mut editor = model::Area::editor();
+        editor.descriptor_builder().description(NEW_DESCRIPTION.to_string()).unwrap();
+        let modification = {
+            let area_dog_house_mut = world_upstream.area_mut(area_dog_house.id()).unwrap();
+            editor.modify(area_dog_house_mut).unwrap()
+        };
+
+        // verify that the area description has changed on the upstream world
+        let area_dog_house = world_upstream.find_area(model::testing::DOG_HOUSE).unwrap();
+        assert_eq!(NEW_DESCRIPTION, area_dog_house.description().unwrap());
+
+        // "send" the modification downstream 
+        let mod_bytes = bincode::serde::encode_to_vec(modification, binconfig).unwrap();
+        let downstream_modification: model::Modification<model::AreaBuilder>
+            = bincode::serde::decode_from_slice(&mod_bytes, binconfig).unwrap().0;
+        
+        // update the downstream
+        let area_id = downstream_modification.builder().get_identity().unwrap().get_id().unwrap();
+        let editor = downstream_modification.take_builder();
+        let _modification = {
+            let area_dog_house_mut = world_downstream.area_mut(area_id).unwrap();
+            editor.modify(area_dog_house_mut).unwrap()
+        };
+
+        // verify that downstream has been updated
+        let area_dog_house = world_downstream.find_area(testing::DOG_HOUSE).unwrap();
+        assert_eq!(NEW_DESCRIPTION, area_dog_house.description().unwrap());
+
+        // verify that both worlds are now equal bitwise
+        let upstream_bytes = bincode::serde::encode_to_vec(world_upstream, binconfig).unwrap();
+        let downstream_bytes = bincode::serde::encode_to_vec(world_downstream, binconfig).unwrap();
+        assert_eq!(upstream_bytes, downstream_bytes);
     }
 }

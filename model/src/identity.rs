@@ -32,6 +32,15 @@ pub trait Identifiable {
     fn universe_id(&self) -> UniverseID {
         self.identity().universe_id
     }
+
+    fn editor_clone(&self) -> IdentityBuilder {
+        let mut editor = IdentityBuilder::editor();
+        editor.id(self.id());
+        editor.region_id(self.region_id());
+        editor.world_id(self.world_id());
+        editor.universe_id(self.universe_id());
+        editor
+    }
 }
 
 pub trait IdentifiableMut: Identifiable {

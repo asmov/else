@@ -1,6 +1,5 @@
 use crate::{s, error::*, builder::*};
 use serde;
-use bincode;
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`
@@ -40,8 +39,6 @@ impl bincode::Decode for Descriptor {
         })
     }
 }
-*/
-    
 
 impl<'de> bincode::BorrowDecode<'de> for Descriptor {
     fn borrow_decode<D: bincode::de::BorrowDecoder<'de>>(decoder: &mut D) -> std::prelude::v1::Result<Self, bincode::error::DecodeError> {
@@ -55,6 +52,7 @@ impl<'de> bincode::BorrowDecode<'de> for Descriptor {
         })
     }
 }
+*/
 
 
 /// The trait that provides standard immutable access to a `Descriptor` struct

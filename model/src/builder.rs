@@ -180,6 +180,10 @@ where
     pub fn builder(&self) -> &B {
         &self.builder
     }
+
+    pub fn take_builder(self) -> B {
+        self.builder
+    }
 }
 
 

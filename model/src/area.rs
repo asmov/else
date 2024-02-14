@@ -110,9 +110,21 @@ impl Builder for AreaBuilder {
         Ok(Creation::new(self, area))
     }
 
-    fn modify(self, _original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let fields_changed = Vec::new();
-        //todo
+    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        let mut fields_changed = Vec::new();
+
+        if self.identity.is_none() {
+            self.identity(original.identity.editor_clone())?;
+        }
+
+        if self.descriptor.is_some() {
+            let descriptor = self.descriptor.unwrap();
+            self.descriptor = Some(descriptor.modify(&mut original.descriptor)?
+                .take_builder());
+            
+            fields_changed.push(AreaField::Descriptor.field());
+        }
+
         Ok(Modification::new(self, fields_changed))
     }
 }
