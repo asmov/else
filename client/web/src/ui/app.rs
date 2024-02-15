@@ -1,3 +1,4 @@
+use model::Descriptive;
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VChild};
 use crate::{net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
 use elsezone_model as model;
@@ -92,7 +93,7 @@ impl Component for App {
                 //log!(input.parse().unwrap_err().to_string());
             },
             AppMsg::Connected => {
-                self.terminal_output("Synchronizing with zone server.".to_string(), EntryCategory::Debug);
+                self.terminal_output("Synchronizing with zone server.", EntryCategory::Debug);
             },
             AppMsg::Synchronized => {
                 if !self.ready {
@@ -101,44 +102,21 @@ impl Component for App {
                 }
             }
             AppMsg::Ready => {
-                self.terminal_output(format!("Integrated into world at frame {}.", self.frame).to_string(), EntryCategory::Debug);
+                self.terminal_output(&format!("Integrated into world at frame {}.", self.frame), EntryCategory::Debug);
 
-                // example of how things would look
-                let tmp_intro = vec![
-                    // World::arrival_description()
-                    AttrValue::Static(""),
-                    AttrValue::Static("Welcome to Terminal."),
-                    AttrValue::Static("Connect your interface to begin your journey."),
-                    AttrValue::Static(""),
-                    // Region::arrival_description() := None
-                    // Area::arrival_description()
-                    AttrValue::Static("A myriad of bright colors race around you and then dissolve into your surroundings as \
-                    quickly as they appeared."),
-                    AttrValue::Static(""),
-                    // Area::description()
-                    AttrValue::Static("You find yourself in what appears to be an enormous translucent sphere. Beyond that,
-                    you see only the void of space, littered with clusters of brightly lit stars in all directions. The iridescent wall \
-                    of the great sphere shimmers with color in tune with the motion and sounds around you. Numerous others, \
-                    like yourself, hustle and bustle about the area. You hear the soft buzz of the commotion surrounding you; \
-                    discussions, laughter, the whirring of people casually materializing in and out of existence."),
-                    AttrValue::Static(""),
-                    AttrValue::Static("A holographic computer screen materializes in front of you. The dotted blue outline of a \
-                    hand appears in the center of the screen with instructions below:"),
-                    AttrValue::Static("Type .connect to begin ..."),
-                    AttrValue::Static(""),
-                ];
+                let terminal = model::hardcoded::terminal::create_terminal();
+                let area = terminal.area(model::hardcoded::terminal::TERMINAL_AREA_ID).unwrap();
+                let tmp_intro: Vec<&str> = area.description().unwrap()
+                    .split('\n')
+                    .collect();
 
+                self.terminal_output("", EntryCategory::Standard);
 
-                for entry in tmp_intro {
-                    self.terminal_output_entries.push(VChild::new(
-                        EntryProps {
-                            text: entry,
-                            category: EntryCategory::Standard
-                        },
-                        None
-                    ));
+                for text in tmp_intro {
+                    self.terminal_output(text, EntryCategory::Standard);
                 }
- 
+
+                self.terminal_output("", EntryCategory::Standard);
             },
             AppMsg::Disconnected => {
                 self.ready = false;
@@ -149,7 +127,7 @@ impl Component for App {
                 self.stats.frame = AttrValue::Rc(format!("{frame}").into());
                 self.refresh_stats();
             },
-            AppMsg::TerminalOutput(msg, category) => self.terminal_output(msg, category),
+            AppMsg::TerminalOutput(msg, category) => self.terminal_output(&msg, category),
         }
 
         true
@@ -166,7 +144,7 @@ impl App {
             self.stats.frame.clone() ];
     }
 
-    fn terminal_output(&mut self, text: String, category: EntryCategory) {
+    fn terminal_output(&mut self, text: &str, category: EntryCategory) {
         self.terminal_output_entries.push(VChild::new(
             EntryProps {
                 text: AttrValue::Rc(text.into()),
