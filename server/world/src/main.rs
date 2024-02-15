@@ -36,7 +36,7 @@ async fn main() {
             () = &mut sleep => {
                 let (frame_duration, frame) = {
                     let mut runtime_lock = runtime.lock().await;
-                    runtime_lock.tick().unwrap();
+                    runtime_lock.tick().await.unwrap();
                     (runtime_lock.frame_duration(), runtime_lock.timeframe().frame())
                 };
 
@@ -152,9 +152,9 @@ async fn zone_stream_loop(
     let msg = WorldToZoneMessage::WorldBytes(timeframe, world_bytes);
     conn.send(msg).await?;
 
-    let mut timeframe_subscriber = {
+    let (mut sync_subscriber, mut timeframe_subscriber) = {
         let mut runtime_lock = runtime.lock().await;
-        runtime_lock.subscribe_timeframe()
+        (runtime_lock.subscribe_sync(), runtime_lock.subscribe_timeframe())
     };
 
     loop {
@@ -170,6 +170,11 @@ async fn zone_stream_loop(
                         server::log!("Received a message! {:?}", message);
                     },
                 }
+            }
+            sync = sync_subscriber.recv() => {
+                let sync = sync.unwrap();
+                let msg = WorldToZoneMessage::Sync(sync);
+                conn.send(msg).await?;
             }
             _result = timeframe_subscriber.changed() => {
                 let timeframe: model::TimeFrame = timeframe_subscriber.borrow_and_update().clone();

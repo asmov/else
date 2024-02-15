@@ -1,13 +1,16 @@
-use behavior::{Reactor, Stimulation};
+use behavior::{Actor, Stimulation};
+use model::{Builder, Built};
 use tokio;
 use elsezone_model as model;
 use elsezone_behavior as behavior;
+use elsezone_server_common as server;
 
 pub struct WorldRuntime {
     timeframe: model::TimeFrame,
     world: model::World,
     character_routines: Vec<behavior::CharacterRoutine>,
-    timeframe_channel_tx: tokio::sync::watch::Sender<model::TimeFrame> 
+    timeframe_channel_tx: tokio::sync::watch::Sender<model::TimeFrame>,
+    sync_channel_tx: Option<tokio::sync::mpsc::Sender<model::Sync>>,
 }
 
 impl WorldRuntime {
@@ -25,12 +28,20 @@ impl WorldRuntime {
             .duration_since(std::time::UNIX_EPOCH).unwrap()
             .as_secs();
 
+
         Ok(Self {
             timeframe: model::TimeFrame::new(0, now),
             world,
             character_routines,
-            timeframe_channel_tx: tokio::sync::watch::channel(model::TimeFrame::new(0,0)).0
+            timeframe_channel_tx: tokio::sync::watch::channel(model::TimeFrame::new(0,0)).0,
+            sync_channel_tx: None,
         })
+    }
+
+    pub fn subscribe_sync(&mut self) -> tokio::sync::mpsc::Receiver<model::Sync> {
+        let (tx, rx) = tokio::sync::mpsc::channel(8);
+        self.sync_channel_tx = Some(tx);
+        rx
     }
 
     pub fn subscribe_timeframe(&mut self) -> tokio::sync::watch::Receiver<model::TimeFrame> {
@@ -49,15 +60,26 @@ impl WorldRuntime {
         std::time::Duration::from_secs(10)
     }
 
-    pub fn tick(&mut self) -> model::Result<()> {
+    pub async fn tick(&mut self) -> model::Result<()> {
         self.timeframe.tick();
+
+        {
+            let mut world_editor = model::World::editor();
+            world_editor.frame(self.timeframe.frame())?;
+            let modification = world_editor.modify(&mut self.world)?;
+            if let Some(sync_tx) = &self.sync_channel_tx {
+                let sync = model::Sync::World(model::Operation::Modification(modification));
+                let _ = sync_tx.send(sync).await;
+            }
+        }
+
         let reactions = self.on_timeframe(self.timeframe.clone())?;
         self.react(reactions)?;
         let _ = self.timeframe_channel_tx.send(self.timeframe.clone());
         Ok(())
     }
 
-    fn on_timeframe(&mut self, timeframe: model::TimeFrame) -> model::Result<Vec<behavior::Reaction>> {
+    fn on_timeframe(&mut self, timeframe: model::TimeFrame) -> model::Result<Vec<behavior::Action>> {
         let mut reactions = Vec::new();
 
         for routine in &mut self.character_routines {
@@ -71,11 +93,13 @@ impl WorldRuntime {
         Ok(reactions)
     }
 
-    fn react(&mut self, reactions: Vec<behavior::Reaction>) -> model::Result<()> {
+    fn react(&mut self, reactions: Vec<behavior::Action>) -> model::Result<Vec<model::Sync>> {
+        let mut syncs = Vec::new();
+
         for reaction in reactions {
-            reaction.react(&mut self.world)?
+            syncs.append(&mut reaction.act(&mut self.world)?);
         }
 
-        Ok(())
+        Ok(syncs)
     }
 }

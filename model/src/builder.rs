@@ -31,7 +31,7 @@ pub trait Builder: Sized {
     fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>>; 
 
     fn set(&mut self, _raw_field: &str, _raw_value: String) -> Result<()> {
-        todo!()
+        unimplemented!("Builder::set()")
     }
 
     fn try_assign_value<T: Clone>(builder_option: &mut Option<T>, classname: &'static str, fieldname: &'static str) -> Result<T> {
@@ -43,8 +43,8 @@ pub trait Builder: Sized {
         Ok(value)
     }
 
-    fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
-        todo!()
+    fn sync_modify(self, _world: &mut World) -> Result<Modification<Self::BuilderType>> {
+        unimplemented!("Builder::sync_modify()")
     }
 }
 

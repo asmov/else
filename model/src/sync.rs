@@ -14,13 +14,22 @@ where
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum Sync {
+    Init,
     Area(Operation<AreaBuilder>),
-    Thing(Operation<ThingBuilder>)
+    Thing(Operation<ThingBuilder>),
+    World(Operation<WorldBuilder>)
 }
 
 impl Sync {
     pub fn sync(self, world: &mut World) -> Result<Sync> {
         Ok(match self {
+            Sync::World(Operation::Modification(modification)) => {
+                Sync::World(Operation::Modification(
+                    modification
+                        .take_builder()
+                        .sync_modify(world)?
+                ))
+            },
             Sync::Area(Operation::Modification(modification)) => {
                 Sync::Area(Operation::Modification(
                     modification

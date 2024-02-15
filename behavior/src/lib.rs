@@ -7,31 +7,57 @@ pub use stimulus::*;
 
 pub trait Stimulation {
     // Perceive a change in environment and (possibly) react to it.
-    fn stimulate(&self, stimulus: Stimulus, world: &World) -> Result<Option<Vec<Reaction>>>;
+    fn stimulate(&self, stimulus: Stimulus, world: &World) -> Result<Option<Vec<Action>>>;
 }
 
-pub trait Reactor {
-    fn react(self, world: &mut World) -> Result<()>;
+pub trait Actor {
+    fn act(self, world: &mut World) -> Result<Vec<Sync>>;
 }
 
-pub enum Reaction {
-    Multiply(MultiplyReaction)
+pub enum Action {
+    Multiply(MultiplyAction),
 }
 
-impl Reactor for Reaction {
-    fn react(self, world: &mut World) -> Result<()> {
+impl Actor for Action {
+    fn act(self, world: &mut World) -> Result<Vec<Sync>> {
         match self {
-            Reaction::Multiply(reaction) => reaction.react(world),
+            Action::Multiply(action) => action.act(world),
         }
     }
 }
 
-pub struct MultiplyReaction {
+pub struct GoAction {
+    thing_id: ID,
+    frame_started: Frame,
+    from_area_id: ID,
+    thru_route_id: ID
+}
+
+impl Actor for GoAction {
+    fn act(self, world: &mut World) -> Result<Vec<Sync>> {
+        todo!()
+    }
+}
+
+impl GoAction {
+    pub fn new(thing_id: ID, frame_started: Frame, from_area_id: ID, thru_route_id: ID) -> Self {
+        Self {
+            thing_id,
+            frame_started,
+            from_area_id,
+            thru_route_id,
+        }
+    }
+}
+
+
+
+pub struct MultiplyAction {
     frame: Frame,
     clone_id: ID
 }
 
-impl MultiplyReaction {
+impl MultiplyAction {
     fn new(frame: Frame, clone_id: ID) -> Self {
         Self {
             frame,
@@ -40,8 +66,8 @@ impl MultiplyReaction {
     }
 }
 
-impl Reactor for MultiplyReaction {
-    fn react(self, world: &mut World) -> Result<()> {
+impl Actor for MultiplyAction {
+    fn act(self, world: &mut World) -> Result<Vec<Sync>> {
         let thing = world.thing(self.clone_id).unwrap();
         let mut character = CharacterBuilder::creator(); 
         character.entity({
@@ -55,21 +81,26 @@ impl Reactor for MultiplyReaction {
         })?;
 
         let _id = world.spawn_thing(character.thing_builder(), 1).unwrap();
-        Ok(())
+        todo!()
+        //Ok(Vec::new())
     }
 }
 
 pub struct VoidCharacterRoutine(Identity);
 impl Stimulation for VoidCharacterRoutine {
-    fn stimulate(&self, _stimulus: Stimulus, _world: &World) -> Result<Option<Vec<Reaction>>> { Ok(None) }
+    fn stimulate(&self, _stimulus: Stimulus, world: &World) -> Result<Option<Vec<Action>>> {
+        let thing = world.thing(self.0.id()).unwrap();
+        println!("< I am {} and I have nothing to do. >", thing.descriptor().name());
+        Ok(None)
+    }
 }
 
 pub struct MultiplierCharacterRoutine(Identity);
 impl Stimulation for MultiplierCharacterRoutine {
-    fn stimulate(&self, stimulus: Stimulus, _world: &World) -> Result<Option<Vec<Reaction>>> {
+    fn stimulate(&self, stimulus: Stimulus, _world: &World) -> Result<Option<Vec<Action>>> {
         match stimulus {
             Stimulus::Time(timeframe) => {
-                Ok(Some(vec![Reaction::Multiply(MultiplyReaction::new(timeframe.frame(), self.0.id()))]))
+                Ok(Some(vec![Action::Multiply(MultiplyAction::new(timeframe.frame(), self.0.id()))]))
             },
             _ => { Ok(None) }
         }
@@ -83,7 +114,7 @@ pub enum CharacterRoutine {
 }
 
 impl Stimulation for CharacterRoutine {
-    fn stimulate(&self, stimulus: Stimulus, world: &World) -> Result<Option<Vec<Reaction>>> {
+    fn stimulate(&self, stimulus: Stimulus, world: &World) -> Result<Option<Vec<Action>>> {
         match self {
             CharacterRoutine::Void(routine) => routine.stimulate(stimulus, world),
             CharacterRoutine::Multiplier(routine) => routine.stimulate(stimulus, world),

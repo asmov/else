@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use strum;
 
-use crate::{identity::*, timeframe::*, world::World};
+use crate::{identity::*, timeframe::*, sync::Sync};
 
 pub type MessageID = u16;
 pub type ErrorCode = u8;
@@ -192,7 +192,8 @@ pub enum WorldToZoneMessage {
     Disconnect,
     ClientApproved,
     ClientRejected,
-    WorldBytes(TimeFrame, Vec<u8>)
+    WorldBytes(TimeFrame, Vec<u8>),
+    Sync(Sync)
 }
 
 impl Messaging for WorldToZoneMessage {
@@ -211,6 +212,7 @@ impl Messaging for WorldToZoneMessage {
             Self::ClientApproved => "WorldToZoneMessage::ClientApproved",
             Self::ClientRejected => "WorldToZoneMessage::ClientRejected",
             Self::WorldBytes(_,_) => "WorldToZoneMessage::WorldBytes",
+            Self::Sync(_) => "WorldToZoneMessage::Sync"
         }
     }
 }

@@ -239,6 +239,13 @@ async fn world_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSyn
 
                 server::log!("Synchronized world at frame {frame}.");
             },
+            WorldToZoneMessage::Sync(sync) => {
+                {
+                    let mut runtime_lock = runtime.lock().await;
+                    runtime_lock.sync(sync).unwrap();
+                }
+                server::log!("Sync");
+            },
             WorldToZoneMessage::TimeFrame(newtimeframe) => {
                 let timeframe = newtimeframe.timeframe;
                 let frame = timeframe.frame();

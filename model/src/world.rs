@@ -1,9 +1,10 @@
-use crate::{error::*, builder::*, identity::*, descriptor::*, entity::*, character::*, area::*, route::*};
+use crate::{error::*, timeframe::*, builder::*, identity::*, descriptor::*, entity::*, character::*, area::*, route::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct World {
     identity: Identity,
+    frame: Frame,
     descriptor: Descriptor,
     areas: Vec<Area>,
     routes: Vec<Route>,
@@ -14,6 +15,7 @@ pub struct World {
 #[derive(Clone, Copy, Debug)]
 pub enum WorldField {
     Identity,
+    Frame,
     Descriptor,
     Areas,
     Routes,
@@ -23,12 +25,14 @@ pub enum WorldField {
 impl WorldField {
     pub const CLASSNAME: &'static str = "World";
     pub const FIELDNAME_IDENTITY: &'static str = "identity";
+    pub const FIELDNAME_FRAME: &'static str = "frame";
     pub const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     pub const FIELDNAME_AREAS: &'static str = "areas";
     pub const FIELDNAME_ROUTES: &'static str = "routes";
     pub const FIELDNAME_THINGS: &'static str = "things";
 
     pub const FIELD_IDENTITY: Field = Field::new(Self::FIELDNAME_IDENTITY, FieldValueType::Object);
+    pub const FIELD_FRAME: Field = Field::new(Self::FIELDNAME_FRAME, FieldValueType::UnsignedInteger);
     pub const FIELD_DESCRIPTOR: Field = Field::new(Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
     pub const FIELD_AREAS: Field = Field::new(Self::FIELDNAME_AREAS, FieldValueType::ObjectArray);
     pub const FIELD_ROUTES: Field = Field::new(Self::FIELDNAME_ROUTES, FieldValueType::ObjectArray);
@@ -37,6 +41,7 @@ impl WorldField {
     pub const fn field(&self) -> &'static Field {
         match self {
             Self::Identity => &Self::FIELD_IDENTITY,
+            Self::Frame => &Self::FIELD_FRAME,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::Areas => &Self::FIELD_AREAS,
             Self::Routes => &Self::FIELD_ROUTES,
@@ -49,6 +54,7 @@ impl WorldField {
 pub struct WorldBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
+    frame: Option<Frame>,
     descriptor: Option<DescriptorBuilder>,
     areas: Vec<AreaBuilder>,
     routes: Vec<RouteBuilder>,
@@ -64,6 +70,7 @@ impl Builder for WorldBuilder {
         Self {
             builder_mode: BuilderMode::Creator,
             identity: None,
+            frame: None,
             descriptor: None,
             areas: Vec::new(),
             routes: Vec::new(),
@@ -85,6 +92,7 @@ impl Builder for WorldBuilder {
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let identity = Creation::try_assign(&mut self.identity, WorldField::CLASSNAME, WorldField::FIELDNAME_IDENTITY)?;
+        let frame = Self::try_assign_value(&mut self.frame, WorldField::CLASSNAME, WorldField::FIELDNAME_FRAME)?;
         let descriptor = Creation::try_assign(&mut self.descriptor, WorldField::CLASSNAME, WorldField::FIELDNAME_DESCRIPTOR)?;
 
         let mut next_id = self.generate_id();
@@ -115,8 +123,9 @@ impl Builder for WorldBuilder {
         self.next_id = next_id;
 
         let world = World {
-            identity: identity,
-            descriptor: descriptor,
+            identity,
+            frame,
+            descriptor,
             areas: Creation::assign_vec(&mut self.areas)?,
             routes: Creation::assign_vec(&mut self.routes)?,
             things: Creation::assign_vec(&mut self.things)?,
@@ -129,6 +138,9 @@ impl Builder for WorldBuilder {
     fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         if self.descriptor.is_some() {
             original.descriptor = Creation::assign(&mut self.descriptor)?;
+        }
+        if let Some(frame) = self.frame {
+            original.frame = frame;
         }
 
         let (universe_id, world_id, region_id) = {
@@ -146,6 +158,10 @@ impl Builder for WorldBuilder {
         Creation::modify_vec(&mut self.things, &mut original.things)?;
 
         Ok(Modification::new(self, Vec::new()))
+    }
+
+    fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
+        self.modify(world)
     }
 }
 
@@ -227,6 +243,11 @@ impl WorldBuilder {
             identity_builder.region_id(region_id)?;
             identity_builder.id(original.generate_id())?;
         }
+        Ok(())
+    }
+
+    pub fn frame(&mut self, frame: Frame) -> Result<()> {
+        self.frame = Some(frame);
         Ok(())
     }
 

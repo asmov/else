@@ -51,6 +51,7 @@ pub mod hardcoded {
         pub fn create_terminal() -> World {
             let mut world_creator = World::creator();
             world_creator.identity_builder().guid(0, 0, 1, 1).unwrap();
+            world_creator.frame(0).unwrap();
             world_creator.descriptor({
                     let mut descriptor = Descriptor::creator();
                     descriptor.key(s!("terminal")).unwrap();
@@ -116,6 +117,7 @@ pub mod testing {
         let mut world_creator = model::World::creator();
 
         world_creator.identity_builder().guid(0, 0, 1, 1).unwrap();
+        world_creator.frame(0).unwrap();
 
         world_creator.descriptor({
                 let mut descriptor = model::Descriptor::creator();

@@ -38,6 +38,11 @@ impl ZoneRuntime {
         Ok(self.world.as_ref().unwrap())
     }
 
+    pub fn sync(&mut self, sync: model::Sync) -> model::Result<()> {
+        sync.sync(self.world.as_mut().unwrap())?;
+        Ok(())
+    }
+
     pub fn sync_timeframe(&mut self, timeframe: model::TimeFrame) {
         self.timeframe = Some(timeframe);
         let _ = self.timeframe_channel_tx.send(self.timeframe.as_ref().unwrap().clone());
