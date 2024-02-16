@@ -13,17 +13,19 @@ pub enum EndpointField {
     End
 }
 
-impl EndpointField {
-    pub const CLASSNAME: &'static str = "Endpoint";
-    pub const FIELDNAME_END: &'static str = "end";
-
-    pub const FIELD_END: Field = Field::new(Self::FIELDNAME_END, FieldValueType::Object);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for EndpointField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::End=> &Self::FIELD_END,
         }
     }
+}
+
+impl EndpointField {
+    const CLASSNAME: &'static str = "Endpoint";
+    const FIELDNAME_END: &'static str = "end";
+
+    const FIELD_END: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_END, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -55,7 +57,7 @@ impl Builder for EndpointBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let end = Creation::try_assign(&mut self.end, EndpointField::CLASSNAME, EndpointField::FIELDNAME_END)?;
+        let end = Creation::try_assign(&mut self.end, EndpointField::End)?;
 
         let endpoint = Endpoint { end };
 

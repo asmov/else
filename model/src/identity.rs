@@ -74,10 +74,10 @@ impl IdentityField {
     pub const FIELDNAME_WORLD_ID: &'static str = "world_id";
     pub const FIELDNAME_UNIVERSE_ID: &'static str = "universe_id";
 
-    pub const FIELD_ID: Field = Field::new(Self::FIELDNAME_ID, FieldValueType::String);
-    pub const FIELD_REGION_ID: Field = Field::new(Self::FIELDNAME_REGION_ID, FieldValueType::StringArray);
-    pub const FIELD_WORLD_ID: Field = Field::new(Self::FIELDNAME_WORLD_ID, FieldValueType::String);
-    pub const FIELD_UNIVERSE_ID: Field = Field::new(Self::FIELDNAME_UNIVERSE_ID, FieldValueType::String);
+    pub const FIELD_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ID, FieldValueType::String);
+    pub const FIELD_REGION_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_REGION_ID, FieldValueType::StringArray);
+    pub const FIELD_WORLD_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_WORLD_ID, FieldValueType::String);
+    pub const FIELD_UNIVERSE_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_UNIVERSE_ID, FieldValueType::String);
 
     pub const fn field(&self) -> &'static Field {
         match self {

@@ -36,20 +36,22 @@ pub enum RoutineCortexField {
     RoutineAwareness
 }
 
-impl RoutineCortexField {
-    pub const CLASSNAME: &'static str = "RoutineCortex";
-    pub const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
-    pub const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
-
-    pub const FIELD_ROUTINE_ID: Field = Field::new(Self::FIELDNAME_ROUTINE_ID, FieldValueType::UnsignedInteger);
-    pub const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for RoutineCortexField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::RoutineID => &Self::FIELD_ROUTINE_ID,
             Self::RoutineAwareness => &Self::FIELD_ROUTINE_AWARENESS,
         }
     }
+}
+
+impl RoutineCortexField {
+    const CLASSNAME: &'static str = "RoutineCortex";
+    const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
+    const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
+
+    const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UnsignedInteger);
+    const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -83,8 +85,8 @@ impl Builder for RoutineCortexBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let routine_id = Self::try_assign_value(&mut self.routine_id, RoutineCortexField::CLASSNAME, RoutineCortexField::FIELDNAME_ROUTINE_ID)?;
-        let routine_awareness = Self::try_assign_value(&mut self.routine_awareness, RoutineCortexField::CLASSNAME, RoutineCortexField::FIELDNAME_ROUTINE_AWARENESS)?;
+        let routine_id = Self::try_assign_value(&mut self.routine_id, RoutineCortexField::RoutineID)?;
+        let routine_awareness = Self::try_assign_value(&mut self.routine_awareness, RoutineCortexField::RoutineAwareness)?;
 
         let routine_cortex = RoutineCortex{
             routine_id: routine_id,

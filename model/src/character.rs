@@ -13,20 +13,22 @@ pub enum CharacterField {
     Cortex
 }
 
-impl CharacterField {
-    pub const CLASSNAME: &'static str = "Character";
-    pub const FIELDNAME_ENTITY: &'static str = "entity";
-    pub const FIELDNAME_CORTEX: &'static str = "cortex";
-
-    pub const FIELD_ENTITY: Field = Field::new(Self::FIELDNAME_ENTITY, FieldValueType::Object);
-    pub const FIELD_CORTEX: Field = Field::new(Self::FIELDNAME_CORTEX, FieldValueType::Object);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for CharacterField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::Entity => &Self::FIELD_ENTITY,
             Self::Cortex => &Self::FIELD_CORTEX,
         }
     }
+}
+
+impl CharacterField {
+    const CLASSNAME: &'static str = "Character";
+    const FIELDNAME_ENTITY: &'static str = "entity";
+    const FIELDNAME_CORTEX: &'static str = "cortex";
+
+    const FIELD_ENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ENTITY, FieldValueType::Object);
+    const FIELD_CORTEX: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_CORTEX, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -60,8 +62,8 @@ impl Builder for CharacterBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let entity = Creation::try_assign(&mut self.entity, CharacterField::CLASSNAME, CharacterField::FIELDNAME_ENTITY)?;
-        let cortex = Creation::try_assign(&mut self.cortex, CharacterField::CLASSNAME, CharacterField::FIELDNAME_CORTEX)?;
+        let entity = Creation::try_assign(&mut self.entity, CharacterField::Entity)?;
+        let cortex = Creation::try_assign(&mut self.cortex, CharacterField::Cortex)?;
 
         let character = Character {
             entity: entity,

@@ -4,7 +4,7 @@ use serde;
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum Thing {
     Character (Character),
-    Item (Item)
+    Item (Item),
 }
 
 impl Identifiable for Thing {

@@ -22,23 +22,8 @@ pub enum WorldField {
     Things
 }
 
-impl WorldField {
-    pub const CLASSNAME: &'static str = "World";
-    pub const FIELDNAME_IDENTITY: &'static str = "identity";
-    pub const FIELDNAME_FRAME: &'static str = "frame";
-    pub const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
-    pub const FIELDNAME_AREAS: &'static str = "areas";
-    pub const FIELDNAME_ROUTES: &'static str = "routes";
-    pub const FIELDNAME_THINGS: &'static str = "things";
-
-    pub const FIELD_IDENTITY: Field = Field::new(Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    pub const FIELD_FRAME: Field = Field::new(Self::FIELDNAME_FRAME, FieldValueType::UnsignedInteger);
-    pub const FIELD_DESCRIPTOR: Field = Field::new(Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    pub const FIELD_AREAS: Field = Field::new(Self::FIELDNAME_AREAS, FieldValueType::ObjectArray);
-    pub const FIELD_ROUTES: Field = Field::new(Self::FIELDNAME_ROUTES, FieldValueType::ObjectArray);
-    pub const FIELD_THINGS: Field = Field::new(Self::FIELDNAME_THINGS, FieldValueType::ObjectArray);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for WorldField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::Identity => &Self::FIELD_IDENTITY,
             Self::Frame => &Self::FIELD_FRAME,
@@ -48,6 +33,23 @@ impl WorldField {
             Self::Things => &Self::FIELD_THINGS
         }
     }
+}
+
+impl WorldField {
+    const CLASSNAME: &'static str = "World";
+    const FIELDNAME_IDENTITY: &'static str = "identity";
+    const FIELDNAME_FRAME: &'static str = "frame";
+    const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
+    const FIELDNAME_AREAS: &'static str = "areas";
+    const FIELDNAME_ROUTES: &'static str = "routes";
+    const FIELDNAME_THINGS: &'static str = "things";
+
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
+    const FIELD_FRAME: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_FRAME, FieldValueType::UnsignedInteger);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    const FIELD_AREAS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_AREAS, FieldValueType::ObjectArray);
+    const FIELD_ROUTES: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectArray);
+    const FIELD_THINGS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_THINGS, FieldValueType::ObjectArray);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -91,9 +93,9 @@ impl Builder for WorldBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let identity = Creation::try_assign(&mut self.identity, WorldField::CLASSNAME, WorldField::FIELDNAME_IDENTITY)?;
-        let frame = Self::try_assign_value(&mut self.frame, WorldField::CLASSNAME, WorldField::FIELDNAME_FRAME)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, WorldField::CLASSNAME, WorldField::FIELDNAME_DESCRIPTOR)?;
+        let identity = Creation::try_assign(&mut self.identity, WorldField::Identity)?;
+        let frame = Self::try_assign_value(&mut self.frame, WorldField::Frame)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, WorldField::Descriptor)?;
 
         let mut next_id = self.generate_id();
         let (universe_id, world_id, region_id) = {

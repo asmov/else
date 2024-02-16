@@ -126,12 +126,12 @@ impl DescriptorField {
     pub const FIELDNAME_DESCRIPTION: &'static str = "description";
     pub const FIELDNAME_NOTES: &'static str = "notes";
 
-    pub const FIELD_NAME: Field = Field::new(Self::FIELDNAME_NAME, FieldValueType::String);
-    pub const FIELD_KEYWORDS: Field = Field::new(Self::FIELDNAME_KEYWORDS, FieldValueType::StringArray);
-    pub const FIELD_KEY: Field = Field::new(Self::FIELDNAME_KEY, FieldValueType::String);
-    pub const FIELD_SHORT_DESCRIPTION: Field = Field::new(Self::FIELDNAME_SHORT_DESCRIPTION, FieldValueType::String);
-    pub const FIELD_DESCRIPTION: Field = Field::new(Self::FIELDNAME_DESCRIPTION, FieldValueType::String);
-    pub const FIELD_NOTES: Field = Field::new(Self::FIELDNAME_NOTES, FieldValueType::String);
+    pub const FIELD_NAME: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_NAME, FieldValueType::String);
+    pub const FIELD_KEYWORDS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_KEYWORDS, FieldValueType::StringArray);
+    pub const FIELD_KEY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_KEY, FieldValueType::String);
+    pub const FIELD_SHORT_DESCRIPTION: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_SHORT_DESCRIPTION, FieldValueType::String);
+    pub const FIELD_DESCRIPTION: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTION, FieldValueType::String);
+    pub const FIELD_NOTES: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_NOTES, FieldValueType::String);
 
     pub const fn field(&self) -> &'static Field {
         match self {

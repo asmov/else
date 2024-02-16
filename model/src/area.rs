@@ -44,19 +44,8 @@ pub enum AreaField {
     Occupants,
 }
 
-impl AreaField {
-    pub const CLASSNAME: &'static str = "Area";
-    pub const FIELDNAME_IDENTITY: &'static str = "identity";
-    pub const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
-    pub const FIELDNAME_ROUTES: &'static str = "routes";
-    pub const FIELDNAME_OCCUPANTS: &'static str = "occupants";
-
-    pub const FIELD_IDENTITY: Field = Field::new(Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    pub const FIELD_DESCRIPTOR: Field = Field::new(Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    pub const FIELD_ROUTES: Field = Field::new(Self::FIELDNAME_ROUTES, FieldValueType::ObjectIDArray);
-    pub const FIELD_OCCUPANTS: Field = Field::new(Self::FIELDNAME_OCCUPANTS, FieldValueType::ObjectIDArray);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for AreaField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::Identity => &Self::FIELD_IDENTITY,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
@@ -64,6 +53,19 @@ impl AreaField {
             Self::Occupants => &Self::FIELD_OCCUPANTS,
         }
     }
+}
+
+impl AreaField {
+    const CLASSNAME: &'static str = "Area";
+    const FIELDNAME_IDENTITY: &'static str = "identity";
+    const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
+    const FIELDNAME_ROUTES: &'static str = "routes";
+    const FIELDNAME_OCCUPANTS: &'static str = "occupants";
+
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    const FIELD_ROUTES: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectIDArray);
+    const FIELD_OCCUPANTS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_OCCUPANTS, FieldValueType::ObjectIDArray);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -97,8 +99,8 @@ impl Builder for AreaBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let identity = Creation::try_assign(&mut self.identity, AreaField::CLASSNAME, AreaField::FIELDNAME_IDENTITY)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, AreaField::CLASSNAME, AreaField::FIELDNAME_DESCRIPTOR)?;
+        let identity = Creation::try_assign(&mut self.identity, AreaField::Identity)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, AreaField::Descriptor)?;
 
         let area = Area {
             identity,

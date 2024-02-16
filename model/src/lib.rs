@@ -20,6 +20,7 @@ pub mod interface;
 pub mod timeframe;
 pub mod cortex;
 pub mod sync;
+pub mod view;
 
 pub use error::*;
 pub use builder::*;
@@ -39,6 +40,7 @@ pub use interface::*;
 pub use timeframe::*;
 pub use cortex::*;
 pub use sync::*;
+pub use view::*;
 
 pub mod hardcoded {
     pub mod terminal {

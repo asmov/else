@@ -20,23 +20,25 @@ pub enum EndField {
     Direction
 }
 
-impl EndField {
-    pub const CLASSNAME: &'static str = "End";
-    pub const FIELDNAME_AREA_IDENTITY: &'static str = "area_identity";
-    pub const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
-    pub const FIELDNAME_DIRECTION: &'static str = "direction";
-
-    pub const FIELD_AREA_IDENTITY: Field = Field::new(Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Object);
-    pub const FIELD_DESCRIPTOR: Field = Field::new(Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    pub const FIELD_DIRECTION: Field = Field::new(Self::FIELDNAME_DIRECTION, FieldValueType::Object);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for EndField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::AreaIdentity => &Self::FIELD_AREA_IDENTITY,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::Direction => &Self::FIELD_DIRECTION
         }
     }
+}
+
+impl EndField {
+    const CLASSNAME: &'static str = "End";
+    const FIELDNAME_AREA_IDENTITY: &'static str = "area_identity";
+    const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
+    const FIELDNAME_DIRECTION: &'static str = "direction";
+
+    const FIELD_AREA_IDENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Object);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    const FIELD_DIRECTION: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DIRECTION, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -72,8 +74,8 @@ impl Builder for EndBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let area_identity = Creation::try_assign(&mut self.area_identity, EndField::CLASSNAME, EndField::FIELDNAME_AREA_IDENTITY)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, EndField::CLASSNAME, EndField::FIELDNAME_DESCRIPTOR)?;
+        let area_identity = Creation::try_assign(&mut self.area_identity, EndField::AreaIdentity)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, EndField::Descriptor)?;
         let direction = self.direction.as_ref()
             .ok_or_else(|| Error::FieldNotSet { class: EndField::CLASSNAME, field: EndField::FIELDNAME_DIRECTION })?
             .clone();

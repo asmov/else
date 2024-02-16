@@ -27,20 +27,22 @@ pub enum JunctionField {
     Exit,
 }
 
-impl JunctionField {
-    pub const CLASSNAME: &'static str = "Junction";
-    pub const FIELDNAME_ENTRANCES: &'static str = "entrances";
-    pub const FIELDNAME_EXIT: &'static str = "exit";
-
-    pub const FIELD_ENTRANCES: Field = Field::new(Self::FIELDNAME_ENTRANCES, FieldValueType::Object);
-    pub const FIELD_EXIT: Field = Field::new(Self::FIELDNAME_EXIT, FieldValueType::Object);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for JunctionField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::Entrances => &Self::FIELD_ENTRANCES,
             Self::Exit => &Self::FIELD_EXIT,
         }
     }
+}
+
+impl JunctionField {
+    const CLASSNAME: &'static str = "Junction";
+    const FIELDNAME_ENTRANCES: &'static str = "entrances";
+    const FIELDNAME_EXIT: &'static str = "exit";
+
+    const FIELD_ENTRANCES: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ENTRANCES, FieldValueType::Object);
+    const FIELD_EXIT: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_EXIT, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -80,7 +82,7 @@ impl Builder for JunctionBuilder {
         }
 
         let entrances = Creation::assign_vec(&mut self.entrances)?;
-        let exit = Creation::try_assign(&mut self.exit, JunctionField::CLASSNAME, JunctionField::FIELDNAME_EXIT)?;
+        let exit = Creation::try_assign(&mut self.exit, JunctionField::Exit)?;
 
         let junction = Junction {
             entrances,

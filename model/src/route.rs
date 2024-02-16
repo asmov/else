@@ -63,19 +63,8 @@ pub enum RouteField {
     PointB
 }
 
-impl RouteField {
-    pub const CLASSNAME: &'static str = "Route";
-    pub const FIELDNAME_IDENTITY: &'static str = "identity";
-    pub const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
-    pub const FIELDNAME_POINT_A: &'static str = "point_a";
-    pub const FIELDNAME_POINT_B: &'static str = "point_b";
-
-    pub const FIELD_IDENTITY: Field = Field::new(Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    pub const FIELD_DESCRIPTOR: Field = Field::new(Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    pub const FIELD_POINT_A: Field = Field::new(Self::FIELDNAME_POINT_A, FieldValueType::Object);
-    pub const FIELD_POINT_B: Field = Field::new(Self::FIELDNAME_POINT_B, FieldValueType::Object);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for RouteField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::Identity => &Self::FIELD_IDENTITY,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
@@ -83,6 +72,19 @@ impl RouteField {
             Self::PointB => &Self::FIELD_POINT_B
         }
     }
+}
+
+impl RouteField {
+    const CLASSNAME: &'static str = "Route";
+    const FIELDNAME_IDENTITY: &'static str = "identity";
+    const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
+    const FIELDNAME_POINT_A: &'static str = "point_a";
+    const FIELDNAME_POINT_B: &'static str = "point_b";
+
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    const FIELD_POINT_A: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_POINT_A, FieldValueType::Object);
+    const FIELD_POINT_B: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_POINT_B, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -120,10 +122,10 @@ impl Builder for RouteBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let identity = Creation::try_assign(&mut self.identity, RouteField::CLASSNAME, RouteField::FIELDNAME_IDENTITY)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, RouteField::CLASSNAME, RouteField::FIELDNAME_DESCRIPTOR)?;
-        let point_a = Creation::try_assign(&mut self.point_a, RouteField::CLASSNAME, RouteField::FIELDNAME_POINT_A)?;
-        let point_b = Creation::try_assign(&mut self.point_b, RouteField::CLASSNAME, RouteField::FIELDNAME_POINT_B)?;
+        let identity = Creation::try_assign(&mut self.identity, RouteField::Identity)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, RouteField::Descriptor)?;
+        let point_a = Creation::try_assign(&mut self.point_a, RouteField::PointA)?;
+        let point_b = Creation::try_assign(&mut self.point_b, RouteField::PointB)?;
 
         let route = Route {
             identity: identity,

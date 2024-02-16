@@ -1,14 +1,11 @@
 pub mod routine;
 pub mod intelligent;
 
-use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, interface::*,
-    timeframe::*};
-use routine::*;
-use intelligent::*;
 use serde;
 
+use crate::{error::*, builder::*};
+pub use intelligent::*;
 pub use routine::*;
-
 
 pub type RoutineID = u8;
 

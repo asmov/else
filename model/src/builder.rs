@@ -34,10 +34,11 @@ pub trait Builder: Sized {
         unimplemented!("Builder::set()")
     }
 
-    fn try_assign_value<T: Clone>(builder_option: &mut Option<T>, classname: &'static str, fieldname: &'static str) -> Result<T> {
+    fn try_assign_value<T: Clone>(builder_option: &mut Option<T>, field: impl Fields) -> Result<T> {
+        let field = field.field();
         let value = builder_option
             .as_ref()
-            .ok_or_else(|| Error::FieldNotSet {class: classname, field: fieldname})?
+            .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?
             .clone();
 
         Ok(value)
@@ -46,6 +47,10 @@ pub trait Builder: Sized {
     fn sync_modify(self, _world: &mut World) -> Result<Modification<Self::BuilderType>> {
         unimplemented!("Builder::sync_modify()")
     }
+}
+
+pub trait Fields {
+    fn field(&self) -> &'static Field;
 }
 
 /// Provides the static creator() and editor() methods for a data type.
@@ -112,9 +117,10 @@ where
         (self.builder, self.model)
     }
 
-    pub fn try_assign(creator: &mut Option<B>, classname: &'static str, fieldname: &'static str) -> Result<B::ModelType> {
+    pub fn try_assign(creator: &mut Option<B>, field: impl Fields) -> Result<B::ModelType> {
+        let field = field.field();
         let (builder, model)= creator.take()
-            .ok_or_else(|| Error::FieldNotSet {class: classname, field: fieldname})?
+            .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?
             .create()?
             .split();
 
@@ -218,16 +224,22 @@ pub enum FieldValueType {
 /// Represents a specific field of a model that is available to APIs
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Field {
+    classname: &'static str,
     name: &'static str,
     value_type: FieldValueType
 }
 
 impl Field {
-    pub const fn new(name: &'static str, value_type: FieldValueType) -> Self {
+    pub const fn new(classname: &'static str, name: &'static str, value_type: FieldValueType) -> Self {
         Self {
+            classname,
             name,
             value_type
         }
+    }
+
+    pub const fn classname(&self) -> &'static str {
+        self.classname
     }
 
     pub const fn name(&self) -> &'static str {

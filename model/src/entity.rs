@@ -26,19 +26,8 @@ pub enum EntityField {
     //Composition
 }
 
-impl EntityField {
-    pub const CLASSNAME: &'static str = "Entity";
-    pub const FIELDNAME_IDENTITY: &'static str = "identity";
-    pub const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
-    //pub const FIELDNAME_INVENTORY: &'static str = "inventory";
-    //pub const FIELDNAME_COMPOSITION: &'static str = "composition";
-
-    pub const FIELD_IDENTITY: Field = Field::new(Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    pub const FIELD_DESCRIPTOR: Field = Field::new(Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    //pub const FIELD_INVENTORY: Field = Field::new(Self::FIELDNAME_INVENTORY, FieldValueType::Object);
-    //pub const FIELD_COMPOSITION: Field = Field::new(Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for EntityField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::Identity => &Self::FIELD_IDENTITY,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
@@ -46,6 +35,19 @@ impl EntityField {
             //Self::Composition => &Self::FIELD_COMPOSITION,
         }
     }
+}
+
+impl EntityField {
+    const CLASSNAME: &'static str = "Entity";
+    const FIELDNAME_IDENTITY: &'static str = "identity";
+    const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
+    //pub const FIELDNAME_INVENTORY: &'static str = "inventory";
+    //pub const FIELDNAME_COMPOSITION: &'static str = "composition";
+
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    //pub const FIELD_INVENTORY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
+    //pub const FIELD_COMPOSITION: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -79,8 +81,8 @@ impl Builder for EntityBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let identity = Creation::try_assign(&mut self.identity, EntityField::CLASSNAME, EntityField::FIELDNAME_IDENTITY)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, EntityField::CLASSNAME, EntityField::FIELDNAME_DESCRIPTOR)?;
+        let identity = Creation::try_assign(&mut self.identity, EntityField::Identity)?;
+        let descriptor = Creation::try_assign(&mut self.descriptor, EntityField::Descriptor)?;
 
         let entity = Entity {
             identity: identity,
