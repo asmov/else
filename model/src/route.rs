@@ -55,6 +55,10 @@ impl Route {
     }
 }
 
+pub trait Routing {
+    fn routes(&self) -> &Vec<ID>;
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum RouteField {
     Identity,

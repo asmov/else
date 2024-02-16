@@ -11,21 +11,27 @@ impl Built for AreaView {
     type BuilderType = AreaViewBuilder;
 }
 
-impl AreaView {
-    pub fn identity(&self) -> &Identity {
+impl Identifiable for AreaView {
+    fn identity(&self) -> &Identity {
         &self.identity
     }
+}
 
-    pub fn descriptor(&self) -> &Descriptor {
+impl Descriptive for AreaView {
+    fn descriptor(&self) -> &Descriptor {
         &self.descriptor
     }
+}
 
+impl Routing for AreaView {
+    fn routes(&self) -> &Vec<Route> {
+        &self.routes
+    }
+}
+
+impl AreaView {
     pub fn things(&self) -> &Vec<ThingView> {
         &self.things
-    }
-
-    pub fn routes(&self) -> &Vec<Route> {
-        &self.routes
     }
 }
 
