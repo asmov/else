@@ -8,9 +8,9 @@ pub enum Thing {
 }
 
 impl Identifiable for Thing {
-    fn identity(&self) -> &Identity {
+    fn uid(&self) -> UID {
         match self {
-            Thing::Character(t) => t.identity(),
+            Thing::Character(t) => t.uid(),
             Thing::Item(_) => todo!(),
         }
     }

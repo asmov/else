@@ -4,7 +4,7 @@ use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Entity {
-    identity: Identity,
+    uid: UID,
     descriptor: Descriptor,
     //inventory: Inventory,
     //composition: Composition
@@ -81,8 +81,8 @@ impl Builder for EntityBuilder {
         let descriptor = Creation::try_assign(&mut self.descriptor, EntityField::Descriptor)?;
 
         let entity = Entity {
-            identity: identity,
-            descriptor: descriptor,
+            uid: identity.to_uid(),
+            descriptor,
         };
 
         Ok(Creation::new(self, entity))
@@ -141,8 +141,8 @@ impl BuildableDescriptor for EntityBuilder {
 }
 
 impl Identifiable for Entity {
-    fn identity(&self) -> &Identity {
-        &self.identity
+    fn uid(&self) -> UID {
+        self.uid
     }
 }
 

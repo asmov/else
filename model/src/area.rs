@@ -6,15 +6,15 @@ use serde;
 /// There is a dynamic list of `Thing` objects thare are current occupants.
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Area {
-    identity: Identity,
+    uid: UID,
     descriptor: Descriptor,
     route_id_map: Vec<ID>,
     occupant_thing_ids: Vec<ID>
 }
 
 impl Identifiable for Area {
-    fn identity(&self) -> &Identity {
-        &self.identity
+    fn uid(&self) -> UID {
+        self.uid
     }
 }
 
@@ -91,7 +91,7 @@ impl Builder for AreaBuilder {
         let descriptor = Creation::try_assign(&mut self.descriptor, AreaField::Descriptor)?;
 
         let area = Area {
-            identity,
+            uid: identity.into_uid(),
             descriptor,
             route_id_map: Vec::new(), //todo
             occupant_thing_ids: Vec::new(), //todo
@@ -104,7 +104,7 @@ impl Builder for AreaBuilder {
         let mut fields_changed = Vec::new();
 
         if self.identity.is_none() {
-            self.identity(original.identity.editor_clone())?;
+            self.identity(IdentityBuilder::from_original(&self, original))?;
         }
 
         if self.descriptor.is_some() {
@@ -119,8 +119,8 @@ impl Builder for AreaBuilder {
     }
 
     fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
-        let area_id = self.get_identity().unwrap().get_id().unwrap();
-        let area_dog_house_mut = world.area_mut(area_id).unwrap(); //todo: don't unwrap
+        let area_uid = self.get_identity().unwrap().get_uid()?;
+        let area_dog_house_mut = world.area_mut(area_uid).unwrap(); //todo: don't unwrap
         self.modify(area_dog_house_mut)
     }
 }

@@ -92,8 +92,8 @@ impl Built for Character {
 }
 
 impl Identifiable for Character {
-    fn identity(&self) -> &Identity {
-        self.entity().identity()
+    fn uid(&self) -> UID {
+        self.entity.uid()
     }
 }
 

@@ -11,15 +11,15 @@ pub use crate::route::{end::*, endpoint::*, junction::*, point::*, direction::*}
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Route {
-    identity: Identity,
+    uid: UID,
     descriptor: Descriptor,
     point_a: Point,
     point_b: Point 
 }
 
 impl Identifiable for Route {
-    fn identity(&self) -> &Identity {
-        &self.identity
+    fn uid(&self) -> UID {
+        self.uid
     }
 }
 
@@ -120,10 +120,10 @@ impl Builder for RouteBuilder {
         let point_b = Creation::try_assign(&mut self.point_b, RouteField::PointB)?;
 
         let route = Route {
-            identity: identity,
-            descriptor: descriptor,
-            point_a: point_a,
-            point_b: point_b,
+            uid: identity.to_uid(),
+            descriptor,
+            point_a,
+            point_b,
         };
 
         Ok(Creation::new(self, route))
@@ -133,7 +133,7 @@ impl Builder for RouteBuilder {
         let mut fields_changed = Vec::new();
 
         if self.identity.is_some() {
-            original.identity = Creation::assign(&mut self.identity)?;
+            original.uid = Creation::assign(&mut self.identity)?.to_uid();
             fields_changed.push(RouteField::Identity.field())
         }
         if self.descriptor.is_some() {

@@ -47,12 +47,16 @@ pub mod hardcoded {
         use elsezone_rust_common::*;
         use crate::*;
 
-        pub const TERMINAL_AREA_ID: u64 = 1;
+        pub const TERMINAL_AREA_KEY: &'static str ="terminal";
 
         /// Creates the starting room that all players join
         pub fn create_terminal() -> World {
             let mut world_creator = World::creator();
-            world_creator.identity_builder().all(1, 1, 0, 0).unwrap();
+            world_creator.identity_builder()
+                .universe_id(UniverseID::MAX).unwrap()
+                .world_id(1).unwrap()
+                .class_id(WorldField::class_id()).unwrap()
+                .id(2).unwrap();
             world_creator.frame(0).unwrap();
             world_creator.descriptor({
                     let mut descriptor = Descriptor::creator();
@@ -118,7 +122,12 @@ pub mod testing {
     pub fn create_world() -> World {
         let mut world_creator = model::World::creator();
 
-        world_creator.identity_builder().all(1, 1, 0, 0).unwrap();
+        world_creator.identity_builder()
+            .universe_id(UniverseID::MAX).unwrap()
+            .world_id(1).unwrap()
+            .class_id(WorldField::class_id()).unwrap()
+            .id(2);
+
         world_creator.frame(0).unwrap();
 
         world_creator.descriptor({
@@ -205,7 +214,7 @@ pub mod testing {
                         descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
                         descriptor_creator
                     }).unwrap();
-                    end_creator.area_identity(area_a.identity().to_creator()).unwrap();
+                    end_creator.area_identity(IdentityBuilder::from_original(&end_creator, area_a)).unwrap();
                     end_creator.direction(Direction::West).unwrap();
                     end_creator
                 }).unwrap();
@@ -221,7 +230,7 @@ pub mod testing {
                         descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
                         descriptor_creator
                     }).unwrap();
-                    end_creator.area_identity(area_b.identity().to_creator()).unwrap();
+                    end_creator.area_identity(IdentityBuilder::from_original(&end_creator, area_b)).unwrap();
                     end_creator.direction(Direction::East).unwrap();
                     end_creator
                 }).unwrap();
@@ -251,7 +260,7 @@ pub mod testing {
                         descriptor_creator.name(s!("Path between Backyard and Cat House")).unwrap();
                         descriptor_creator
                     }).unwrap();
-                    end_creator.area_identity(area_a.identity().to_creator()).unwrap();
+                    end_creator.area_identity(IdentityBuilder::from_original(&end_creator, area_a)).unwrap();
                     end_creator.direction(Direction::East).unwrap();
                     end_creator
                 }).unwrap();
@@ -267,7 +276,7 @@ pub mod testing {
                         descriptor_creator.name(s!("Path between Backyard and Cat House")).unwrap();
                         descriptor_creator
                     }).unwrap();
-                    end_creator.area_identity(area_b.identity().to_creator()).unwrap();
+                    end_creator.area_identity(IdentityBuilder::from_original(&end_creator, area_b)).unwrap();
                     end_creator.direction(Direction::West).unwrap();
                     end_creator
                 }).unwrap();
@@ -335,7 +344,7 @@ mod tests {
             entity_creator
         }).unwrap();
 
-        let thing_id = world.spawn_thing(character_creator.thing_builder(), area.id()).unwrap();
+        let thing_id = world.spawn_thing(character_creator.thing_builder(), area.uid()).unwrap();
         let thing = world.thing(thing_id).unwrap();
 
         assert_eq!("A gray cat", thing.description().unwrap());
@@ -345,9 +354,8 @@ mod tests {
     fn test_manual_building() {
         let mut world = testing::create_world();
 
-        let litterbox_id = world.find_area(testing::CAT_HOUSE)
-            .unwrap()
-            .id();
+        let litterbox_id = world.find_area(testing::CAT_HOUSE).unwrap()
+            .uid();
 
         let mut gray_cat = model::Character::creator();
         gray_cat.cortex({

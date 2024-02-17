@@ -1,7 +1,7 @@
 use crate::{builder::*, descriptor::*, identity::*, route::*, view::thing::*};
 
 pub struct AreaView {
-    identity: Identity,
+    uid: UID,
     descriptor: Descriptor,
     things: Vec<ThingView>, // only those visible to the viewer
     route_ids: Vec<UID> // safe to hand to the client (for now)
@@ -12,8 +12,8 @@ impl Built for AreaView {
 }
 
 impl Identifiable for AreaView {
-    fn identity(&self) -> &Identity {
-        &self.identity
+    fn uid(&self) -> UID {
+        self.uid
     }
 }
 
@@ -101,7 +101,7 @@ impl Builder for AreaViewBuilder {
         let route_ids = Creation::assign_vec_uid(&mut self.routes)?;
 
         let area_view = AreaView {
-            identity,
+            uid: identity.to_uid(),
             descriptor,
             things,
             route_ids,
@@ -114,7 +114,7 @@ impl Builder for AreaViewBuilder {
         let mut fields_changed = Vec::new();
 
         if self.identity.is_some() {
-            original.identity = Creation::assign(&mut self.identity)?;
+            original.uid = Creation::assign(&mut self.identity)?.to_uid();
             fields_changed.push(AreaViewFields::Identity.field());
         }
         if self.descriptor.is_some() {

@@ -46,7 +46,7 @@ mod tests {
         let mut editor = model::Area::editor();
         editor.descriptor_builder().description(NEW_DESCRIPTION.to_string()).unwrap();
         let modification = {
-            let area_dog_house_mut = world_upstream.area_mut(area_dog_house.id()).unwrap();
+            let area_dog_house_mut = world_upstream.area_mut(area_dog_house.uid()).unwrap();
             editor.modify(area_dog_house_mut).unwrap()
         };
 

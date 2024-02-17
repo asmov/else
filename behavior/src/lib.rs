@@ -54,21 +54,21 @@ impl GoAction {
 
 pub struct MultiplyAction {
     frame: Frame,
-    clone_id: ID
+    clone_uid: UID
 }
 
 impl MultiplyAction {
-    fn new(frame: Frame, clone_id: ID) -> Self {
+    fn new(frame: Frame, clone_uid: UID) -> Self {
         Self {
             frame,
-            clone_id,
+            clone_uid,
         }
     }
 }
 
 impl Actor for MultiplyAction {
     fn act(self, world: &mut World) -> Result<Vec<Sync>> {
-        let thing = world.thing(self.clone_id).unwrap();
+        let thing = world.thing(self.clone_uid).unwrap();
         let mut character = CharacterBuilder::creator(); 
         character.entity({
             let mut entity = EntityBuilder::creator();
@@ -86,21 +86,21 @@ impl Actor for MultiplyAction {
     }
 }
 
-pub struct VoidCharacterRoutine(Identity);
+pub struct VoidCharacterRoutine(UID);
 impl Stimulation for VoidCharacterRoutine {
     fn stimulate(&self, _stimulus: Stimulus, world: &World) -> Result<Option<Vec<Action>>> {
-        let thing = world.thing(self.0.id()).unwrap();
+        let thing = world.thing(self.0).unwrap();
         println!("< I am {} and I have nothing to do. >", thing.descriptor().name());
         Ok(None)
     }
 }
 
-pub struct MultiplierCharacterRoutine(Identity);
+pub struct MultiplierCharacterRoutine(UID);
 impl Stimulation for MultiplierCharacterRoutine {
     fn stimulate(&self, stimulus: Stimulus, _world: &World) -> Result<Option<Vec<Action>>> {
         match stimulus {
             Stimulus::Time(timeframe) => {
-                Ok(Some(vec![Action::Multiply(MultiplyAction::new(timeframe.frame(), self.0.id()))]))
+                Ok(Some(vec![Action::Multiply(MultiplyAction::new(timeframe.frame(), self.0))]))
             },
             _ => { Ok(None) }
         }
@@ -128,11 +128,11 @@ impl CharacterRoutine {
 
     pub fn new(character: &Character) -> CharacterRoutine {
         let routine_id = character.routine_id();
-        let identity = character.identity().clone();
+        let uid = character.uid();
 
         match routine_id {
-            Self::ID_VOID => Self::Void(VoidCharacterRoutine(identity)),
-            Self::ID_MULTIPLIER => Self::Multiplier(MultiplierCharacterRoutine(identity)),
+            Self::ID_VOID => Self::Void(VoidCharacterRoutine(uid)),
+            Self::ID_MULTIPLIER => Self::Multiplier(MultiplierCharacterRoutine(uid)),
             _ => panic!("Unknown routine ID: {routine_id}")
         }
     }

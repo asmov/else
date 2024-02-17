@@ -105,7 +105,7 @@ impl Component for App {
                 self.terminal_output(&format!("Integrated into world at frame {}.", self.frame), EntryCategory::Debug);
 
                 let terminal = model::hardcoded::terminal::create_terminal();
-                let area = terminal.area(model::hardcoded::terminal::TERMINAL_AREA_ID).unwrap();
+                let area = terminal.find_area(model::hardcoded::terminal::TERMINAL_AREA_KEY).unwrap();
                 let tmp_intro: Vec<&str> = area.description().unwrap()
                     .split('\n')
                     .collect();

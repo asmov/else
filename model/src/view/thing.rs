@@ -1,13 +1,13 @@
 use crate::{builder::*, identity::*, descriptor::*};
 
 pub struct ThingView {
-    identity: Identity,
+    uid: UID,
     descriptor: Descriptor
 }
 
 impl Identifiable for ThingView {
-    fn identity(&self) -> &Identity {
-        &self.identity
+    fn uid(&self) -> UID {
+        self.uid
     }
 }
 

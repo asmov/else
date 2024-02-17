@@ -3,7 +3,7 @@ use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct World {
-    identity: Identity,
+    uid: UID,
     frame: Frame,
     descriptor: Descriptor,
     areas: Vec<Area>,
@@ -36,6 +36,7 @@ impl Fields for WorldField {
 }
 
 impl WorldField {
+    const CLASS_ID: ClassID = 2;
     const CLASSNAME: &'static str = "World";
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_FRAME: &'static str = "frame";
@@ -50,6 +51,12 @@ impl WorldField {
     const FIELD_AREAS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_AREAS, FieldValueType::ObjectArray);
     const FIELD_ROUTES: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectArray);
     const FIELD_THINGS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_THINGS, FieldValueType::ObjectArray);
+}
+
+impl WorldField {
+    pub fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -77,7 +84,7 @@ impl Builder for WorldBuilder {
             areas: Vec::new(),
             routes: Vec::new(),
             things: Vec::new(),
-            next_id: 1
+            next_id: 2 // universe is always 1
         }
     }
 
@@ -99,7 +106,7 @@ impl Builder for WorldBuilder {
 
         let mut next_id = self.generate_id();
         let (universe_id, world_id, region_id) = {
-            (identity.universe_id(), identity.world_id(), identity.region_id())
+            (identity.universe_id(), identity.world_id(), identity.class_id())
         };
 
         // set IDs for areas
@@ -107,7 +114,7 @@ impl Builder for WorldBuilder {
             let identity_builder = area.identity_builder();
             identity_builder.universe_id(universe_id)?;
             identity_builder.world_id(world_id)?;
-            identity_builder.region_id(region_id)?;
+            identity_builder.class_id(region_id)?;
             identity_builder.id(next_id)?;
             next_id += 1;
         }
@@ -117,7 +124,7 @@ impl Builder for WorldBuilder {
             let identity_builder = thing.entity_builder().identity_builder();
             identity_builder.universe_id(universe_id)?;
             identity_builder.world_id(world_id)?;
-            identity_builder.region_id(region_id)?;
+            identity_builder.class_id(region_id)?;
             identity_builder.id(next_id)?;
             next_id += 1;
         }
@@ -125,7 +132,7 @@ impl Builder for WorldBuilder {
         self.next_id = next_id;
 
         let world = World {
-            identity,
+            uid: identity.into_uid(),
             frame,
             descriptor,
             areas: Creation::assign_vec(&mut self.areas)?,
@@ -145,15 +152,16 @@ impl Builder for WorldBuilder {
             original.frame = frame;
         }
 
-        let (universe_id, world_id, region_id) = {
-            let identity = original.identity();
-            (identity.universe_id(), identity.world_id(), identity.region_id())
+        let (universe_id, world_id) = {
+            let identity = Identity::from_uid(original.uid());
+            (identity.universe_id(), identity.world_id())
         };
 
         // build identities
-        Self::build_local_identities(original, &mut self.areas, universe_id, world_id, region_id)?;
-        Self::build_local_identities(original, &mut self.routes, universe_id, world_id, region_id)?;
-        Self::build_local_identities(original, &mut self.things, universe_id, world_id, region_id)?;
+        // todo: use appropriate class ids for things
+        Self::build_local_identities(original, &mut self.areas, universe_id, world_id, ClassID::MAX)?;
+        Self::build_local_identities(original, &mut self.routes, universe_id, world_id, ClassID::MAX)?;
+        Self::build_local_identities(original, &mut self.things, universe_id, world_id, ClassID::MAX)?;
 
         Creation::modify_vec(&mut self.areas, &mut original.areas)?;
         Creation::modify_vec(&mut self.routes, &mut original.routes)?;
@@ -232,7 +240,7 @@ impl WorldBuilder {
     fn build_local_identities(
         original: &mut World,
         builders: &mut Vec<impl BuildableIdentity>,
-        universe_id: UniverseID, world_id: WorldID, region_id: RegionID
+        universe_id: UniverseID, world_id: WorldID, region_id: ClassID
     ) -> Result<()> {
         for builder in builders {
             if builder.has_identity() {
@@ -242,7 +250,7 @@ impl WorldBuilder {
             let identity_builder = builder.identity_builder();
             identity_builder.universe_id(universe_id)?;
             identity_builder.world_id(world_id)?;
-            identity_builder.region_id(region_id)?;
+            identity_builder.class_id(region_id)?;
             identity_builder.id(original.generate_id())?;
         }
         Ok(())
@@ -260,8 +268,8 @@ impl Built for World {
 }
 
 impl Identifiable for World {
-    fn identity(&self) -> &Identity {
-        &self.identity
+    fn uid(&self) -> UID {
+        self.uid
     }
 }
 
@@ -278,20 +286,20 @@ impl World {
         id
     }
 
-    pub fn thing(&self, id: u64) -> Option<&Thing> {
-        self.things.iter().find(|thing| thing.id() == id)
+    pub fn thing(&self, uid: UID) -> Option<&Thing> {
+        self.things.iter().find(|thing| thing.uid() == uid)
     }
 
-    pub fn thing_mut(&mut self, id: u64) -> Option<&mut Thing> {
-        self.things.iter_mut().find(|thing| thing.id() == id)
+    pub fn thing_mut(&mut self, uid: UID) -> Option<&mut Thing> {
+        self.things.iter_mut().find(|thing| thing.uid() == uid)
     }
 
-    pub fn area(&self, id: u64) -> Option<&Area> {
-        self.areas.iter().find(|area| area.id() == id)
+    pub fn area(&self, uid: UID) -> Option<&Area> {
+        self.areas.iter().find(|area| area.uid() == uid)
     }
 
-    pub fn area_mut(&mut self, id: u64) -> Option<&mut Area> {
-        self.areas.iter_mut().find(|area| area.id() == id)
+    pub fn area_mut(&mut self, uid: UID) -> Option<&mut Area> {
+        self.areas.iter_mut().find(|area| area.uid() == uid)
     }
 
     pub fn find_areas(&self, query: &str) -> Vec<&Area> {
@@ -326,20 +334,23 @@ impl World {
         self.things.iter_mut().find(|thing| thing.key().is_some_and(|k| k == key))
     }
 
-    pub fn spawn_thing(&mut self, mut thing: ThingBuilder, area_id: ID) -> Result<ID> {
-        let _area = self.area(area_id).expect("Area not found");
+    pub fn spawn_thing(&mut self, mut thing: ThingBuilder, area_uid: UID) -> Result<UID> {
+        let _area = self.area(area_uid).expect("Area not found");
         let thing_id = self.generate_id();
+        let world_identity = self.uid().into_identity();
 
-        thing.entity_builder().identity_builder().all(
-            self.identity.universe_id(),
-            self.identity.world_id(),
-            self.identity.region_id(),
-            thing_id)?;
+        let identity_builder = thing.entity_builder().identity_builder();
+        identity_builder
+            .universe_id(world_identity.universe_id())?
+            .world_id(world_identity.world_id())?
+            .class_id(ClassID::MAX)? //todo: determine class id from builder
+            .id(thing_id)?;
+        let uid = identity_builder.get_uid()?;
 
         let mut world_editor = World::editor();
         world_editor.add_thing(thing)?;
         let _result = world_editor.modify(self)?;
 
-        Ok(thing_id)
+        Ok(uid)
     }
 }
