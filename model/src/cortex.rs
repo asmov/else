@@ -2,8 +2,8 @@ pub mod routine;
 pub mod intelligent;
 
 use serde;
-
 use crate::{error::*, builder::*};
+
 pub use intelligent::*;
 pub use routine::*;
 

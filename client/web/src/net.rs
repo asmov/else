@@ -145,11 +145,11 @@ pub async fn zone_connector_task(status: Callback<Status>, log: Callback<(String
         if connect_attempts > -1 {
             status.emit(Status::Disconnected);
             let wait = std::cmp::min(MAX_RECONNECT_WAIT, 15 + 3 * connect_attempts as u64);
-            log.emit((format!("Reconnecting to zone server in {wait} seconds ..."), EntryCategory::Debug));
+            log.emit((format!("Reconnecting to zone server in {wait} seconds ..."), EntryCategory::Technical));
             yew::platform::time::sleep(Duration::from_secs(wait)).await;
             connect_attempts += 1;
         } else {
-            log.emit((format!("Establishing connection to zone server ({ELSE_LOCALHOST_ZONE_URL})."), EntryCategory::Debug));
+            log.emit((format!("Establishing connection to zone server ({ELSE_LOCALHOST_ZONE_URL})."), EntryCategory::Technical));
             connect_attempts = 0;
         }
 
@@ -164,11 +164,11 @@ pub async fn zone_connector_task(status: Callback<Status>, log: Callback<(String
         let who = Who::Zone(1, ELSE_LOCALHOST_ZONE_URL.to_string());
         let conn = Connection::new(who.clone(), Stream::Outgoing(websocket));
 
-        log.emit((format!("Connected to {who}."), EntryCategory::Debug));
+        log.emit((format!("Connected to {who}."), EntryCategory::Technical));
 
         let conn = match negotiate_session(conn, &log).await {
             Ok(conn) => {
-                log.emit((format!("Negotiated session with {}.", who.what()), EntryCategory::Debug));
+                log.emit((format!("Negotiated session with {}.", who.what()), EntryCategory::Technical));
                 conn
             },
             Err(e) => {
@@ -182,7 +182,7 @@ pub async fn zone_connector_task(status: Callback<Status>, log: Callback<(String
 
         match zone_stream_loop(conn, &status, &log).await {
             Ok(who) => {
-                log.emit((format!("Finished session with {who}."), EntryCategory::Debug));
+                log.emit((format!("Finished session with {who}."), EntryCategory::Technical));
             },
             Err(e) => {
                 log.emit((format!("{e}"), EntryCategory::Error));
@@ -202,7 +202,7 @@ pub async fn zone_stream_loop(mut conn: Connection, status: &Callback<Status>, l
                 status.emit(Status::Synchronized);
             },
             _ => {
-                log.emit((format!("Received message: {:?}", msg), EntryCategory::Debug))
+                log.emit((format!("Received message: {:?}", msg), EntryCategory::Technical))
             }
         }
     }

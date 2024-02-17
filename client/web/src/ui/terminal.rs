@@ -95,6 +95,8 @@ pub enum TerminalContext {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum EntryCategory {
     Standard,
+    Technical,
+    Warning,
     Error,
     Debug,
     Context(TerminalContext)
@@ -128,13 +130,19 @@ impl Component for Entry {
                         html!{<p>{ctx.props().text.clone()}</p>}
                     }
             },
+            EntryCategory::Technical => html!{
+                <p class="text-lime-800">{ctx.props().text.clone()}</p>
+            },
+            EntryCategory::Debug => html!{
+                <p class="text-lime-600">{ctx.props().text.clone()}</p>
+            },
+            EntryCategory::Warning => html!{
+                <p class="text-orange-800">{ctx.props().text.clone()}</p>
+            },
             EntryCategory::Error => html!{
                 <p class="text-red-800">{ctx.props().text.clone()}</p>
             },
-            EntryCategory::Debug => html!{
-                <p class="text-lime-800">{ctx.props().text.clone()}</p>
-            },
-            EntryCategory::Context(_) => html!{
+             EntryCategory::Context(_) => html!{
                 <p class="text-slate-600">{ctx.props().text.clone()}</p>
             }
         }

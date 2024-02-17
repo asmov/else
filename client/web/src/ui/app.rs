@@ -93,7 +93,7 @@ impl Component for App {
                 //log!(input.parse().unwrap_err().to_string());
             },
             AppMsg::Connected => {
-                self.terminal_output("Synchronizing with zone server.", EntryCategory::Debug);
+                self.terminal_output("Synchronizing with zone server.", EntryCategory::Technical);
             },
             AppMsg::Synchronized => {
                 if !self.ready {
@@ -102,7 +102,7 @@ impl Component for App {
                 }
             }
             AppMsg::Ready => {
-                self.terminal_output(&format!("Integrated into world at frame {}.", self.frame), EntryCategory::Debug);
+                self.terminal_output(&format!("Integrated into world at frame {}.", self.frame), EntryCategory::Technical);
 
                 let terminal = model::hardcoded::terminal::create_terminal();
                 let area = terminal.find_area(model::hardcoded::terminal::TERMINAL_AREA_KEY).unwrap();
