@@ -1,4 +1,4 @@
-use crate::{builder::*, descriptor::{self, *}, entity::*, error::*, identity::*, world::World};
+use crate::{classes::*, error::*, builder::*, identity::*, descriptor::*, world::World};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -43,17 +43,28 @@ impl Fields for AreaField {
     }
 }
 
+impl Class for AreaField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
 impl AreaField {
+    const CLASS_ID: ClassID = ClassIdent::Area as ClassID;
     const CLASSNAME: &'static str = "Area";
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_OCCUPANTS: &'static str = "occupants";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    const FIELD_ROUTES: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectIDArray);
-    const FIELD_OCCUPANTS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_OCCUPANTS, FieldValueType::ObjectIDArray);
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectIDArray);
+    const FIELD_OCCUPANTS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_OCCUPANTS, FieldValueType::ObjectIDArray);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -122,6 +133,10 @@ impl Builder for AreaBuilder {
         let area_uid = self.get_identity().unwrap().get_uid()?;
         let area_dog_house_mut = world.area_mut(area_uid).unwrap(); //todo: don't unwrap
         self.modify(area_dog_house_mut)
+    }
+
+    fn class_id(&self) -> ClassID {
+        AreaField::class_id()
     }
 }
 

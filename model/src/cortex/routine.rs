@@ -1,5 +1,4 @@
-use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, interface::*,
-    timeframe::*};
+use crate::{classes::*, error::*, identity::*, builder::*};
 use super::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -45,13 +44,24 @@ impl Fields for RoutineCortexField {
     }
 }
 
+impl Class for RoutineCortexField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
 impl RoutineCortexField {
+    const CLASS_ID: ClassID = ClassIdent::RoutineCortex as ClassID;
     const CLASSNAME: &'static str = "RoutineCortex";
     const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
     const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UnsignedInteger);
-    const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
+    const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UnsignedInteger);
+    const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -98,6 +108,10 @@ impl Builder for RoutineCortexBuilder {
 
     fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         todo!()
+    }
+
+    fn class_id(&self) -> ClassID {
+        RoutineCortexField::class_id()
     }
 }
 

@@ -57,6 +57,13 @@ impl Builder for PointBuilder {
             }
         }
     }
+
+    fn class_id(&self) -> ClassID {
+        match self {
+            Self::Endpoint(modeler) => modeler.class_id(),
+            Self::Junction(modeler) => modeler.class_id(),
+        }
+    }
 }
 
 pub trait PointBuilderVariant: Builder {

@@ -1,4 +1,4 @@
-use crate::{s, error::*, builder::*};
+use crate::{s, classes::*, identity::ClassID, error::*, builder::*};
 use serde;
 
 /// All descriptive information about and object that can be observed by a player.
@@ -107,23 +107,18 @@ pub enum DescriptorField {
     Notes
 }
 
-impl DescriptorField {
-    pub const CLASSNAME: &'static str = "Descriptor";
-    pub const FIELDNAME_NAME: &'static str = "name";
-    pub const FIELDNAME_KEYWORDS: &'static str = "keywords";
-    pub const FIELDNAME_KEY: &'static str = "key";
-    pub const FIELDNAME_SHORT_DESCRIPTION: &'static str = "short_description";
-    pub const FIELDNAME_DESCRIPTION: &'static str = "description";
-    pub const FIELDNAME_NOTES: &'static str = "notes";
+impl Class for DescriptorField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
 
-    pub const FIELD_NAME: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_NAME, FieldValueType::String);
-    pub const FIELD_KEYWORDS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_KEYWORDS, FieldValueType::StringArray);
-    pub const FIELD_KEY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_KEY, FieldValueType::String);
-    pub const FIELD_SHORT_DESCRIPTION: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_SHORT_DESCRIPTION, FieldValueType::String);
-    pub const FIELD_DESCRIPTION: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTION, FieldValueType::String);
-    pub const FIELD_NOTES: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_NOTES, FieldValueType::String);
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
 
-    pub const fn field(&self) -> &'static Field {
+impl Fields for DescriptorField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::Name => &Self::FIELD_NAME,
             Self::Keywords => &Self::FIELD_KEYWORDS,
@@ -133,6 +128,33 @@ impl DescriptorField {
             Self::Notes => &Self::FIELD_NOTES
         }
     }
+}
+
+impl TryFrom<&str> for DescriptorField {
+    type Error = Error;
+    
+    fn try_from(name: &str) -> Result<Self> {
+        match name {
+            "name" => Ok(Self::Name),
+            "keywords" => Ok(Self::Keywords),
+            "key" => Ok(Self::Key),
+            "short_description" => Ok(Self::ShortDescription),
+            "description" => Ok(Self::Description),
+            "notes" => Ok(Self::Notes),
+            _ => Err(Error::UnknownField {class: Self::CLASSNAME, field: name.to_string()})
+        }
+    }
+}
+
+impl DescriptorField {
+    const CLASS_ID: ClassID = ClassIdent::Descriptor as ClassID;
+    const CLASSNAME: &'static str = "Descriptor";
+    const FIELD_NAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "name", FieldValueType::String);
+    const FIELD_KEYWORDS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "keywords", FieldValueType::StringArray);
+    const FIELD_KEY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "key", FieldValueType::String);
+    const FIELD_SHORT_DESCRIPTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "short_description", FieldValueType::String);
+    const FIELD_DESCRIPTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "description", FieldValueType::String);
+    const FIELD_NOTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "notes", FieldValueType::String);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
@@ -177,7 +199,7 @@ impl Builder for DescriptorBuilder {
         let descriptor = Descriptor {
             name: self.name
                 .as_ref()
-                .ok_or_else(|| Error::FieldNotSet { class: DescriptorField::CLASSNAME, field: DescriptorField::FIELDNAME_NAME})?
+                .ok_or_else(|| Error::FieldNotSet { class: DescriptorField::CLASSNAME, field: "name"})?
                 .clone(),
             keywords: self.keywords
                 .as_ref()
@@ -210,13 +232,24 @@ impl Builder for DescriptorBuilder {
         Ok(Modification::new(self, fields_changed))
     }
 
-    fn set(&mut self, raw_field: &str, raw_value: String) -> Result<()> {
-        match raw_field {
-            DescriptorField::FIELDNAME_NAME => self.name(raw_value),
-            DescriptorField::FIELDNAME_DESCRIPTION => self.description(raw_value),
-            DescriptorField::FIELDNAME_NOTES => self.notes(raw_value),
-            _ => Err(Error::UnknownField{class: DescriptorField::CLASSNAME, field: s!(raw_field)})
+    fn set(&mut self, field_name: &str, raw_value: String) -> Result<()> {
+        match DescriptorField::try_from(field_name)? {
+            DescriptorField::Name => self.name(raw_value),
+            DescriptorField::Keywords => {
+                self.keywords(
+                    raw_value.split_whitespace()
+                        .map(|s| s.to_owned())
+                        .collect())
+            },
+            DescriptorField::Key => self.key(raw_value),
+            DescriptorField::ShortDescription => self.short_description(raw_value),
+            DescriptorField::Description => self.description(raw_value),
+            DescriptorField::Notes => self.notes(raw_value),
         }
+    }
+
+    fn class_id(&self) -> ClassID {
+        DescriptorField::class_id()
     }
 }
 
@@ -226,6 +259,12 @@ impl DescriptorBuilder {
         Ok(())
     }
 
+    pub fn keywords(&mut self, keywords: Vec<String>) -> Result<()> {
+        self.keywords = Some(keywords);
+        Ok(())
+    }
+
+
     pub fn name(&mut self, name: String) -> Result<()> {
         self.name = Some(name);
         Ok(())
@@ -233,6 +272,11 @@ impl DescriptorBuilder {
 
     pub fn description(&mut self, description: String) -> Result<()> {
         self.description = Some(description);
+        Ok(())
+    }
+
+    pub fn short_description(&mut self, description: String) -> Result<()> {
+        self.short_description = Some(description);
         Ok(())
     }
 

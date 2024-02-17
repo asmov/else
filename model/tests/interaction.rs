@@ -40,6 +40,7 @@ mod tests {
         let thing = world.thing(thing_id).unwrap();
 
         assert_eq!("A gray cat", thing.description().unwrap());
+        dbg!("Thing ID: {}", thing.uid().into_identity().id_to_string());
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use serde;
-use crate::{error::*, builder::*};
+use crate::{classes::*, error::*, builder::*};
 
 pub type UID        = u128;
 // UID is composed of:
@@ -65,7 +65,91 @@ impl Identity {
     pub const fn into_uid(self) -> UID {
         self.to_uid()
     }
+
+    pub fn id_to_string(&self) -> String {
+        let mut chars: Vec<char> = Vec::new();
+        let mut x = self.id();
+        loop {
+            let m = (x % RADIX as ID) as usize;
+            x = x / RADIX as ID;
+
+            chars.push(CHARMAP[m]);
+
+            if x == 0 {
+                break;
+            }
+        }
+
+        chars.into_iter().collect()
+    }
 }
+
+const RADIX: usize = 62;
+const CHARMAP: [char; RADIX] = [
+    '0',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    'a',
+    'b',
+    'c',
+    'd',
+    'e',
+    'f',
+    'g',
+    'h',
+    'i',
+    'j',
+    'k',
+    'l',
+    'm',
+    'n',
+    'o',
+    'p',
+    'q',
+    'r',
+    's',
+    't',
+    'u',
+    'v',
+    'w',
+    'x',
+    'y',
+    'z',
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+];
+
 
 impl Into<UID> for Identity {
     fn into(self) -> UID {
@@ -126,12 +210,23 @@ impl Fields for IdentityField {
     }
 }
 
+impl Class for IdentityField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
 impl IdentityField {
+    const CLASS_ID: ClassID = ClassIdent::Identity as ClassID;
     const CLASSNAME: &'static str = "Identity";
-    const FIELD_UNIVERSE_ID: Field = Field::new(Self::CLASSNAME, "universe_id", FieldValueType::UnsignedInteger);
-    const FIELD_WORLD_ID: Field = Field::new(Self::CLASSNAME, "world_id", FieldValueType::UnsignedInteger);
-    const FIELD_CLASS_ID: Field = Field::new(Self::CLASSNAME, "class_id", FieldValueType::UnsignedInteger);
-    const FIELD_ID: Field = Field::new(Self::CLASSNAME, "id", FieldValueType::UnsignedInteger);
+    const FIELD_UNIVERSE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "universe_id", FieldValueType::UnsignedInteger);
+    const FIELD_WORLD_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "world_id", FieldValueType::UnsignedInteger);
+    const FIELD_CLASS_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "class_id", FieldValueType::UnsignedInteger);
+    const FIELD_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "id", FieldValueType::UnsignedInteger);
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -205,27 +300,31 @@ impl Builder for IdentityBuilder {
 
         Ok(Modification::new(self, fields_changed))
     }
+
+    fn class_id(&self) -> ClassID {
+        IdentityField::class_id()
+    }
 }
 
 impl IdentityBuilder {
     pub fn universe_id(&mut self, universe_id: UniverseID) -> Result<&mut Self> {
         self.universe_id = Some(universe_id);
-        Ok((self))
+        Ok(self)
     }
 
     pub fn world_id(&mut self, world_id: WorldID) -> Result<&mut Self> {
         self.world_id = Some(world_id);
-        Ok((self))
+        Ok(self)
     }
 
     pub fn class_id(&mut self, region_id: ClassID) -> Result<&mut Self> {
         self.class_id = Some(region_id);
-        Ok((self))
+        Ok(self)
     }
 
     pub fn id(&mut self, id: ID) -> Result<&mut Self> {
         self.id = Some(id);
-        Ok((self))
+        Ok(self)
     }
     
     pub fn uid(&mut self, uid: UID) -> Result<()> {
@@ -270,7 +369,7 @@ impl IdentityBuilder {
 
     pub fn from_original(builder: &impl Builder, identifiable: &impl Identifiable) -> Self {
         let mut me = Self::builder(builder.builder_mode());
-        me.uid(identifiable.uid());
+        me.uid(identifiable.uid()).unwrap();
         me
     }
 }

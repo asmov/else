@@ -1,7 +1,7 @@
 use crate::error::*;
 use crate::Identifiable;
 use crate::World;
-use crate::identity::UID;
+use crate::identity::{UID, ClassID};
 
 /// Performs all write operations for game data objects. Nothing is mutated directly on the object itself.  
 /// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
@@ -49,11 +49,10 @@ pub trait Builder: Sized {
     fn sync_modify(self, _world: &mut World) -> Result<Modification<Self::BuilderType>> {
         unimplemented!("Builder::sync_modify()")
     }
+
+    fn class_id(&self) -> ClassID;
 }
 
-pub trait Fields {
-    fn field(&self) -> &'static Field;
-}
 
 /// Provides the static creator() and editor() methods for a data type.
 pub trait Built {
@@ -240,6 +239,14 @@ where
     }
 }
 
+pub trait Fields {
+    fn field(&self) -> &'static Field;
+}
+
+pub trait Class: Fields {
+    fn class_id() -> ClassID;
+    fn classname() -> &'static str;
+}
 
 /// Represents data types for model fields that are available to APIs.
 #[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
@@ -267,18 +274,24 @@ pub enum FieldValueType {
 /// Represents a specific field of a model that is available to APIs
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Field {
+    class_id: ClassID,
     classname: &'static str,
     name: &'static str,
     value_type: FieldValueType
 }
 
 impl Field {
-    pub const fn new(classname: &'static str, name: &'static str, value_type: FieldValueType) -> Self {
+    pub const fn new(class_id: ClassID, classname: &'static str, name: &'static str, value_type: FieldValueType) -> Self {
         Self {
+            class_id,
             classname,
             name,
             value_type
         }
+    }
+
+    pub const fn class_id(&self) -> ClassID {
+        self.class_id
     }
 
     pub const fn classname(&self) -> &'static str {

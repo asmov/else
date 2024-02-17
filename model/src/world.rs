@@ -1,4 +1,4 @@
-use crate::{error::*, timeframe::*, builder::*, identity::*, descriptor::*, entity::*, character::*, area::*, route::*};
+use crate::{classes::*, error::*, timeframe::*, builder::*, identity::*, descriptor::*, entity::*, character::*, area::*, route::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -35,8 +35,18 @@ impl Fields for WorldField {
     }
 }
 
+impl Class for WorldField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
 impl WorldField {
-    const CLASS_ID: ClassID = 2;
+    const CLASS_ID: ClassID = ClassIdent::World as ClassID;
     const CLASSNAME: &'static str = "World";
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_FRAME: &'static str = "frame";
@@ -45,18 +55,12 @@ impl WorldField {
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_THINGS: &'static str = "things";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    const FIELD_FRAME: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_FRAME, FieldValueType::UnsignedInteger);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    const FIELD_AREAS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_AREAS, FieldValueType::ObjectArray);
-    const FIELD_ROUTES: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectArray);
-    const FIELD_THINGS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_THINGS, FieldValueType::ObjectArray);
-}
-
-impl WorldField {
-    pub fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
+    const FIELD_FRAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_FRAME, FieldValueType::UnsignedInteger);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    const FIELD_AREAS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_AREAS, FieldValueType::ObjectArray);
+    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectArray);
+    const FIELD_THINGS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_THINGS, FieldValueType::ObjectArray);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -105,26 +109,28 @@ impl Builder for WorldBuilder {
         let descriptor = Creation::try_assign(&mut self.descriptor, WorldField::Descriptor)?;
 
         let mut next_id = self.generate_id();
-        let (universe_id, world_id, region_id) = {
-            (identity.universe_id(), identity.world_id(), identity.class_id())
+        let (universe_id, world_id) = {
+            (identity.universe_id(), identity.world_id())
         };
 
         // set IDs for areas
         for area in &mut self.areas {
+            let class_id = area.class_id();
             let identity_builder = area.identity_builder();
             identity_builder.universe_id(universe_id)?;
             identity_builder.world_id(world_id)?;
-            identity_builder.class_id(region_id)?;
+            identity_builder.class_id(class_id)?;
             identity_builder.id(next_id)?;
             next_id += 1;
         }
 
         // set IDs for things
         for thing in &mut self.things {
+            let class_id = thing.class_id();
             let identity_builder = thing.entity_builder().identity_builder();
             identity_builder.universe_id(universe_id)?;
             identity_builder.world_id(world_id)?;
-            identity_builder.class_id(region_id)?;
+            identity_builder.class_id(class_id)?;
             identity_builder.id(next_id)?;
             next_id += 1;
         }
@@ -159,9 +165,9 @@ impl Builder for WorldBuilder {
 
         // build identities
         // todo: use appropriate class ids for things
-        Self::build_local_identities(original, &mut self.areas, universe_id, world_id, ClassID::MAX)?;
-        Self::build_local_identities(original, &mut self.routes, universe_id, world_id, ClassID::MAX)?;
-        Self::build_local_identities(original, &mut self.things, universe_id, world_id, ClassID::MAX)?;
+        Self::build_local_identities(original, &mut self.areas, universe_id, world_id)?;
+        Self::build_local_identities(original, &mut self.routes, universe_id, world_id)?;
+        Self::build_local_identities(original, &mut self.things, universe_id, world_id)?;
 
         Creation::modify_vec(&mut self.areas, &mut original.areas)?;
         Creation::modify_vec(&mut self.routes, &mut original.routes)?;
@@ -172,6 +178,10 @@ impl Builder for WorldBuilder {
 
     fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
         self.modify(world)
+    }
+
+    fn class_id(&self) -> ClassID {
+        WorldField::class_id()
     }
 }
 
@@ -240,17 +250,18 @@ impl WorldBuilder {
     fn build_local_identities(
         original: &mut World,
         builders: &mut Vec<impl BuildableIdentity>,
-        universe_id: UniverseID, world_id: WorldID, region_id: ClassID
+        universe_id: UniverseID, world_id: WorldID
     ) -> Result<()> {
         for builder in builders {
             if builder.has_identity() {
                 return Ok(())
             }
 
+            let class_id = builder.class_id();
             let identity_builder = builder.identity_builder();
             identity_builder.universe_id(universe_id)?;
             identity_builder.world_id(world_id)?;
-            identity_builder.class_id(region_id)?;
+            identity_builder.class_id(class_id)?;
             identity_builder.id(original.generate_id())?;
         }
         Ok(())

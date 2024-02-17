@@ -28,8 +28,8 @@ impl Descriptive for Thing {
 impl Exists for Thing {
     fn entity(&self) -> &Entity {
         match self {
-            Thing::Character(t) => t.entity(),
-            Thing::Item(t) => todo!(),
+            Thing::Character(character) => character.entity(),
+            Thing::Item(_item) => todo!(),
         }
     }
 }
@@ -78,6 +78,12 @@ impl Builder for ThingBuilder {
                     unreachable!("Dispatch type mismatch in ThingBuilder::modify for Character")
                 }
             }
+        }
+    }
+
+    fn class_id(&self) -> ClassID {
+        match self {
+            Self::Character(modeler) => modeler.class_id(),
         }
     }
 }

@@ -1,4 +1,4 @@
-pub use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, cortex::*};
+pub use crate::{s, classes::*, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, cortex::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -22,13 +22,24 @@ impl Fields for CharacterField {
     }
 }
 
+impl Class for CharacterField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
 impl CharacterField {
+    const CLASS_ID: ClassID = ClassIdent::Character as ClassID;
     const CLASSNAME: &'static str = "Character";
     const FIELDNAME_ENTITY: &'static str = "entity";
     const FIELDNAME_CORTEX: &'static str = "cortex";
 
-    const FIELD_ENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ENTITY, FieldValueType::Object);
-    const FIELD_CORTEX: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_CORTEX, FieldValueType::Object);
+    const FIELD_ENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ENTITY, FieldValueType::Object);
+    const FIELD_CORTEX: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_CORTEX, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -84,6 +95,10 @@ impl Builder for CharacterBuilder {
         }
 
         Ok(Modification::new(ThingBuilder::Character(self), fields_changed))
+    }
+
+    fn class_id(&self) -> ClassID {
+        CharacterField::class_id()
     }
 }
 

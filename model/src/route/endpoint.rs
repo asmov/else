@@ -21,11 +21,22 @@ impl Fields for EndpointField {
     }
 }
 
+impl Class for EndpointField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
 impl EndpointField {
+    const CLASS_ID: ClassID = ClassIdent::Endpoint as ClassID;
     const CLASSNAME: &'static str = "Endpoint";
     const FIELDNAME_END: &'static str = "end";
 
-    const FIELD_END: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_END, FieldValueType::Object);
+    const FIELD_END: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_END, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -73,6 +84,10 @@ impl Builder for EndpointBuilder {
         }
 
         Ok(Modification::new(PointBuilder::Endpoint(self), fields_changed))
+    }
+
+    fn class_id(&self) -> ClassID {
+        EndpointField::class_id()
     }
 }
 

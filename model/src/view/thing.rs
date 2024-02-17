@@ -1,4 +1,4 @@
-use crate::{builder::*, identity::*, descriptor::*};
+use crate::{classes::*, builder::*, identity::*, descriptor::*};
 
 pub struct ThingView {
     uid: UID,
@@ -21,12 +21,12 @@ impl Built for ThingView {
     type BuilderType = ThingViewBuilder;
 }
 
-pub enum ThingViewFields {
+pub enum ThingViewField {
     Identity,
     Descriptor
 }
 
-impl Fields for ThingViewFields {
+impl Fields for ThingViewField {
     fn field(&self) -> &'static Field {
         match self {
             Self::Identity => Self::FIELD_IDENTITY,
@@ -35,10 +35,21 @@ impl Fields for ThingViewFields {
     }
 }
 
-impl ThingViewFields {
+impl Class for ThingViewField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
+impl ThingViewField {
+    const CLASS_ID: ClassID = ClassIdent::ThingView as ClassID;
     const CLASSNAME: &'static str = "ThingView";
-    const FIELD_IDENTITY: &'static Field = &Field::new(Self::CLASSNAME, "Identity", FieldValueType::Object);
-    const FIELD_DESCRIPTOR: &'static Field = &Field::new(Self::CLASSNAME, "Descriptor", FieldValueType::Object);
+    const FIELD_IDENTITY: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Identity", FieldValueType::Object);
+    const FIELD_DESCRIPTOR: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Descriptor", FieldValueType::Object);
 }
 
 pub struct ThingViewBuilder {
@@ -76,5 +87,9 @@ impl Builder for ThingViewBuilder {
 
     fn modify(self, original: &mut Self::ModelType) -> crate::Result<Modification<Self::BuilderType>> {
         todo!()
+    }
+
+    fn class_id(&self) -> ClassID {
+        ThingViewField::class_id()
     }
 }

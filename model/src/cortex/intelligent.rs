@@ -1,5 +1,4 @@
-use crate::{s, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, interface::*,
-    timeframe::*};
+use crate::{classes::*, error::*, identity::*, builder::*, interface::*};
 use super::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -32,15 +31,36 @@ pub enum IntelligentCortexField {
     RoutineAwareness
 }
 
+impl Fields for IntelligentCortexField {
+    fn field(&self) -> &'static Field {
+        match self {
+            Self::InterfaceID => Self::InterfaceID.field(),
+            Self::RoutineID => Self::RoutineID.field(),
+            Self::RoutineAwareness => Self::RoutineAwareness.field(),
+        }
+    }
+}
+
+impl Class for IntelligentCortexField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
 impl IntelligentCortexField {
+    const CLASS_ID: ClassID = ClassIdent::IntelligentCortex as ClassID;
     pub const CLASSNAME: &'static str = "IntelligentCortex";
     pub const FIELDNAME_INTERFACE_ID: &'static str = "interface_id";
     pub const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
     pub const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    pub const FIELD_INTERFACE_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_INTERFACE_ID, FieldValueType::UnsignedInteger);
-    pub const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UnsignedInteger);
-    pub const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
+    pub const FIELD_INTERFACE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_INTERFACE_ID, FieldValueType::UnsignedInteger);
+    pub const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UnsignedInteger);
+    pub const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
 
     pub const fn field(&self) -> &'static Field {
         match self {
@@ -104,6 +124,10 @@ impl Builder for IntelligentCortexBuilder {
     fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         todo!()
     }
+
+    fn class_id(&self) -> ClassID {
+        IntelligentCortexField::class_id()
+    }
 }
 
 impl IntelligentCortex {
@@ -119,14 +143,6 @@ impl IntelligentCortex {
 }
 
 impl CortexBuilderVariant for IntelligentCortexBuilder {
-    /*fn create_cortex(self) -> Result<Cortex> {
-        Ok(Cortex::Intelligent(self.create()?))
-    }
-
-    fn modify_cortex(self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
-        self.modify(original)
-    }*/
-
     fn cortex_builder(self) -> CortexBuilder {
         CortexBuilder::Intelligent(self)
     }

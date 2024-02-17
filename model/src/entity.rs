@@ -1,4 +1,4 @@
-use crate::{error::*, identity::*, builder::*, descriptor::*};
+use crate::{classes::*, error::*, identity::*, builder::*, descriptor::*};
 use serde;
 
 
@@ -33,17 +33,28 @@ impl Fields for EntityField {
     }
 }
 
+impl Class for EntityField {
+    fn class_id() -> ClassID {
+        Self::CLASS_ID
+    }
+
+    fn classname() -> &'static str {
+        Self::CLASSNAME
+    }
+}
+
 impl EntityField {
+    const CLASS_ID: ClassID = ClassIdent::Entity as ClassID;
     const CLASSNAME: &'static str = "Entity";
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     //pub const FIELDNAME_INVENTORY: &'static str = "inventory";
     //pub const FIELDNAME_COMPOSITION: &'static str = "composition";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    //pub const FIELD_INVENTORY: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
-    //pub const FIELD_COMPOSITION: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    //pub const FIELD_INVENTORY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
+    //pub const FIELD_COMPOSITION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -97,6 +108,10 @@ impl Builder for EntityBuilder {
         }
 
         Ok(Modification::new(self, fields_changed))
+    }
+
+    fn class_id(&self) -> ClassID {
+        EntityField::class_id()
     }
 }
 

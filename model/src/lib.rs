@@ -1,5 +1,6 @@
 pub use elsezone_rust_common::{self as elserust, s};
 
+pub mod classes;
 pub mod error;
 pub mod builder;
 pub mod identity;
@@ -24,6 +25,7 @@ pub mod view;
 pub mod hardcoded;
 pub mod testing;
 
+pub use classes::*;
 pub use error::*;
 pub use builder::*;
 pub use identity::*;
