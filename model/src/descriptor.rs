@@ -92,18 +92,8 @@ pub trait Descriptive {
     }
 }
 
-pub trait DescriptiveMut: Descriptive {
-    fn descriptor_mut(&mut self) -> &mut Descriptor;
-}
-
 impl Descriptive for Descriptor {
     fn descriptor(&self) -> &Descriptor {
-        self
-    }
-}
-
-impl DescriptiveMut for Descriptor {
-    fn descriptor_mut(&mut self) -> &mut Descriptor {
         self
     }
 }

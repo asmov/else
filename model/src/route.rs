@@ -23,21 +23,9 @@ impl Identifiable for Route {
     }
 }
 
-impl IdentifiableMut for Route {
-    fn identity_mut(&mut self) -> &mut Identity {
-        &mut self.identity
-    }
-}
-
 impl Descriptive for Route {
     fn descriptor(&self) -> &Descriptor {
         &self.descriptor
-    }
-}
-
-impl DescriptiveMut for Route {
-    fn descriptor_mut(&mut self) -> &mut Descriptor {
-        &mut self.descriptor
     }
 }
 
@@ -56,7 +44,7 @@ impl Route {
 }
 
 pub trait Routing {
-    fn routes(&self) -> &Vec<ID>;
+    fn route_ids(&self) -> &Vec<UID>;
 }
 
 #[derive(Clone, Copy, Debug)]

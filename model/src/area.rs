@@ -18,21 +18,9 @@ impl Identifiable for Area {
     }
 }
 
-impl IdentifiableMut for Area {
-    fn identity_mut(&mut self) -> &mut Identity {
-        &mut self.identity
-    }
-}
-
 impl Descriptive for Area {
     fn descriptor(&self) -> &Descriptor {
         &self.descriptor
-    }
-}
-
-impl DescriptiveMut for Area {
-    fn descriptor_mut(&mut self) -> &mut Descriptor {
-        &mut self.descriptor
     }
 }
 

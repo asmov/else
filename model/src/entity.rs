@@ -14,10 +14,6 @@ pub trait Exists: Identifiable + Descriptive {
     fn entity(&self) -> &Entity;
 }
 
-pub trait ExistsMut: Exists + IdentifiableMut + DescriptiveMut {
-    fn entity_mut(&mut self) -> &mut Entity;
-}
-
 #[derive(Debug)]
 pub enum EntityField {
     Identity,
@@ -96,7 +92,7 @@ impl Builder for EntityBuilder {
         let mut fields_changed = Vec::new();
 
         if self.descriptor.is_some() { 
-            original.descriptor = Creation::assign(&mut self.descriptor)?;
+            Modification::assign(&mut self.descriptor, &mut original.descriptor)?;
             fields_changed.push(EntityField::Descriptor.field())
         }
 
@@ -150,12 +146,6 @@ impl Identifiable for Entity {
     }
 }
 
-impl IdentifiableMut for Entity {
-    fn identity_mut(&mut self) -> &mut Identity {
-        &mut self.identity
-    }
-}
-
 impl Built for Entity {
     type BuilderType = EntityBuilder;
 }
@@ -163,11 +153,5 @@ impl Built for Entity {
 impl Descriptive for Entity {
     fn descriptor(&self) -> &Descriptor {
         &self.descriptor
-    }
-}
-
-impl DescriptiveMut for Entity {
-    fn descriptor_mut(&mut self) -> &mut Descriptor {
-        &mut self.descriptor
     }
 }

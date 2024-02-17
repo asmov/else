@@ -1,38 +1,55 @@
-use crate::{error::*, builder::*};
 use serde;
+use crate::{error::*, builder::*};
 
-pub type ID = u64;
-pub type RegionID = u32;
-pub type WorldID = u16;
+pub type UID        = u128;
 pub type UniverseID = u16;
+pub type WorldID    = u16;
+pub type RegionID   = u32;
+pub type ID         = u64;
+
+const UID_BITS:         usize = std::mem::size_of::<UID>()         * 8;
+const UNIVERSE_ID_BITS: usize = std::mem::size_of::<UniverseID>()  * 8;
+const WORLD_ID_BITS:    usize = std::mem::size_of::<WorldID>()     * 8;
+const REGION_ID_BITS:   usize = std::mem::size_of::<RegionID>()    * 8;
+const ID_BITS:          usize = std::mem::size_of::<ID>()          * 8;
+
+const UNIVERSE_ID_SHIFT:    usize = UID_BITS          - UNIVERSE_ID_BITS;
+const WORLD_ID_SHIFT:       usize = UNIVERSE_ID_SHIFT - WORLD_ID_BITS;
+const REGION_ID_SHIFT:      usize = WORLD_ID_SHIFT    - REGION_ID_BITS;
+const ID_SHIFT:             usize = REGION_ID_SHIFT   - ID_BITS;
 
 #[derive(PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone, Copy, Debug)]
 pub struct Identity {
-    id: ID,
-    region_id: RegionID,
-    world_id: WorldID,
     universe_id: UniverseID,
+    world_id: WorldID,
+    region_id: RegionID,
+    id: ID
 }
 
 pub trait Identifiable {
     fn identity(&self) -> &Identity;
 
-    fn id(&self) -> ID {
-        self.identity().id
-    }
-
-    fn region_id(&self) -> RegionID {
-        self.identity().region_id
-    }
-
-    fn world_id(&self) -> WorldID {
-        self.identity().world_id
+    fn uid(&self) -> UID {
+        self.identity().to_uid()
     }
 
     fn universe_id(&self) -> UniverseID {
         self.identity().universe_id
     }
 
+    fn world_id(&self) -> WorldID {
+        self.identity().world_id
+    }
+
+    fn region_id(&self) -> RegionID {
+        self.identity().region_id
+    }
+
+    fn id(&self) -> ID {
+        self.identity().id
+    }
+
+    //todo: remove
     fn editor_clone(&self) -> IdentityBuilder {
         let mut editor = IdentityBuilder::editor();
         editor.id(self.id());
@@ -43,19 +60,63 @@ pub trait Identifiable {
     }
 }
 
-pub trait IdentifiableMut: Identifiable {
-    fn identity_mut(&mut self) -> &mut Identity;
-}
-
 impl Identifiable for Identity {
     fn identity(&self) -> &Identity {
         self
     }
 }
 
-impl IdentifiableMut for Identity {
-    fn identity_mut(&mut self) -> &mut Identity {
-        self
+impl Built for Identity {
+    type BuilderType = IdentityBuilder;
+}
+
+impl Identity {
+    pub fn new(universe_id: UniverseID, world_id: WorldID, region_id: RegionID, id: ID) -> Self {
+        Self {
+            universe_id,
+            world_id,
+            region_id,
+            id
+        }
+    }
+
+    pub fn to_creator(&self) -> IdentityBuilder {
+        let mut creator = Identity::creator();
+        creator.all(self.universe_id, self.world_id, self.region_id, self.id).unwrap();
+        creator
+    }
+
+    pub const fn from_uid(value: UID) -> Self {
+        Self {
+            universe_id:    (value >> UNIVERSE_ID_SHIFT)    as UniverseID,
+            world_id:       (value >> WORLD_ID_SHIFT)       as WorldID,
+            region_id:      (value >> REGION_ID_SHIFT)      as RegionID,
+            id:             (value >> ID_SHIFT)             as ID 
+        }
+    }
+
+    pub const fn to_uid(&self) -> UID {
+        0
+        | ((self.universe_id as UID) << UNIVERSE_ID_SHIFT)
+        | ((self.world_id    as UID) << WORLD_ID_SHIFT)
+        | ((self.region_id   as UID) << REGION_ID_SHIFT)
+        | ((self.id          as UID) << ID_SHIFT)
+    }
+
+    pub const fn into_uid(self) -> UID {
+        self.to_uid()
+    }
+}
+
+impl Into<UID> for Identity {
+    fn into(self) -> UID {
+        self.into_uid()
+    }
+}
+
+impl From<UID> for Identity {
+    fn from(value: UID) -> Self {
+        Self::from_uid(value)
     }
 }
 
@@ -67,19 +128,8 @@ pub enum IdentityField {
     UniverseID,
 }
 
-impl IdentityField {
-    pub const CLASSNAME: &'static str = "Identity";
-    pub const FIELDNAME_ID: &'static str = "id";
-    pub const FIELDNAME_REGION_ID: &'static str = "region_id";
-    pub const FIELDNAME_WORLD_ID: &'static str = "world_id";
-    pub const FIELDNAME_UNIVERSE_ID: &'static str = "universe_id";
-
-    pub const FIELD_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_ID, FieldValueType::String);
-    pub const FIELD_REGION_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_REGION_ID, FieldValueType::StringArray);
-    pub const FIELD_WORLD_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_WORLD_ID, FieldValueType::String);
-    pub const FIELD_UNIVERSE_ID: Field = Field::new(Self::CLASSNAME, Self::FIELDNAME_UNIVERSE_ID, FieldValueType::String);
-
-    pub const fn field(&self) -> &'static Field {
+impl Fields for IdentityField {
+    fn field(&self) -> &'static Field {
         match self {
             Self::ID => &Self::FIELD_ID,
             Self::RegionID => &Self::FIELD_REGION_ID,
@@ -89,13 +139,21 @@ impl IdentityField {
     }
 }
 
+impl IdentityField {
+    const CLASSNAME: &'static str = "Identity";
+    const FIELD_UNIVERSE_ID: Field = Field::new(Self::CLASSNAME, "universe_id", FieldValueType::UnsignedInteger);
+    const FIELD_WORLD_ID: Field = Field::new(Self::CLASSNAME, "world_id", FieldValueType::UnsignedInteger);
+    const FIELD_REGION_ID: Field = Field::new(Self::CLASSNAME, "region_id", FieldValueType::UnsignedInteger);
+    const FIELD_ID: Field = Field::new(Self::CLASSNAME, "id", FieldValueType::UnsignedInteger);
+}
+
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct IdentityBuilder {
     builder_mode: BuilderMode,
-    id: Option<ID>,
-    region_id: Option<RegionID>,
+    universe_id: Option<UniverseID>,
     world_id: Option<WorldID>,
-    universe_id: Option<UniverseID>
+    region_id: Option<RegionID>,
+    id: Option<ID>
 }
 
 impl Builder for IdentityBuilder {
@@ -105,10 +163,10 @@ impl Builder for IdentityBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            id: None,
-            region_id: None,
+            universe_id: None,
             world_id: None,
-            universe_id: None
+            region_id: None,
+            id: None,
         }
     }
 
@@ -126,14 +184,15 @@ impl Builder for IdentityBuilder {
     fn create(self) -> Result<Creation<Self::BuilderType>> {
         let identity = Identity {
             id: self.id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_ID})?,
+                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::ID.field().name()})?,
             region_id: self.region_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_REGION_ID})?,
+                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::RegionID.field().name()})?,
             world_id: self.world_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_WORLD_ID})?,
+                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::WorldID.field().name()})?,
             universe_id: self.universe_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::FIELDNAME_UNIVERSE_ID})?
+                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::UniverseID.field().name()})?
         };
+
         Ok(Creation::new(self, identity))
     }
 
@@ -182,11 +241,20 @@ impl IdentityBuilder {
         Ok(())
     }
 
-    pub fn guid(&mut self, id: ID, region_id: RegionID, world_id: WorldID, universe_id: UniverseID) -> Result<()> {
-        self.id(id)?;
-        self.region_id(region_id)?;
-        self.world_id(world_id)?;
+    pub fn all(&mut self, universe_id: UniverseID, world_id: WorldID, region_id: RegionID, id: ID) -> Result<()> {
         self.universe_id(universe_id)?;
+        self.world_id(world_id)?;
+        self.region_id(region_id)?;
+        self.id(id)?;
+        Ok(())
+    }
+
+    pub fn uid(&mut self, uid: UID) -> Result<()> {
+        let identity = Identity::from_uid(uid);
+        self.universe_id(identity.universe_id);
+        self.world_id(identity.world_id);
+        self.region_id(identity.region_id);
+        self.id(identity.id);
         Ok(())
     }
 
@@ -217,24 +285,28 @@ pub trait BuildableIdentity: Builder {
     }
 }
 
-impl Built for Identity {
-    type BuilderType = IdentityBuilder;
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl Identity {
-    pub fn new(id: ID, region_id: RegionID, world_id: WorldID, universe_id: UniverseID) -> Self {
-        Self {
-            id,
-            region_id,
-            world_id,
-            universe_id,
+    #[test]
+    fn test_uid_min_mid_max() {
+        let expected: [(UniverseID, WorldID, RegionID, ID);4] = [
+            (UniverseID::MIN, WorldID::MIN, RegionID::MIN, ID::MIN),
+            (UniverseID::MIN + 1, WorldID::MIN + 1, RegionID::MIN + 1, ID::MIN + 1),
+            (UniverseID::MAX / 2, WorldID::MAX / 2, RegionID::MAX / 2, ID::MAX / 2),
+            (UniverseID::MAX, WorldID::MAX, RegionID::MAX, ID::MAX),
+        ];
+
+        for (universe_id, world_id, region_id, id) in expected {
+            let identity = Identity::new(universe_id, world_id, region_id, id);
+            let uid: UID = identity.into();
+            let identity = Identity::from(uid);
+
+            assert_eq!(universe_id, identity.universe_id());
+            assert_eq!(world_id, identity.world_id());
+            assert_eq!(region_id, identity.region_id());
+            assert_eq!(id, identity.id());
         }
     }
-
-    pub fn to_creator(&self) -> IdentityBuilder {
-        let mut creator = Identity::creator();
-        creator.guid(self.id, self.region_id, self.world_id, self.universe_id).unwrap();
-        creator
-    }
 }
-

@@ -119,12 +119,6 @@ impl Descriptive for End {
     }
 }
 
-impl DescriptiveMut for End {
-    fn descriptor_mut(&mut self) -> &mut Descriptor {
-        &mut self.descriptor
-    }
-}
-
 impl End {
     /// The identity of the Area that this end provides an exit/entrance for.
     pub fn area_identity(&self) -> &Identity {

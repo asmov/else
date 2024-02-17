@@ -52,7 +52,7 @@ pub mod hardcoded {
         /// Creates the starting room that all players join
         pub fn create_terminal() -> World {
             let mut world_creator = World::creator();
-            world_creator.identity_builder().guid(0, 0, 1, 1).unwrap();
+            world_creator.identity_builder().all(1, 1, 0, 0).unwrap();
             world_creator.frame(0).unwrap();
             world_creator.descriptor({
                     let mut descriptor = Descriptor::creator();
@@ -118,7 +118,7 @@ pub mod testing {
     pub fn create_world() -> World {
         let mut world_creator = model::World::creator();
 
-        world_creator.identity_builder().guid(0, 0, 1, 1).unwrap();
+        world_creator.identity_builder().all(1, 1, 0, 0).unwrap();
         world_creator.frame(0).unwrap();
 
         world_creator.descriptor({
@@ -380,14 +380,12 @@ mod tests {
 
         // test simple mutation
 
-        let gray_cat = world.find_thing_mut("gray_cat").unwrap();
+        let mut gray_cat = world.find_thing_mut("gray_cat").unwrap();
 
-        let mut gray_cat_descriptor_editor = Descriptor::editor();
-        gray_cat_descriptor_editor.description(s!("A slightly gray cat")).unwrap();
-        gray_cat_descriptor_editor.modify(gray_cat.descriptor_mut()).unwrap();
-
-        let gray_cat_editor = Entity::editor();
-        gray_cat_editor.modify(gray_cat.entity_mut()).unwrap();
+        let mut character_editor = Character::editor();
+        character_editor.entity_builder().descriptor_builder()
+            .description(s!("A slightly gray cat")).unwrap();
+        character_editor.thing_builder().modify(&mut gray_cat).unwrap();
 
         let gray_cat = world.find_thing("gray_cat").unwrap();
         assert_eq!("A slightly gray cat", gray_cat.description().unwrap());

@@ -4,7 +4,7 @@ pub struct AreaView {
     identity: Identity,
     descriptor: Descriptor,
     things: Vec<ThingView>, // only those visible to the viewer
-    routes: Vec<Route> // safe to hand to the client (for now)
+    route_ids: Vec<UID> // safe to hand to the client (for now)
 }
 
 impl Built for AreaView {
@@ -24,8 +24,8 @@ impl Descriptive for AreaView {
 }
 
 impl Routing for AreaView {
-    fn routes(&self) -> &Vec<Route> {
-        &self.routes
+    fn route_ids(&self) -> &Vec<UID> {
+        &self.route_ids
     }
 }
 
@@ -98,13 +98,13 @@ impl Builder for AreaViewBuilder {
         let identity = Creation::try_assign(&mut self.identity, AreaViewFields::Identity)?;
         let descriptor = Creation::try_assign(&mut self.descriptor, AreaViewFields::Descriptor)?;
         let things = Creation::assign_vec(&mut self.things)?;
-        let routes = Creation::assign_vec(&mut self.routes)?;
+        let route_ids = Creation::assign_vec_uid(&mut self.routes)?;
 
         let area_view = AreaView {
             identity,
             descriptor,
             things,
-            routes,
+            route_ids,
         };
 
         Ok(Creation::new(self, area_view))
@@ -123,7 +123,7 @@ impl Builder for AreaViewBuilder {
         }
 
         Creation::modify_vec(&mut self.things, &mut original.things)?;
-        Creation::modify_vec(&mut self.routes, &mut original.routes)?;
+        Creation::modify_vec_uid(&mut self.routes, &mut original.route_ids)?;
 
         Ok(Modification::new(self, fields_changed))
     }

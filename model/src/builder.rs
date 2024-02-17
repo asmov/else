@@ -1,5 +1,7 @@
 use crate::error::*;
+use crate::Identifiable;
 use crate::World;
+use crate::identity::UID;
 
 /// Performs all write operations for game data objects. Nothing is mutated directly on the object itself.  
 /// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
@@ -150,6 +152,24 @@ where
             .collect())
     }
 
+    pub fn assign_vec_uid(creators: &mut Vec<B>) -> Result<Vec<UID>>
+    where
+        B::ModelType: Identifiable
+    {
+        Ok(creators
+            .drain(0..)
+            .map(|creator| creator.create())
+            .collect::<Result<Vec<_>>>()?
+            .into_iter()
+            .map(|creation| {
+                let (builder, model) = creation.split();
+                creators.push(builder);
+                model.uid()
+            })
+            .collect())
+    }
+
+
     pub fn modify_vec(creators: &mut Vec<B>, originals: &mut Vec<B::ModelType>) -> Result<()> {
        Ok(creators 
             .drain(0..)
@@ -163,6 +183,21 @@ where
             }))
     }
 
+    pub fn modify_vec_uid(creators: &mut Vec<B>, originals: &mut Vec<UID>) -> Result<()>
+    where
+        B::ModelType: Identifiable
+    {
+       Ok(creators 
+            .drain(0..)
+            .map(|creator| creator.create())
+            .collect::<Result<Vec<_>>>()?
+            .into_iter()
+            .for_each(|creation| {
+                let (builder, model) = creation.split();
+                originals.push(model.uid());
+                creators.push(builder);
+            }))
+    }
 }
 
 /// The result of a Builder::modify() call. It is what is serialized and sync'd out to any mirrors, if necessary.
@@ -194,6 +229,14 @@ where
 
     pub fn take_builder(self) -> B {
         self.builder
+    }
+
+    pub fn assign(editor_option: &mut Option<B>, original_value: &mut B::ModelType) -> Result<()> {
+        let builder = editor_option.take().unwrap()
+            .modify(original_value)?
+            .take_builder();
+        let _ = editor_option.insert(builder);
+        Ok(())
     }
 }
 

@@ -1,4 +1,4 @@
 use crate::entity::*;
 
-pub trait Something: Exists + ExistsMut {}
+pub trait Something: Exists {}
 

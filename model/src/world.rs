@@ -265,21 +265,9 @@ impl Identifiable for World {
     }
 }
 
-impl IdentifiableMut for World {
-    fn identity_mut(&mut self) -> &mut Identity {
-        &mut self.identity
-    }
-}
-
 impl Descriptive for World {
     fn descriptor(&self) -> &Descriptor {
         &self.descriptor
-    }
-}
-
-impl DescriptiveMut for World {
-    fn descriptor_mut(&mut self) -> &mut Descriptor {
-        &mut self.descriptor
     }
 }
 
@@ -342,11 +330,11 @@ impl World {
         let _area = self.area(area_id).expect("Area not found");
         let thing_id = self.generate_id();
 
-        thing.entity_builder().identity_builder().guid(
-            thing_id,
-            self.identity.region_id(),
+        thing.entity_builder().identity_builder().all(
+            self.identity.universe_id(),
             self.identity.world_id(),
-            self.identity.universe_id())?;
+            self.identity.region_id(),
+            thing_id)?;
 
         let mut world_editor = World::editor();
         world_editor.add_thing(thing)?;

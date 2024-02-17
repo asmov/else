@@ -73,8 +73,17 @@ impl Builder for CharacterBuilder {
         Ok(Creation::new(ThingBuilder::Character(self), Thing::Character(character)))
     }
 
-    fn modify(self, _original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
-        Ok(Modification::new(ThingBuilder::Character(self), Vec::new()))
+    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
+        let mut fields_changed = Vec::new();
+
+        // todo
+        if self.entity.is_some() {
+            let modification = self.entity.take().unwrap().modify(&mut original.entity)?;
+            self.entity = Some(modification.take_builder());
+            fields_changed.push(CharacterField::Entity.field());
+        }
+
+        Ok(Modification::new(ThingBuilder::Character(self), fields_changed))
     }
 }
 
@@ -88,33 +97,15 @@ impl Identifiable for Character {
     }
 }
 
-impl IdentifiableMut for Character {
-    fn identity_mut(&mut self) -> &mut Identity {
-        self.entity_mut().identity_mut()
-    }
-}
-
 impl Descriptive for Character {
     fn descriptor(&self) -> &Descriptor{
         self.entity().descriptor()
     }
 }
 
-impl DescriptiveMut for Character {
-    fn descriptor_mut(&mut self) -> &mut Descriptor {
-        self.entity_mut().descriptor_mut()
-    }
-}
-
 impl Exists for Character {
     fn entity(&self) -> &Entity {
         &self.entity
-    }
-}
-
-impl ExistsMut for Character {
-    fn entity_mut(&mut self) -> &mut Entity {
-        &mut self.entity
     }
 }
 
