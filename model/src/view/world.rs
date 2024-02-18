@@ -62,10 +62,10 @@ impl Class for WorldViewField {
 impl WorldViewField {
     const CLASS_ID: ClassID = ClassIdent::WorldView as ClassID;
     const CLASSNAME: &'static str = "WorldView";
-    const FIELD_UID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "uid", FieldValueType::UnsignedInteger);
-    const FIELD_FRAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "frame", FieldValueType::UnsignedInteger);
+    const FIELD_UID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "uid", FieldValueType::UID);
+    const FIELD_FRAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "frame", FieldValueType::U64);
     const FIELD_AREA: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "area", FieldValueType::Model);
-    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "routes", FieldValueType::ObjectIDArray);
+    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "routes", FieldValueType::VecUID);
 }
 
 pub struct WorldViewBuilder {

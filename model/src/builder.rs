@@ -251,25 +251,28 @@ pub trait Class: Fields {
 /// Represents data types for model fields that are available to APIs.
 #[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
 pub enum FieldValueType {
+    /// bool
+    Bool,
+    /// i64
+    I64,
+    /// u64
+    U64,
+    /// f64
+    F64,
+    /// u128
     UID,
     /// String
     String, 
-    /// i64
-    Integer,
-    /// u64
-    UnsignedInteger,
-    /// f64
-    Float,
-    /// bool
-    Boolean,
-    Model,
-    /// Vec<Identity>
-    ObjectIDArray,
-    ObjectArray,
-    /// Vec<String>
-    StringArray,
     /// Fieldless enum
-    Enum
+    Enum,
+    /// impl Builder
+    Model,
+    /// Vec<UID>
+    VecUID,
+    /// Vec<impl Builder>
+    VecModel,
+    /// Vec<String>
+    VecString,
 }
 
 /// Represents a specific field of a model that is available to APIs

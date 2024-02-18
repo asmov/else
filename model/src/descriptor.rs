@@ -150,7 +150,7 @@ impl DescriptorField {
     const CLASS_ID: ClassID = ClassIdent::Descriptor as ClassID;
     const CLASSNAME: &'static str = "Descriptor";
     const FIELD_NAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "name", FieldValueType::String);
-    const FIELD_KEYWORDS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "keywords", FieldValueType::StringArray);
+    const FIELD_KEYWORDS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "keywords", FieldValueType::VecString);
     const FIELD_KEY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "key", FieldValueType::String);
     const FIELD_SHORT_DESCRIPTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "short_description", FieldValueType::String);
     const FIELD_DESCRIPTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "description", FieldValueType::String);

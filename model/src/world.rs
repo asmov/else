@@ -56,11 +56,11 @@ impl WorldField {
     const FIELDNAME_THINGS: &'static str = "things";
 
     const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
-    const FIELD_FRAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_FRAME, FieldValueType::UnsignedInteger);
+    const FIELD_FRAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_FRAME, FieldValueType::U64);
     const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_AREAS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_AREAS, FieldValueType::ObjectArray);
-    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectArray);
-    const FIELD_THINGS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_THINGS, FieldValueType::ObjectArray);
+    const FIELD_AREAS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_AREAS, FieldValueType::VecModel);
+    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::VecModel);
+    const FIELD_THINGS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_THINGS, FieldValueType::VecModel);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

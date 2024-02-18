@@ -60,7 +60,7 @@ impl RoutineCortexField {
     const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
     const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UnsignedInteger);
+    const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::U64);
     const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
 }
 

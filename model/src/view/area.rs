@@ -1,4 +1,4 @@
-use crate::{builder::*, descriptor::*, identity::*, route::*, view::thing::*, classes::*};
+use crate::{error::*, builder::*, descriptor::*, identity::*, route::*, view::thing::*, classes::*};
 
 pub struct AreaView {
     uid: UID,
@@ -36,7 +36,7 @@ impl AreaView {
 }
 
 pub enum AreaViewField {
-    Identity,
+    UID,
     Descriptor,
     Things,
     Routes
@@ -45,7 +45,7 @@ pub enum AreaViewField {
 impl Fields for AreaViewField {
     fn field(&self) -> &'static Field {
         match self {
-            Self::Identity => Self::FIELD_IDENTITY,
+            Self::UID => Self::FIELD_UID,
             Self::Descriptor => Self::FIELD_DESCRIPTOR,
             Self::Things => Self::FIELD_THINGS,
             Self::Routes => Self::FIELD_ROUTES,
@@ -66,10 +66,10 @@ impl Class for AreaViewField {
 impl AreaViewField {
     const CLASS_ID: ClassID = ClassIdent::AreaView as ClassID;
     const CLASSNAME: &'static str = "AreaView";
-    const FIELD_IDENTITY: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Identity", FieldValueType::Model);
-    const FIELD_DESCRIPTOR: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Descriptor", FieldValueType::Model);
-    const FIELD_THINGS: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Things", FieldValueType::ObjectArray);
-    const FIELD_ROUTES: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Routes", FieldValueType::ObjectArray);
+    const FIELD_UID: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "uid", FieldValueType::UID);
+    const FIELD_DESCRIPTOR: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "descriptor", FieldValueType::Model);
+    const FIELD_THINGS: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "things", FieldValueType::VecModel);
+    const FIELD_ROUTES: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "routes", FieldValueType::VecModel);
 }
 
 pub struct AreaViewBuilder {
@@ -105,14 +105,14 @@ impl Builder for AreaViewBuilder {
         self.builder_mode
     }
 
-    fn create(mut self) -> crate::Result<Creation<Self::BuilderType>> {
-        let identity = Creation::try_assign(&mut self.identity, AreaViewField::Identity)?;
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let uid = Creation::try_assign(&mut self.identity, AreaViewField::UID)?.to_uid();
         let descriptor = Creation::try_assign(&mut self.descriptor, AreaViewField::Descriptor)?;
         let things = Creation::assign_vec(&mut self.things)?;
         let route_ids = Creation::assign_vec_uid(&mut self.routes)?;
 
         let area_view = AreaView {
-            uid: identity.to_uid(),
+            uid,
             descriptor,
             things,
             route_ids,
@@ -121,12 +121,12 @@ impl Builder for AreaViewBuilder {
         Ok(Creation::new(self, area_view))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> crate::Result<Modification<Self::BuilderType>> {
+    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
         if self.identity.is_some() {
             original.uid = Creation::assign(&mut self.identity)?.to_uid();
-            fields_changed.push(AreaViewField::Identity.field());
+            fields_changed.push(AreaViewField::UID.field());
         }
         if self.descriptor.is_some() {
             original.descriptor = Creation::assign(&mut self.descriptor)?;
@@ -145,7 +145,7 @@ impl Builder for AreaViewBuilder {
 }
 
 impl BuildableIdentity for AreaViewBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> crate::Result<()> {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
         self.identity = Some(identity);
         Ok(())
     }
@@ -164,7 +164,7 @@ impl BuildableIdentity for AreaViewBuilder {
 }
 
 impl BuildableDescriptor for AreaViewBuilder {
-    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> crate::Result<()> {
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
         self.descriptor = Some(descriptor);
         Ok(())
     }
@@ -179,14 +179,14 @@ impl BuildableDescriptor for AreaViewBuilder {
 }
 
 impl BuildableRouteVector for AreaViewBuilder {
-    fn add_route(&mut self, route: RouteBuilder) -> crate::Result<()> {
+    fn add_route(&mut self, route: RouteBuilder) -> Result<()> {
         self.routes.push(route);
         Ok(())
     }
 }
 
 impl AreaViewBuilder {
-    pub fn add_thing(&mut self, thing: ThingViewBuilder) -> crate::Result<()> {
+    pub fn add_thing(&mut self, thing: ThingViewBuilder) -> Result<()> {
         self.things.push(thing);
         Ok(())
     }

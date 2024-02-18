@@ -223,10 +223,10 @@ impl Class for IdentityField {
 impl IdentityField {
     const CLASS_ID: ClassID = ClassIdent::Identity as ClassID;
     const CLASSNAME: &'static str = "Identity";
-    const FIELD_UNIVERSE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "universe_id", FieldValueType::UnsignedInteger);
-    const FIELD_WORLD_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "world_id", FieldValueType::UnsignedInteger);
-    const FIELD_CLASS_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "class_id", FieldValueType::UnsignedInteger);
-    const FIELD_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "id", FieldValueType::UnsignedInteger);
+    const FIELD_UNIVERSE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "universe_id", FieldValueType::U64);
+    const FIELD_WORLD_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "world_id", FieldValueType::U64);
+    const FIELD_CLASS_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "class_id", FieldValueType::U64);
+    const FIELD_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "id", FieldValueType::U64);
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

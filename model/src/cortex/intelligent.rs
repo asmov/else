@@ -58,8 +58,8 @@ impl IntelligentCortexField {
     pub const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
     pub const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    pub const FIELD_INTERFACE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_INTERFACE_ID, FieldValueType::UnsignedInteger);
-    pub const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UnsignedInteger);
+    pub const FIELD_INTERFACE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_INTERFACE_ID, FieldValueType::U64);
+    pub const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::U64);
     pub const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
 
     pub const fn field(&self) -> &'static Field {
