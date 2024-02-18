@@ -51,8 +51,8 @@ impl EntityField {
     //pub const FIELDNAME_INVENTORY: &'static str = "inventory";
     //pub const FIELDNAME_COMPOSITION: &'static str = "composition";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
     //pub const FIELD_INVENTORY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
     //pub const FIELD_COMPOSITION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
 }

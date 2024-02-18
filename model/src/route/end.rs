@@ -47,9 +47,9 @@ impl EndField {
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_DIRECTION: &'static str = "direction";
 
-    const FIELD_AREA_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Object);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    const FIELD_DIRECTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DIRECTION, FieldValueType::Object);
+    const FIELD_AREA_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_DIRECTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DIRECTION, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

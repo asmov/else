@@ -38,8 +38,8 @@ impl CharacterField {
     const FIELDNAME_ENTITY: &'static str = "entity";
     const FIELDNAME_CORTEX: &'static str = "cortex";
 
-    const FIELD_ENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ENTITY, FieldValueType::Object);
-    const FIELD_CORTEX: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_CORTEX, FieldValueType::Object);
+    const FIELD_ENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ENTITY, FieldValueType::Model);
+    const FIELD_CORTEX: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_CORTEX, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

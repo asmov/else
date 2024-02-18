@@ -84,10 +84,10 @@ impl RouteField {
     const FIELDNAME_POINT_A: &'static str = "point_a";
     const FIELDNAME_POINT_B: &'static str = "point_b";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
-    const FIELD_POINT_A: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_POINT_A, FieldValueType::Object);
-    const FIELD_POINT_B: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_POINT_B, FieldValueType::Object);
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_POINT_A: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_POINT_A, FieldValueType::Model);
+    const FIELD_POINT_B: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_POINT_B, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

@@ -251,6 +251,7 @@ pub trait Class: Fields {
 /// Represents data types for model fields that are available to APIs.
 #[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
 pub enum FieldValueType {
+    UID,
     /// String
     String, 
     /// i64
@@ -261,7 +262,7 @@ pub enum FieldValueType {
     Float,
     /// bool
     Boolean,
-    Object,
+    Model,
     /// Vec<Identity>
     ObjectIDArray,
     ObjectArray,

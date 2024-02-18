@@ -66,8 +66,8 @@ impl Class for AreaViewField {
 impl AreaViewField {
     const CLASS_ID: ClassID = ClassIdent::AreaView as ClassID;
     const CLASSNAME: &'static str = "AreaView";
-    const FIELD_IDENTITY: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Identity", FieldValueType::Object);
-    const FIELD_DESCRIPTOR: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Descriptor", FieldValueType::Object);
+    const FIELD_IDENTITY: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Identity", FieldValueType::Model);
+    const FIELD_DESCRIPTOR: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Descriptor", FieldValueType::Model);
     const FIELD_THINGS: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Things", FieldValueType::ObjectArray);
     const FIELD_ROUTES: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "Routes", FieldValueType::ObjectArray);
 }

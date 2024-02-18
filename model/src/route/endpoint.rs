@@ -36,7 +36,7 @@ impl EndpointField {
     const CLASSNAME: &'static str = "Endpoint";
     const FIELDNAME_END: &'static str = "end";
 
-    const FIELD_END: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_END, FieldValueType::Object);
+    const FIELD_END: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_END, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

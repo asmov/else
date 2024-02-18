@@ -61,8 +61,8 @@ impl AreaField {
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_OCCUPANTS: &'static str = "occupants";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Object);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Object);
+    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
     const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::ObjectIDArray);
     const FIELD_OCCUPANTS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_OCCUPANTS, FieldValueType::ObjectIDArray);
 }

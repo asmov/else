@@ -52,8 +52,8 @@ impl JunctionField {
     const FIELDNAME_ENTRANCES: &'static str = "entrances";
     const FIELDNAME_EXIT: &'static str = "exit";
 
-    const FIELD_ENTRANCES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ENTRANCES, FieldValueType::Object);
-    const FIELD_EXIT: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_EXIT, FieldValueType::Object);
+    const FIELD_ENTRANCES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ENTRANCES, FieldValueType::Model);
+    const FIELD_EXIT: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_EXIT, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
