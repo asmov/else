@@ -1,4 +1,4 @@
-use crate::{classes::*, error::*, builder::*, identity::*, descriptor::*, world::World};
+use crate::{classes::*, error::*, builder::*, identity::*, descriptor::*, thing::*, world::World};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -9,7 +9,7 @@ pub struct Area {
     uid: UID,
     descriptor: Descriptor,
     route_id_map: Vec<ID>,
-    occupant_thing_ids: Vec<ID>
+    occupant_thing_ids: Vec<UID>
 }
 
 impl Identifiable for Area {
@@ -72,6 +72,7 @@ pub struct AreaBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
+    occupant_thing_ids: Vec<VecOp<UID>>
 }
 
 impl Builder for AreaBuilder {
@@ -82,7 +83,8 @@ impl Builder for AreaBuilder {
         Self {
             builder_mode: BuilderMode::Creator,
             identity: None,
-            descriptor: None
+            descriptor: None,
+            occupant_thing_ids: Vec::new()
         }
     }
 
@@ -100,12 +102,18 @@ impl Builder for AreaBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let identity = Creation::try_assign(&mut self.identity, AreaField::Identity)?;
         let descriptor = Creation::try_assign(&mut self.descriptor, AreaField::Descriptor)?;
+        let occupant_thing_ids = self.occupant_thing_ids.iter()
+            .map(|op| match op {
+                VecOp::Add(uid) => *uid,
+                VecOp::Remove(uid) => unreachable!("VecOp::Remove not possible in AreaBuilder::create") 
+            })
+            .collect();
 
         let area = Area {
             uid: identity.into_uid(),
             descriptor,
             route_id_map: Vec::new(), //todo
-            occupant_thing_ids: Vec::new(), //todo
+            occupant_thing_ids
         };
 
         Ok(Creation::new(self, area))
@@ -124,6 +132,19 @@ impl Builder for AreaBuilder {
                 .take_builder());
             
             fields_changed.push(AreaField::Descriptor.field());
+        }
+
+        if !self.occupant_thing_ids.is_empty() {
+            for vecop in &self.occupant_thing_ids {
+                match *vecop {
+                    VecOp::Add(uid) => original.occupant_thing_ids.push(uid),
+                    VecOp::Remove(uid) => {
+                        let index = original.occupant_thing_ids.iter().position(|&x| x == uid)
+                            .ok_or_else(|| Error::ModelNotFoundFor{model: "Thing", uid, op: "AreaBuilder::remove_occupant()"})?;
+                        original.occupant_thing_ids.remove(index);
+                    }
+                }
+            }
         }
 
         Ok(Modification::new(self, fields_changed))
@@ -181,4 +202,17 @@ impl Built for Area {
 pub trait BuildableAreaVector {
     fn add_area(&mut self, area: AreaBuilder) -> Result<()>; 
 }
+
+impl AreaBuilder {
+    pub fn add_occupant(&mut self, thing_uid: UID) -> Result<&mut Self> {
+        self.occupant_thing_ids.push(VecOp::Add(thing_uid));
+        Ok(self)
+    }
+
+    pub fn remove_occupant(&mut self, thing_uid: UID) -> Result<&mut Self> {
+        assert!(self.builder_mode() == BuilderMode::Editor, "AreaBuilder::remove_occupant only allowed in Editor mode");
+        self.occupant_thing_ids.push(VecOp::Remove(thing_uid));
+        Ok(self)
+    }
+ }
 

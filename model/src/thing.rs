@@ -1,4 +1,4 @@
-use crate::{error::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*};
+use crate::{error::*, location::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -20,6 +20,15 @@ impl Descriptive for Thing {
     fn descriptor(&self) -> &Descriptor {
         match self {
             Thing::Character(t) => t.descriptor(),
+            Thing::Item(_) => todo!(),
+        }
+    }
+}
+
+impl Located for Thing {
+    fn location(&self) -> Location {
+        match self {
+            Thing::Character(t) => t.location(),
             Thing::Item(_) => todo!(),
         }
     }

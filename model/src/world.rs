@@ -169,6 +169,70 @@ impl Builder for WorldBuilder {
         Self::build_local_identities(original, &mut self.routes, universe_id, world_id)?;
         Self::build_local_identities(original, &mut self.things, universe_id, world_id)?;
 
+        // handle movement of things between locations
+        for thing in &self.things {
+            if let Some(entity_builder) = thing.get_entity() {
+                if let Some(location) = entity_builder.get_location() {
+                    let thing_uid = thing.get_identity().unwrap().get_uid()?;
+                    // remove from current location
+                    if thing.builder_mode() == BuilderMode::Editor {
+                        let old_location = original.thing(thing_uid)?.location();
+                        if old_location.uid() == location.uid() {
+                            continue; // no change to location, skip
+                        }
+
+                        match old_location {
+                            Location::Area(old_area_uid) => {
+                                let mut area_builder = self.areas.iter_mut()
+                                    .find(|area_builder| {
+                                        area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
+                                    });
+                                if area_builder.is_none() {
+                                    let mut area_editor = Area::editor();
+                                    area_editor.identity(IdentityBuilder::editor_from_uid(old_area_uid)).unwrap();
+                                    self.areas.push(area_editor);
+                                    let area_editor = self.areas.iter_mut()
+                                        .find(|area_builder| {
+                                            area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
+                                        })
+                                        .unwrap();
+                                    area_builder = Some(area_editor)
+                                }
+                                area_builder.unwrap().remove_occupant(thing.get_identity().unwrap().get_uid()?)?;
+                            },
+                            Location::Route(_old_route_uid) => todo!(),
+                        }
+                    }
+
+                    match location {
+                        Location::Area(area_uid) => {
+                            let area = original.area_mut(area_uid)?;
+                            let mut area_builder = self.areas.iter_mut()
+                                .find(|area_builder| {
+                                    area_builder.get_identity().unwrap().get_uid().unwrap() == area_uid
+                                });
+                            if area_builder.is_none() { 
+                                let mut area_editor = Area::editor();
+                                area_editor.identity(IdentityBuilder::from_original(&self, area)).unwrap();
+                                self.areas.push(area_editor);
+                                let area_editor = self.areas.iter_mut()
+                                    .find(|area_builder| {
+                                        area_builder.get_identity().unwrap().get_uid().unwrap() == area_uid
+                                    })
+                                    .unwrap();
+                                area_builder = Some(area_editor)
+                            }
+
+                            area_builder.unwrap().add_occupant(thing_uid)?;
+                        },
+                        Location::Route(_area_uid) => {
+                            todo!()
+                        }
+                    }
+                }
+            }
+        }
+
         Creation::modify_vec(&mut self.areas, &mut original.areas)?;
         Creation::modify_vec(&mut self.routes, &mut original.routes)?;
         Creation::modify_vec(&mut self.things, &mut original.things)?;
@@ -297,20 +361,24 @@ impl World {
         id
     }
 
-    pub fn thing(&self, uid: UID) -> Option<&Thing> {
+    pub fn thing(&self, uid: UID) -> Result<&Thing> {
         self.things.iter().find(|thing| thing.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
     }
 
-    pub fn thing_mut(&mut self, uid: UID) -> Option<&mut Thing> {
+    pub fn thing_mut(&mut self, uid: UID) -> Result<&mut Thing> {
         self.things.iter_mut().find(|thing| thing.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
     }
 
-    pub fn area(&self, uid: UID) -> Option<&Area> {
+    pub fn area(&self, uid: UID) -> Result<&Area> {
         self.areas.iter().find(|area| area.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
     }
 
-    pub fn area_mut(&mut self, uid: UID) -> Option<&mut Area> {
+    pub fn area_mut(&mut self, uid: UID) -> Result<&mut Area> {
         self.areas.iter_mut().find(|area| area.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
     }
 
     pub fn find_areas(&self, query: &str) -> Vec<&Area> {
@@ -345,23 +413,22 @@ impl World {
         self.things.iter_mut().find(|thing| thing.key().is_some_and(|k| k == key))
     }
 
-    pub fn spawn_thing(&mut self, mut thing: ThingBuilder, area_uid: UID) -> Result<UID> {
-        let _area = self.area(area_uid).expect("Area not found");
+    pub fn spawn_thing(&mut self, mut thing: ThingBuilder) -> Result<(UID, Modification<WorldBuilder>)> {
         let thing_id = self.generate_id();
+        let class_id = thing.class_id();
         let world_identity = self.uid().into_identity();
 
         let identity_builder = thing.entity_builder().identity_builder();
         identity_builder
             .universe_id(world_identity.universe_id())?
             .world_id(world_identity.world_id())?
-            .class_id(ClassID::MAX)? //todo: determine class id from builder
+            .class_id(class_id)?
             .id(thing_id)?;
         let uid = identity_builder.get_uid()?;
 
         let mut world_editor = World::editor();
         world_editor.add_thing(thing)?;
-        let _result = world_editor.modify(self)?;
-
-        Ok(uid)
+        let modification = world_editor.modify(self)?;
+        Ok((uid, modification))
     }
 }

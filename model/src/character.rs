@@ -1,4 +1,4 @@
-pub use crate::{s, classes::*, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, cortex::*};
+pub use crate::{location::*, classes::*, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, cortex::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -6,6 +6,42 @@ pub struct Character {
     entity: Entity,
     cortex: Cortex
 }
+
+impl Built for Character {
+    type BuilderType = CharacterBuilder;
+}
+
+impl Identifiable for Character {
+    fn uid(&self) -> UID {
+        self.entity.uid()
+    }
+}
+
+impl Descriptive for Character {
+    fn descriptor(&self) -> &Descriptor{
+        self.entity().descriptor()
+    }
+}
+
+impl Located for Character {
+    fn location(&self) -> Location {
+        self.entity().location()
+    }
+}
+
+impl Exists for Character {
+    fn entity(&self) -> &Entity {
+        &self.entity
+    }
+}
+
+impl Sensitive for Character {
+    fn cortex(&self) -> &Cortex {
+        &self.cortex
+    }
+}
+
+impl Something for Character {}
 
 #[derive(Debug)]
 pub enum CharacterField {
@@ -102,40 +138,6 @@ impl Builder for CharacterBuilder {
     }
 }
 
-impl Built for Character {
-    type BuilderType = CharacterBuilder;
-}
-
-impl Identifiable for Character {
-    fn uid(&self) -> UID {
-        self.entity.uid()
-    }
-}
-
-impl Descriptive for Character {
-    fn descriptor(&self) -> &Descriptor{
-        self.entity().descriptor()
-    }
-}
-
-impl Exists for Character {
-    fn entity(&self) -> &Entity {
-        &self.entity
-    }
-}
-
-impl Sensitive for Character {
-    fn cortex(&self) -> &Cortex {
-        &self.cortex
-    }
-}
-
-impl SensitiveMut for Character {
-    fn cortext_mut(&mut self) -> &mut Cortex {
-        &mut self.cortex
-    }
-}
-
 impl BuildableCortex for CharacterBuilder {
     fn cortex(&mut self, cortex: CortexBuilder) -> Result<()> {
         self.cortex = Some(cortex);
@@ -171,5 +173,3 @@ impl ThingBuilderVariant for CharacterBuilder {
         ThingBuilder::Character(self)
     }
 }
-
-impl Something for Character {}

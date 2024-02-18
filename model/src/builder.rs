@@ -78,6 +78,27 @@ pub enum BuilderMode {
     Editor
 }
 
+/// Represents an Add or Remove operation against a Vec
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub enum VecOp<T> {
+    Add(T),
+    Remove(T)
+}
+
+impl<T> VecOp<T> {
+    pub fn is_add(&self) -> bool {
+        match self {
+            VecOp::Add(_) => true,
+            VecOp::Remove(_) => false
+        }
+    }
+
+    pub fn is_remove(&self) -> bool {
+        !self.is_add()
+    }
+}
+
+
 /// The result of a Builder::create() call. It is what is serialized and sync'd out to any mirrors, if necessary.
 ///
 /// Implementation requires that a Builder and its BuilderType are the same. Thus, when using an enum dispatch pattern,
@@ -169,6 +190,8 @@ where
     }
 
 
+    //todo: conditionally call create() or modify() based on the builder's mode
+    //todo: move this to the Builder trait
     pub fn modify_vec(creators: &mut Vec<B>, originals: &mut Vec<B::ModelType>) -> Result<()> {
        Ok(creators 
             .drain(0..)

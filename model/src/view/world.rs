@@ -18,8 +18,8 @@ impl Built for WorldView {
 }
 
 impl WorldView {
-    pub fn frame(&self) -> &Frame {
-        &self.frame
+    pub fn frame(&self) -> Frame {
+        self.frame
     }
 
     pub fn area_view(&self) -> &AreaView {

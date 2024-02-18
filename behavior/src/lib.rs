@@ -77,10 +77,11 @@ impl Actor for MultiplyAction {
                 descriptor.key(format!("{}_{}", thing.name(), self.frame))?;
                 descriptor
             })?;
+            entity.location(thing.location()).unwrap();
             entity
         })?;
 
-        let _id = world.spawn_thing(character.thing_builder(), 1).unwrap();
+        let _ = world.spawn_thing(character.thing_builder()).unwrap();
         todo!()
         //Ok(Vec::new())
     }

@@ -33,10 +33,11 @@ mod tests {
                 descriptor_creator.description(s!("A gray cat")).unwrap();
                 descriptor_creator
             }).unwrap();
+            entity_creator.location(Location::Area(area.uid())).unwrap();
             entity_creator
         }).unwrap();
 
-        let thing_id = world.spawn_thing(character_creator.thing_builder(), area.uid()).unwrap();
+        let thing_id = world.spawn_thing(character_creator.thing_builder()).unwrap().0;
         let thing = world.thing(thing_id).unwrap();
 
         assert_eq!("A gray cat", thing.description().unwrap());
@@ -47,8 +48,7 @@ mod tests {
     fn test_manual_building() {
         let mut world = testing::create_world();
 
-        let litterbox_id = world.find_area(testing::CAT_HOUSE).unwrap()
-            .uid();
+        let cathouse_uid = world.find_area(testing::CAT_HOUSE).unwrap().uid();
 
         let mut gray_cat = model::Character::creator();
         gray_cat.cortex({
@@ -61,15 +61,17 @@ mod tests {
             let mut entity = model::Entity::creator();
             entity.descriptor({
                 let mut descriptor = model::Descriptor::creator();
-                descriptor.key(s!("gray_cat")).unwrap();
-                descriptor.name(s!("Cat")).unwrap();
-                descriptor.description(s!("A gray cat")).unwrap();
+                descriptor
+                    .key(s!("gray_cat")).unwrap()
+                    .name(s!("Cat")).unwrap()
+                    .description(s!("A gray cat")).unwrap();
                 descriptor
             }).unwrap();
+            entity.location(Location::Area(cathouse_uid)).unwrap();
             entity
         }).unwrap();
 
-        let gray_cat_id = world.spawn_thing(gray_cat.thing_builder(), litterbox_id).unwrap();
+        let gray_cat_id = world.spawn_thing(gray_cat.thing_builder()).unwrap().0;
         let gray_cat = world.thing(gray_cat_id).unwrap();
 
         assert_eq!("Cat", gray_cat.name());

@@ -9,7 +9,13 @@ pub enum Error {
     FieldNotSet{ class: &'static str, field: &'static str},
 
     #[error("Required field for `{class}` was not set before `{field}`: {required_field}")]
-    FieldNotSetFirst{ class: &'static str, field: &'static str, required_field: &'static str}
+    FieldNotSetFirst{ class: &'static str, field: &'static str, required_field: &'static str},
+
+    #[error("{model} not found: {uid}")]
+    ModelNotFound{ model: &'static str, uid: u128 },
+
+    #[error("{model} not found for {op}: {uid}")]
+    ModelNotFoundFor{ model: &'static str, uid: u128, op: &'static str }
 }
 
 pub type Result<T> = ::core::result::Result<T, Error>;

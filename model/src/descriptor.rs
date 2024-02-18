@@ -1,5 +1,5 @@
-use crate::{s, classes::*, identity::ClassID, error::*, builder::*};
 use serde;
+use crate::{classes::*, identity::ClassID, error::*, builder::*};
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`
@@ -19,42 +19,6 @@ pub struct Descriptor {
     notes: Option<String>
 }
 
-/* 
-impl bincode::Encode for Descriptor {
-    fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> std::prelude::v1::Result<(), bincode::error::EncodeError> {
-        bincode::Encode::encode(&self.name, encoder)?;
-        Ok(())
-    }
-}
-
-impl bincode::Decode for Descriptor {
-    fn decode<D: bincode::de::Decoder>(decoder: &mut D) -> std::prelude::v1::Result<Self, bincode::error::DecodeError> {
-        Ok(Self{
-            name: bincode::Decode::decode(decoder)?,
-            keywords: bincode::Decode::decode(decoder)?,
-            key: None,//bincode::Decode::decode(decoder)?,
-            short_description: bincode::Decode::decode(decoder)?,
-            description: bincode::Decode::decode(decoder)?,
-            notes: bincode::Decode::decode(decoder)?
-        })
-    }
-}
-
-impl<'de> bincode::BorrowDecode<'de> for Descriptor {
-    fn borrow_decode<D: bincode::de::BorrowDecoder<'de>>(decoder: &mut D) -> std::prelude::v1::Result<Self, bincode::error::DecodeError> {
-        Ok(Self{
-            name: bincode::BorrowDecode::borrow_decode(decoder)?,
-            keywords: bincode::BorrowDecode::borrow_decode(decoder)?,
-            key: bincode::BorrowDecode::borrow_decode(decoder)?,
-            short_description: bincode::BorrowDecode::borrow_decode(decoder)?,
-            description: bincode::BorrowDecode::borrow_decode(decoder)?,
-            notes: bincode::BorrowDecode::borrow_decode(decoder)?
-        })
-    }
-}
-*/
-
-
 /// The trait that provides standard immutable access to a `Descriptor` struct
 pub trait Descriptive {
     /// Fetch the `Descriptor` struct for this object
@@ -70,7 +34,7 @@ pub trait Descriptive {
         &self.descriptor().keywords
     }
 
-    /// Unique to the World. Should be used to permanently reference objects (never use ID).
+    /// Unique to the World. Should be used to permanently reference objects (never use UID manually).
     fn key(&self) -> Option<&String> {
         self.descriptor().key.as_ref()
     }
@@ -234,18 +198,20 @@ impl Builder for DescriptorBuilder {
 
     fn set(&mut self, field_name: &str, raw_value: String) -> Result<()> {
         match DescriptorField::try_from(field_name)? {
-            DescriptorField::Name => self.name(raw_value),
+            DescriptorField::Name => self.name(raw_value)?,
             DescriptorField::Keywords => {
                 self.keywords(
                     raw_value.split_whitespace()
                         .map(|s| s.to_owned())
-                        .collect())
+                        .collect())?
             },
-            DescriptorField::Key => self.key(raw_value),
-            DescriptorField::ShortDescription => self.short_description(raw_value),
-            DescriptorField::Description => self.description(raw_value),
-            DescriptorField::Notes => self.notes(raw_value),
-        }
+            DescriptorField::Key => self.key(raw_value)?,
+            DescriptorField::ShortDescription => self.short_description(raw_value)?,
+            DescriptorField::Description => self.description(raw_value)?,
+            DescriptorField::Notes => self.notes(raw_value)?,
+        };
+
+        Ok(())
     }
 
     fn class_id(&self) -> ClassID {
@@ -254,35 +220,35 @@ impl Builder for DescriptorBuilder {
 }
 
 impl DescriptorBuilder {
-    pub fn key(&mut self, key: String) -> Result<()> {
+    pub fn key(&mut self, key: String) -> Result<&mut Self> {
         self.key = Some(key);
-        Ok(())
+        Ok(self)
     }
 
-    pub fn keywords(&mut self, keywords: Vec<String>) -> Result<()> {
+    pub fn keywords(&mut self, keywords: Vec<String>) -> Result<&mut Self> {
         self.keywords = Some(keywords);
-        Ok(())
+        Ok(self)
     }
 
 
-    pub fn name(&mut self, name: String) -> Result<()> {
+    pub fn name(&mut self, name: String) -> Result<&mut Self> {
         self.name = Some(name);
-        Ok(())
+        Ok(self)
     }
 
-    pub fn description(&mut self, description: String) -> Result<()> {
+    pub fn description(&mut self, description: String) -> Result<&mut Self> {
         self.description = Some(description);
-        Ok(())
+        Ok(self)
     }
 
-    pub fn short_description(&mut self, description: String) -> Result<()> {
+    pub fn short_description(&mut self, description: String) -> Result<&mut Self> {
         self.short_description = Some(description);
-        Ok(())
+        Ok(self)
     }
 
-    pub fn notes(&mut self, notes: String) -> Result<()> {
+    pub fn notes(&mut self, notes: String) -> Result<&mut Self> {
         self.notes = Some(notes);
-        Ok(())
+        Ok(self)
     }
 }
 

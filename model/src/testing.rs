@@ -73,7 +73,10 @@ pub fn create_world() -> World {
         area_creator
     }).unwrap();
 
-    world_creator.add_thing({
+    let (_, mut world) = world_creator.create().unwrap().split();
+    let mut world_editor = World::editor();
+
+    world_editor.add_thing({
         let mut character_creator = model::Character::creator();
         character_creator.cortex({
             let mut routine_cortex_creator = RoutineCortexBuilder::creator();
@@ -81,15 +84,18 @@ pub fn create_world() -> World {
             routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
             routine_cortex_creator.cortex_builder()
         }).unwrap();
-        let descriptor_creator = character_creator.entity_builder().descriptor_builder();
-        descriptor_creator.key(s!(BLACK_CAT)).unwrap();
-        descriptor_creator.name(s!("Black Cat")).unwrap();
-        descriptor_creator.description(s!("A cheerful cat with a shiny black coat")).unwrap();
+        character_creator.entity_builder().descriptor({
+            let mut descriptor_creator = Descriptor::creator();
+            descriptor_creator
+                .key(s!(BLACK_CAT)).unwrap()
+                .name(s!("Black Cat")).unwrap()
+                .description(s!("A cheerful cat with a shiny black coat")).unwrap();
+            descriptor_creator
+        }).unwrap();
+        character_creator.entity_builder().location(Location::Area(world.find_area(CAT_HOUSE).unwrap().uid())).unwrap();
         character_creator.thing_builder()
     }).unwrap();
 
-    let (_, mut world) = world_creator.create().unwrap().split();
-    let mut world_editor = World::editor();
 
     // route: dog_house <--> backyard
     world_editor.add_route({

@@ -367,6 +367,17 @@ impl IdentityBuilder {
         Ok(identity.into())
     }
 
+    pub fn editor_from_uid(uid: UID) -> Self {
+        let identity = Identity::from_uid(uid); 
+        Self {
+            builder_mode: BuilderMode::Editor,
+            universe_id: Some(identity.universe_id()), 
+            world_id: Some(identity.world_id()),
+            class_id: Some(identity.class_id()),
+            id: Some(identity.id())
+        }
+    }
+
     pub fn from_original(builder: &impl Builder, identifiable: &impl Identifiable) -> Self {
         let mut me = Self::builder(builder.builder_mode());
         me.uid(identifiable.uid()).unwrap();

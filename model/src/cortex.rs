@@ -76,12 +76,6 @@ impl Sensitive for Cortex {
     }
 }
 
-impl SensitiveMut for Cortex {
-    fn cortext_mut(&mut self) -> &mut Cortex {
-        self
-    }
-}
-
 pub trait BuildableCortex: Builder {
     fn cortex(&mut self, cortex: CortexBuilder) -> Result<()>;
     fn get_cortex_builder_mut(&mut self) -> &mut Option<CortexBuilder>; 

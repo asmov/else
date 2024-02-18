@@ -1,4 +1,4 @@
-use crate::{classes::*, error::*, identity::*, builder::*, descriptor::*};
+use crate::{classes::*, error::*, identity::*, builder::*, descriptor::*, location::*};
 use serde;
 
 
@@ -6,11 +6,34 @@ use serde;
 pub struct Entity {
     uid: UID,
     descriptor: Descriptor,
+    location: Location
     //inventory: Inventory,
     //composition: Composition
 }
 
-pub trait Exists: Identifiable + Descriptive {
+impl Identifiable for Entity {
+    fn uid(&self) -> UID {
+        self.uid
+    }
+}
+
+impl Built for Entity {
+    type BuilderType = EntityBuilder;
+}
+
+impl Descriptive for Entity {
+    fn descriptor(&self) -> &Descriptor {
+        &self.descriptor
+    }
+}
+
+impl Located for Entity {
+    fn location(&self) -> Location {
+        self.location
+    }
+}
+
+pub trait Exists: Identifiable + Descriptive + Located {
     fn entity(&self) -> &Entity;
 }
 
@@ -18,6 +41,7 @@ pub trait Exists: Identifiable + Descriptive {
 pub enum EntityField {
     Identity,
     Descriptor,
+    Location
     //Inventory,
     //Composition
 }
@@ -27,6 +51,7 @@ impl Fields for EntityField {
         match self {
             Self::Identity => &Self::FIELD_IDENTITY,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
+            Self::Location => &Self::FIELD_LOCATION,
             //Self::Inventory => &Self::FIELD_INVENTORY,
             //Self::Composition => &Self::FIELD_COMPOSITION,
         }
@@ -48,11 +73,13 @@ impl EntityField {
     const CLASSNAME: &'static str = "Entity";
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
+    const FIELDNAME_LOCATION: &'static str = "location";
     //pub const FIELDNAME_INVENTORY: &'static str = "inventory";
     //pub const FIELDNAME_COMPOSITION: &'static str = "composition";
 
     const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
     const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_LOCATION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_LOCATION, FieldValueType::UID);
     //pub const FIELD_INVENTORY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
     //pub const FIELD_COMPOSITION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
 }
@@ -61,6 +88,7 @@ impl EntityField {
 pub struct EntityBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
+    location: Option<Location>,
     descriptor: Option<DescriptorBuilder>
 }
 
@@ -72,7 +100,8 @@ impl Builder for EntityBuilder {
         Self {
             builder_mode: BuilderMode::Creator,
             identity: None,
-            descriptor: None
+            descriptor: None,
+            location: None
         }
     }
 
@@ -88,12 +117,14 @@ impl Builder for EntityBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let identity = Creation::try_assign(&mut self.identity, EntityField::Identity)?;
+        let uid = Creation::try_assign(&mut self.identity, EntityField::Identity)?.to_uid();
         let descriptor = Creation::try_assign(&mut self.descriptor, EntityField::Descriptor)?;
+        let location = Self::try_assign_value(&mut self.location, EntityField::Location)?;
 
         let entity = Entity {
-            uid: identity.to_uid(),
+            uid,
             descriptor,
+            location
         };
 
         Ok(Creation::new(self, entity))
@@ -105,6 +136,10 @@ impl Builder for EntityBuilder {
         if self.descriptor.is_some() { 
             Modification::assign(&mut self.descriptor, &mut original.descriptor)?;
             fields_changed.push(EntityField::Descriptor.field())
+        }
+        if self.location.is_some() {
+            original.location = self.location.unwrap();
+            fields_changed.push(EntityField::Location.field());
         }
 
         Ok(Modification::new(self, fields_changed))
@@ -155,18 +190,13 @@ impl BuildableDescriptor for EntityBuilder {
     }
 }
 
-impl Identifiable for Entity {
-    fn uid(&self) -> UID {
-        self.uid
+impl EntityBuilder {
+    pub fn location(&mut self, location: Location) -> Result<&mut Self> {
+        self.location = Some(location);
+        Ok(self)
     }
-}
 
-impl Built for Entity {
-    type BuilderType = EntityBuilder;
-}
-
-impl Descriptive for Entity {
-    fn descriptor(&self) -> &Descriptor {
-        &self.descriptor
+    pub fn get_location(&self) -> Option<Location> {
+        self.location
     }
 }
