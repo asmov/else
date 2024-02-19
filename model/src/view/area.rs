@@ -144,6 +144,12 @@ impl Builder for AreaViewBuilder {
     }
 }
 
+impl MaybeIdentifiable for AreaViewBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        Self::_try_uid(&self)
+    }
+}
+
 impl BuildableIdentity for AreaViewBuilder {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
         self.identity = Some(identity);

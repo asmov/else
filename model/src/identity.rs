@@ -31,6 +31,30 @@ pub trait Identifiable {
     fn uid(&self) -> UID;
 }
 
+impl MaybeIdentifiable for Identity {
+    fn try_uid(&self) -> Result<UID> {
+        Ok(self.into_uid())
+    }
+}
+
+impl Identifiable for Identity {
+    fn uid(&self) -> UID {
+        self.to_uid()
+    }
+}
+
+impl MaybeIdentifiable for UID {
+    fn try_uid(&self) -> Result<UID> {
+        Ok(*self)
+    }
+}
+
+impl Identifiable for UID {
+    fn uid(&self) -> UID {
+        *self
+    }
+}
+
 impl Built for Identity {
     type BuilderType = IdentityBuilder;
 }
@@ -385,13 +409,29 @@ impl IdentityBuilder {
     }
 }
 
-pub trait BuildableIdentity: Builder {
+pub trait MaybeIdentifiable {
+    fn try_uid(&self) -> Result<UID>;
+}
+
+impl MaybeIdentifiable for IdentityBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        self.get_uid()
+    }
+}
+
+pub trait BuildableIdentity: Builder + MaybeIdentifiable {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<()>; 
     fn identity_builder(&mut self) -> &mut IdentityBuilder;
     fn get_identity(&self) -> Option<&IdentityBuilder>;
 
     fn has_identity(&self) -> bool {
         self.get_identity().is_some()
+    }
+
+    fn _try_uid(&self) -> Result<UID> {
+        self.get_identity()
+            .ok_or_else(|| Error::BuildableUID{})
+            .and_then(|identity| identity.get_uid())
     }
 }
 

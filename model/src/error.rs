@@ -15,7 +15,10 @@ pub enum Error {
     ModelNotFound{ model: &'static str, uid: u128 },
 
     #[error("{model} not found for {op}: {uid}")]
-    ModelNotFoundFor{ model: &'static str, uid: u128, op: &'static str }
+    ModelNotFoundFor{ model: &'static str, uid: u128, op: &'static str },
+
+    #[error("Buildable UID not available")]
+    BuildableUID{}
 }
 
 pub type Result<T> = ::core::result::Result<T, Error>;

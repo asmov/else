@@ -117,6 +117,15 @@ impl BuildableEntity for ThingBuilder {
     }
 }
 
+impl MaybeIdentifiable for ThingBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        self.get_identity()
+            .ok_or_else(|| Error::BuildableUID{})?
+            .get_uid()
+            
+    }
+}
+
 impl BuildableIdentity for ThingBuilder {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
         self.entity_builder().identity(identity)

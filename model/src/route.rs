@@ -168,6 +168,12 @@ impl Builder for RouteBuilder {
     }
 }
 
+impl MaybeIdentifiable for RouteBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        Self::_try_uid(&self)
+    }
+}
+
 impl BuildableIdentity for RouteBuilder {
     fn identity(&mut self, id: IdentityBuilder) -> Result<()> {
         self.identity = Some(id);

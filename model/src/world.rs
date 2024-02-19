@@ -1,4 +1,4 @@
-use crate::{classes::*, error::*, timeframe::*, builder::*, identity::*, descriptor::*, entity::*, character::*, area::*, route::*};
+use crate::{area::*, builder::*, character::*, classes::*, descriptor::*, entity::{self, *}, error::*, identity::*, location, route::*, timeframe::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -69,9 +69,9 @@ pub struct WorldBuilder {
     identity: Option<IdentityBuilder>,
     frame: Option<Frame>,
     descriptor: Option<DescriptorBuilder>,
-    areas: Vec<AreaBuilder>,
-    routes: Vec<RouteBuilder>,
-    things: Vec<ThingBuilder>,
+    areas: Vec<VecOp<AreaBuilder, UID>>,
+    routes: Vec<VecOp<RouteBuilder, UID>>,
+    things: Vec<VecOp<ThingBuilder, UID>>,
     next_id: ID,
 }
 
@@ -114,37 +114,53 @@ impl Builder for WorldBuilder {
         };
 
         // set IDs for areas
-        for area in &mut self.areas {
-            let class_id = area.class_id();
-            let identity_builder = area.identity_builder();
-            identity_builder.universe_id(universe_id)?;
-            identity_builder.world_id(world_id)?;
-            identity_builder.class_id(class_id)?;
-            identity_builder.id(next_id)?;
-            next_id += 1;
+        for area_vec_op in &mut self.areas {
+            match area_vec_op {
+                VecOp::Add(area) => {
+                    let class_id = area.class_id();
+                    let identity_builder = area.identity_builder();
+                    identity_builder.universe_id(universe_id)?;
+                    identity_builder.world_id(world_id)?;
+                    identity_builder.class_id(class_id)?;
+                    identity_builder.id(next_id)?;
+                    next_id += 1;
+                }
+                _ => unreachable!("Only Add operations are allowed for areas during creation")
+            }
         }
 
         // set IDs for things
-        for thing in &mut self.things {
-            let class_id = thing.class_id();
-            let identity_builder = thing.entity_builder().identity_builder();
-            identity_builder.universe_id(universe_id)?;
-            identity_builder.world_id(world_id)?;
-            identity_builder.class_id(class_id)?;
-            identity_builder.id(next_id)?;
-            next_id += 1;
+        for thing_vec_op in &mut self.things {
+            match thing_vec_op {
+                VecOp::Add(thing) => {
+                    let class_id = thing.class_id();
+                    let identity_builder = thing.entity_builder().identity_builder();
+                    identity_builder.universe_id(universe_id)?;
+                    identity_builder.world_id(world_id)?;
+                    identity_builder.class_id(class_id)?;
+                    identity_builder.id(next_id)?;
+                    next_id += 1;
+                }
+                _ => unreachable!("Only Add operations are allowed for things during creation")
+            }
         }
 
         self.next_id = next_id;
 
+        let uid = identity.into_uid();
+        let areas = Build::assign_vec(&mut self.areas, WorldField::Areas)?;
+        let routes = Build::assign_vec(&mut self.routes, WorldField::Routes)?;
+        let things = Build::assign_vec(&mut self.things, WorldField::Things)?;
+        let next_id = self.next_id + 1;
+
         let world = World {
-            uid: identity.into_uid(),
+            uid,
             frame,
             descriptor,
-            areas: Creation::assign_vec(&mut self.areas)?,
-            routes: Creation::assign_vec(&mut self.routes)?,
-            things: Creation::assign_vec(&mut self.things)?,
-            next_id: self.next_id + 1,
+            areas,
+            routes,
+            things,
+            next_id,
         };
 
         Ok(Creation::new(self, world))
@@ -169,73 +185,94 @@ impl Builder for WorldBuilder {
         Self::build_local_identities(original, &mut self.routes, universe_id, world_id)?;
         Self::build_local_identities(original, &mut self.things, universe_id, world_id)?;
 
+        //wip
+        fn process_thing_location(thing_builder: &ThingBuilder) -> Result<()> {
+            let entity_builder = match thing_builder.get_entity() {
+                Some(entity_builder) => entity_builder,
+                None => return Ok(())
+            };
+            let location = match entity_builder.get_location() {
+                Some(location) => location,
+                None => return Ok(())
+            };
+            let thing_uid = thing_builder.try_uid()?;
+
+            Ok(())
+        }
+
         // handle movement of things between locations
-        for thing in &self.things {
-            if let Some(entity_builder) = thing.get_entity() {
-                if let Some(location) = entity_builder.get_location() {
-                    let thing_uid = thing.get_identity().unwrap().get_uid()?;
-                    // remove from current location
-                    if thing.builder_mode() == BuilderMode::Editor {
-                        let old_location = original.thing(thing_uid)?.location();
-                        if old_location.uid() == location.uid() {
-                            continue; // no change to location, skip
-                        }
-
-                        match old_location {
-                            Location::Area(old_area_uid) => {
-                                let mut area_builder = self.areas.iter_mut()
-                                    .find(|area_builder| {
-                                        area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
-                                    });
-                                if area_builder.is_none() {
-                                    let mut area_editor = Area::editor();
-                                    area_editor.identity(IdentityBuilder::editor_from_uid(old_area_uid)).unwrap();
-                                    self.areas.push(area_editor);
-                                    let area_editor = self.areas.iter_mut()
-                                        .find(|area_builder| {
-                                            area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
-                                        })
-                                        .unwrap();
-                                    area_builder = Some(area_editor)
+        for thing_vec_op in &self.things {
+            match thing_vec_op {
+                VecOp::Add(thing) | VecOp::Modify(thing) => {
+                    if let Some(entity_builder) = thing.get_entity() {
+                        if let Some(location) = entity_builder.get_location() {
+                            let thing_uid = thing.get_identity().unwrap().get_uid()?;
+                            // remove from current location
+                            if thing.builder_mode() == BuilderMode::Editor {
+                                let old_location = original.thing(thing_uid)?.location();
+                                if old_location.uid() == location.uid() {
+                                    continue; // no change to location, skip
                                 }
-                                area_builder.unwrap().remove_occupant(thing.get_identity().unwrap().get_uid()?)?;
-                            },
-                            Location::Route(_old_route_uid) => todo!(),
-                        }
-                    }
 
-                    match location {
-                        Location::Area(area_uid) => {
-                            let area = original.area_mut(area_uid)?;
-                            let mut area_builder = self.areas.iter_mut()
-                                .find(|area_builder| {
-                                    area_builder.get_identity().unwrap().get_uid().unwrap() == area_uid
-                                });
-                            if area_builder.is_none() { 
-                                let mut area_editor = Area::editor();
-                                area_editor.identity(IdentityBuilder::from_original(&self, area)).unwrap();
-                                self.areas.push(area_editor);
-                                let area_editor = self.areas.iter_mut()
-                                    .find(|area_builder| {
-                                        area_builder.get_identity().unwrap().get_uid().unwrap() == area_uid
-                                    })
-                                    .unwrap();
-                                area_builder = Some(area_editor)
+                                match old_location {
+                                    Location::Area(old_area_uid) => {
+                                        let mut area_builder = self.areas.iter_mut()
+                                            .find(|area_builder| {
+                                                area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
+                                            });
+                                        if area_builder.is_none() {
+                                            let mut area_editor = Area::editor();
+                                            area_editor.identity(IdentityBuilder::editor_from_uid(old_area_uid)).unwrap();
+                                            self.areas.push(area_editor);
+                                            let area_editor = self.areas.iter_mut()
+                                                .find(|area_builder| {
+                                                    area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
+                                                })
+                                                .unwrap();
+                                            area_builder = Some(area_editor)
+                                        }
+                                        area_builder.unwrap().remove_occupant(thing.get_identity().unwrap().get_uid()?)?;
+                                    },
+                                    Location::Route(_old_route_uid) => todo!(),
+                                }
                             }
 
-                            area_builder.unwrap().add_occupant(thing_uid)?;
-                        },
-                        Location::Route(_area_uid) => {
-                            todo!()
+                            match location {
+                                Location::Area(area_uid) => {
+                                    let area = original.area_mut(area_uid)?;
+                                    let mut area_builder = self.areas.iter_mut()
+                                        .find(|area_builder| {
+                                            area_builder.get_identity().unwrap().get_uid().unwrap() == area_uid
+                                        });
+                                    if area_builder.is_none() { 
+                                        let mut area_editor = Area::editor();
+                                        area_editor.identity(IdentityBuilder::from_original(&self, area)).unwrap();
+                                        self.areas.push(area_editor);
+                                        let area_editor = self.areas.iter_mut()
+                                            .find(|area_builder| {
+                                                area_builder.get_identity().unwrap().get_uid().unwrap() == area_uid
+                                            })
+                                            .unwrap();
+                                        area_builder = Some(area_editor)
+                                    }
+
+                                    area_builder.unwrap().add_occupant(thing_uid)?;
+                                },
+                                Location::Route(_area_uid) => {
+                                    todo!()
+                                }
+                            }
                         }
                     }
-                }
+                },
+                VecOp::Remove(_) => {},
             }
         }
 
-        Creation::modify_vec(&mut self.areas, &mut original.areas)?;
-        Creation::modify_vec(&mut self.routes, &mut original.routes)?;
-        Creation::modify_vec(&mut self.things, &mut original.things)?;
+        let mut fields_changed = FieldsChanged::new();
+        Build::modify_vec(&mut self.areas, &mut original.areas, &mut fields_changed, WorldField::Areas)?;
+        Build::modify_vec(&mut self.routes, &mut original.routes, &mut fields_changed, WorldField::Routes)?;
+        Build::modify_vec(&mut self.things, &mut original.things, &mut fields_changed, WorldField::Things)?;
 
         Ok(Modification::new(self, Vec::new()))
     }
@@ -246,6 +283,12 @@ impl Builder for WorldBuilder {
 
     fn class_id(&self) -> ClassID {
         WorldField::class_id()
+    }
+}
+
+impl MaybeIdentifiable for WorldBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        Self::_try_uid(&self)
     }
 }
 
@@ -285,21 +328,31 @@ impl BuildableDescriptor for WorldBuilder {
 
 impl BuildableAreaVector for WorldBuilder {
     fn add_area(&mut self, area: AreaBuilder) -> Result<()> {
-        self.areas.push(area);
+        self.areas.push(VecOp::Add(area));
+        Ok(())
+    }
+
+    fn modify_area(&mut self, area: AreaBuilder) -> Result<()> {
+        self.areas.push(VecOp::Modify(area));
+        Ok(())
+    }
+
+    fn remove_area(&mut self, area_uid: UID) -> Result<()> {
+        self.areas.push(VecOp::Remove(area_uid));
         Ok(())
     }
 }
 
 impl BuildableRouteVector for WorldBuilder {
     fn add_route(&mut self, route: RouteBuilder) -> Result<()> {
-        self.routes.push(route);
+        self.routes.push(VecOp::Add(route));
         Ok(())
     }
 }
 
 impl BuildableThingVector for WorldBuilder {
     fn add_thing(&mut self, thing: ThingBuilder) -> Result<()> {
-       self.things.push(thing); 
+       self.things.push(VecOp::Add(thing)); 
        Ok(())
     }
 }
@@ -313,20 +366,25 @@ impl WorldBuilder {
 
     fn build_local_identities(
         original: &mut World,
-        builders: &mut Vec<impl BuildableIdentity>,
+        operations: &mut Vec<VecOp<impl BuildableIdentity, UID>>,
         universe_id: UniverseID, world_id: WorldID
     ) -> Result<()> {
-        for builder in builders {
-            if builder.has_identity() {
-                return Ok(())
-            }
+        for op in operations {
+            match op {
+                VecOp::Add(builder) => {
+                    if builder.has_identity() {
+                        return Ok(())
+                    }
 
-            let class_id = builder.class_id();
-            let identity_builder = builder.identity_builder();
-            identity_builder.universe_id(universe_id)?;
-            identity_builder.world_id(world_id)?;
-            identity_builder.class_id(class_id)?;
-            identity_builder.id(original.generate_id())?;
+                    let class_id = builder.class_id();
+                    let identity_builder = builder.identity_builder();
+                    identity_builder.universe_id(universe_id)?;
+                    identity_builder.world_id(world_id)?;
+                    identity_builder.class_id(class_id)?;
+                    identity_builder.id(original.generate_id())?;
+                },
+                _ => {},
+            }
         }
         Ok(())
     }

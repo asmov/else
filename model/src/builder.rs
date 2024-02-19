@@ -1,7 +1,8 @@
 use crate::error::*;
+use crate::BuildableIdentity;
 use crate::Identifiable;
 use crate::World;
-use crate::identity::{UID, ClassID};
+use crate::identity::{MaybeIdentifiable, UID, ClassID};
 
 /// Performs all write operations for game data objects. Nothing is mutated directly on the object itself.  
 /// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
@@ -78,26 +79,126 @@ pub enum BuilderMode {
     Editor
 }
 
-/// Represents an Add or Remove operation against a Vec
+/// Represents an Add, Remove, or Modify operation against a Vec
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub enum VecOp<T> {
+pub enum VecOp<T: MaybeIdentifiable, R: MaybeIdentifiable> {
     Add(T),
-    Remove(T)
+    Modify(T),
+    Remove(R)
 }
 
-impl<T> VecOp<T> {
+impl<T: MaybeIdentifiable, R: MaybeIdentifiable> VecOp<T, R> {
     pub fn is_add(&self) -> bool {
         match self {
             VecOp::Add(_) => true,
-            VecOp::Remove(_) => false
+            _ => false,
+        }
+    }
+
+    pub fn is_modify(&self) -> bool {
+        match self {
+            VecOp::Modify(_) => true,
+            _ => false
         }
     }
 
     pub fn is_remove(&self) -> bool {
-        !self.is_add()
+        match self {
+            VecOp::Remove(_) => true,
+            _ => false
+        }
     }
 }
 
+pub struct FieldsChanged {}
+impl FieldsChanged {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+pub struct Build;
+impl Build {
+    pub fn assign_vec<B,M,R>(builder_vec: &mut Vec<VecOp<B,R>>, field: impl Fields) -> Result<Vec<M>>
+    where
+        B: Builder<BuilderType = B, ModelType = M> + BuildableIdentity,
+        M: Identifiable,
+        R: MaybeIdentifiable
+    {
+        todo!()
+    }
+
+    // Modifies an existing Vec of models using a Builder's list of VecOps (Add, Modify, Remove)
+    pub fn modify_vec<B,M,R>(
+        builder_vec: &mut Vec<VecOp<B,R>>,
+        existing_vec: &mut Vec<M>,
+        fields_changed: &mut FieldsChanged,
+        field: impl Fields) -> Result<()>
+    where
+        B: Builder<BuilderType = B, ModelType = M> + BuildableIdentity,
+        M: Identifiable,
+        R: MaybeIdentifiable
+    {
+        let mut fields_changed = FieldsChanged::new();
+
+        builder_vec
+            .drain(0..)
+            .map(|vec_op| { match vec_op {
+                VecOp::Add(builder) => {
+                    match builder.builder_mode() {
+                        BuilderMode::Creator => {
+                            let creation = builder.create()?;
+                            let (builder, model) = creation.split();
+                            existing_vec.push(model);
+                            Ok(VecOp::Add(builder))
+                        },
+                        BuilderMode::Editor => {
+                            let builder_uid = builder.try_uid()?;
+                            let existing = existing_vec
+                                .iter_mut()
+                                .find(|existing| existing.uid() == builder_uid)
+                                .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
+                            let modification = builder.modify(existing)?;
+                            let builder = modification.take_builder();
+                            Ok(VecOp::Add(builder))
+                        }
+                    }
+                },
+                VecOp::Modify(builder) => {
+                    match builder.builder_mode() {
+                        BuilderMode::Editor => {
+                            let builder_uid = builder.try_uid()?;
+                            let existing = existing_vec
+                                .iter_mut()
+                                .find(|existing| existing.uid() == builder_uid)
+                                .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
+                            let modification = builder.modify(existing)?;
+                            let builder = modification.take_builder();
+                            Ok(VecOp::Add(builder))
+                        },
+                        BuilderMode::Creator => unreachable!("BuilderMode::Creator is not allowed for VecOp::Modify in Build::modify_vec()")
+                    }
+                },
+                VecOp::Remove(maybe_identifiable) => {
+                    let builder_uid = maybe_identifiable.try_uid()?;
+                    let index = existing_vec
+                        .iter()
+                        .position(|existing| existing.uid() == builder_uid)
+                        .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
+                    existing_vec.remove(index);
+                    Ok(VecOp::Remove(maybe_identifiable))
+                }
+            }
+        })
+        .collect::<Result<Vec<_>>>()?
+        .into_iter()
+        .for_each(|vec_op| {
+            builder_vec.push(vec_op);
+        });
+
+        Ok(())
+    }
+}
 
 /// The result of a Builder::create() call. It is what is serialized and sync'd out to any mirrors, if necessary.
 ///

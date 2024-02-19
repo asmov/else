@@ -156,6 +156,12 @@ pub trait BuildableEntity: Builder {
     fn get_entity(&self) -> Option<&EntityBuilder>;
 }
 
+impl MaybeIdentifiable for EntityBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        Self::_try_uid(&self)
+    }
+}
+
 impl BuildableIdentity for EntityBuilder {
     fn identity(&mut self, id: IdentityBuilder) -> Result<()> {
         self.identity = Some(id);
