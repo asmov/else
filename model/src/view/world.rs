@@ -7,6 +7,8 @@ pub struct WorldView {
     routes: Vec<Route>
 }
 
+impl Keyed for WorldView {}
+
 impl Identifiable for WorldView {
     fn uid(&self) -> UID {
         self.uid

@@ -20,6 +20,23 @@ pub enum EndField {
     Direction
 }
 
+impl Keyed for End {
+    fn key(&self) -> Option<&str> {
+        self.descriptor.key()
+    }
+}
+
+impl Descriptive for End {
+    /// The description of the Route that this end connects to, from the point-of-view of the Area.
+    fn descriptor(&self) -> &Descriptor {
+        &self.descriptor
+    }
+}
+
+impl Built for End {
+    type BuilderType = EndBuilder;
+}
+
 impl Fields for EndField {
     fn field(&self) -> &'static Field {
         match self {
@@ -123,16 +140,7 @@ impl Builder for EndBuilder {
     }
 }
 
-impl Built for End {
-    type BuilderType = EndBuilder;
-}
 
-impl Descriptive for End {
-    /// The description of the Route that this end connects to, from the point-of-view of the Area.
-    fn descriptor(&self) -> &Descriptor {
-        &self.descriptor
-    }
-}
 
 impl End {
     /// The identity of the Area that this end provides an exit/entrance for.

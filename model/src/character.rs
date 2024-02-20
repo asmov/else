@@ -11,6 +11,12 @@ impl Built for Character {
     type BuilderType = CharacterBuilder;
 }
 
+impl Keyed for Character {
+    fn key(&self) -> Option<&str> {
+        self.descriptor().key()
+    }
+}
+
 impl Identifiable for Character {
     fn uid(&self) -> UID {
         self.entity.uid()

@@ -11,6 +11,12 @@ impl Built for AreaView {
     type BuilderType = AreaViewBuilder;
 }
 
+impl Keyed for AreaView {
+    fn key(&self) -> Option<&str> {
+        self.descriptor.key()
+    }
+}
+
 impl Identifiable for AreaView {
     fn uid(&self) -> UID {
         self.uid

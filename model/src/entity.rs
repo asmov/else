@@ -11,6 +11,12 @@ pub struct Entity {
     //composition: Composition
 }
 
+impl Keyed for Entity {
+    fn key(&self) -> Option<&str> {
+        self.descriptor.key()
+    }
+}
+
 impl Identifiable for Entity {
     fn uid(&self) -> UID {
         self.uid

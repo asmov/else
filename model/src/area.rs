@@ -12,6 +12,12 @@ pub struct Area {
     occupant_thing_ids: Vec<UID>
 }
 
+impl Keyed for Area {
+    fn key(&self) -> Option<&str> {
+        self.descriptor.key()
+    }
+}
+
 impl Identifiable for Area {
     fn uid(&self) -> UID {
         self.uid

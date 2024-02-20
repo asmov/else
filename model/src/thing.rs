@@ -7,6 +7,12 @@ pub enum Thing {
     Item (Item),
 }
 
+impl Keyed for Thing {
+    fn key(&self) -> Option<&str> {
+        self.descriptor().key()
+    }
+}
+
 impl Identifiable for Thing {
     fn uid(&self) -> UID {
         match self {

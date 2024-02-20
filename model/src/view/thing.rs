@@ -5,6 +5,12 @@ pub struct ThingView {
     descriptor: Descriptor
 }
 
+impl Keyed for ThingView {
+    fn key(&self) -> Option<&str> {
+        self.descriptor.key()
+    }
+}
+
 impl Identifiable for ThingView {
     fn uid(&self) -> UID {
         self.uid

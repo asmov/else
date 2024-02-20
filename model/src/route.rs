@@ -17,6 +17,12 @@ pub struct Route {
     point_b: Point 
 }
 
+impl Keyed for Route {
+    fn key(&self) -> Option<&str> {
+        self.descriptor.key()
+    }
+}
+
 impl Identifiable for Route {
     fn uid(&self) -> UID {
         self.uid

@@ -1,5 +1,5 @@
 use serde;
-use crate::{classes::*, identity::ClassID, error::*, builder::*};
+use crate::{builder::*, classes::*, error::*, identity::*};
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`
@@ -19,8 +19,14 @@ pub struct Descriptor {
     notes: Option<String>
 }
 
+impl Keyed for Descriptor {
+    fn key(&self) -> Option<&str> {
+        self.key.as_ref().map(|s| s.as_str())
+    }
+}
+
 /// The trait that provides standard immutable access to a `Descriptor` struct
-pub trait Descriptive {
+pub trait Descriptive: Keyed {
     /// Fetch the `Descriptor` struct for this object
     fn descriptor(&self) -> &Descriptor;
 
@@ -34,10 +40,9 @@ pub trait Descriptive {
         &self.descriptor().keywords
     }
 
-    /// Unique to the World. Should be used to permanently reference objects (never use UID manually).
-    fn key(&self) -> Option<&String> {
+    /*fn key(&self) -> Option<&String> {
         self.descriptor().key.as_ref()
-    }
+    }*/
 
     /// A one-liner summary. If `description` is not available, this will be used instead.
     fn short_description(&self) -> Option<&String> {

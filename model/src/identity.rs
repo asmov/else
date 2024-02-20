@@ -27,9 +27,13 @@ pub struct Identity {
     id: ID
 }
 
-pub trait Identifiable {
+pub trait Identifiable: Keyed {
     fn uid(&self) -> UID;
 
+}
+
+/// Unique to the World. Should be used to permanently reference objects (never use UID manually).
+pub trait Keyed {
     fn key(&self) -> Option<&str> {
         None
     }
@@ -40,6 +44,8 @@ impl MaybeIdentifiable for Identity {
         Ok(self.into_uid())
     }
 }
+
+impl Keyed for Identity {}
 
 impl Identifiable for Identity {
     fn uid(&self) -> UID {
@@ -58,6 +64,8 @@ impl Identifiable for UID {
         *self
     }
 }
+
+impl Keyed for UID {}
 
 impl Built for Identity {
     type BuilderType = IdentityBuilder;
