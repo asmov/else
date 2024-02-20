@@ -186,7 +186,7 @@ impl Builder for WorldBuilder {
         Self::build_local_identities(original, &mut self.things, universe_id, world_id)?;
 
         //wip
-        fn process_thing_location(thing_builder: &ThingBuilder) -> Result<()> {
+        fn process_thing_location(thing_builder: &ThingBuilder, world: &mut World) -> Result<()> {
             let entity_builder = match thing_builder.get_entity() {
                 Some(entity_builder) => entity_builder,
                 None => return Ok(())
@@ -195,9 +195,51 @@ impl Builder for WorldBuilder {
                 Some(location) => location,
                 None => return Ok(())
             };
+
             let thing_uid = thing_builder.try_uid()?;
 
+            if thing_builder.builder_mode() == BuilderMode::Editor {
+                process_thing_leaving_location(thing_uid, world, location)?;
+            }
+
             Ok(())
+        }
+
+        fn process_thing_leaving_location(thing_uid: UID, world: &mut World, new_location: Location) -> Result<()> {
+            let existing_thing = world.thing(thing_uid)?;
+            match existing_thing.location() {
+                location::Location::Area(area_uid) => {
+                    let existing_area = {
+                        world.area_mut(area_uid)?;
+                    };
+                    area.remove_occupant(thing_uid)?;
+                },
+                location::Location::Route(route_uid) => {
+                    todo!()
+                }
+            }
+        }
+
+        fn existing_area_builder<'world>(world_builder: &'world mut WorldBuilder, existing_area_uid: UID) -> Result<&'world mut AreaBuilder> {
+            let mut area_builder = world_builder.areas
+                .iter_mut()
+                //.find(|vec_op| area_builder. == existing_area_uid );
+            
+            if let Some(area_builder) = area_builder {
+                return Ok(area_builder);
+            }
+
+                if area_builder.is_none() {
+                    let mut area_editor = area::editor();
+                    area_editor.identity(identitybuilder::editor_from_uid(old_area_uid)).unwrap();
+                    self.areas.push(area_editor);
+                    let area_editor = self.areas.iter_mut()
+                        .find(|area_builder| {
+                            area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
+                        })
+                        .unwrap();
+                    area_builder = some(area_editor)
+                }
         }
 
         // handle movement of things between locations
@@ -221,15 +263,15 @@ impl Builder for WorldBuilder {
                                                 area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
                                             });
                                         if area_builder.is_none() {
-                                            let mut area_editor = Area::editor();
-                                            area_editor.identity(IdentityBuilder::editor_from_uid(old_area_uid)).unwrap();
+                                            let mut area_editor = area::editor();
+                                            area_editor.identity(identitybuilder::editor_from_uid(old_area_uid)).unwrap();
                                             self.areas.push(area_editor);
                                             let area_editor = self.areas.iter_mut()
                                                 .find(|area_builder| {
                                                     area_builder.get_identity().unwrap().get_uid().unwrap() == old_area_uid
                                                 })
                                                 .unwrap();
-                                            area_builder = Some(area_editor)
+                                            area_builder = some(area_editor)
                                         }
                                         area_builder.unwrap().remove_occupant(thing.get_identity().unwrap().get_uid()?)?;
                                     },

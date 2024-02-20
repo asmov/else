@@ -29,6 +29,10 @@ pub struct Identity {
 
 pub trait Identifiable {
     fn uid(&self) -> UID;
+
+    fn key(&self) -> Option<&str> {
+        None
+    }
 }
 
 impl MaybeIdentifiable for Identity {
