@@ -93,4 +93,43 @@ mod tests {
         let gray_cat = world.find_thing("gray_cat").unwrap();
         assert_eq!("A slightly gray cat", gray_cat.description().unwrap());
     }
+
+    #[test]
+    fn test_thing_movement() {
+        let mut world = testing::create_world();
+
+        let black_cat_uid = world.find_thing(testing::BLACK_CAT).unwrap().uid();
+        let backyard_uid = world.find_area(testing::BACKYARD).unwrap().uid();
+
+        // move 'black_cat' from 'cat_house' to 'backyard'.
+        let mut black_cat_editor = world
+            .find_thing(testing::BLACK_CAT).unwrap()
+            .edit_self();
+        black_cat_editor.entity_builder()
+            .location(Location::Area(backyard_uid)).unwrap();
+
+        let mut world_editor = World::editor();
+        world_editor.edit_thing(black_cat_editor).unwrap();
+        world_editor.modify(&mut world).unwrap();
+
+        // confirm the change in location for 'black_cat'
+        let new_location_uid = world
+            .find_thing(testing::BLACK_CAT).unwrap()
+            .location()
+            .uid();
+
+        assert_eq!(new_location_uid, backyard_uid);
+
+        // confirm that 'backyard' has 'black_cat' as an occupant
+        assert!(world
+            .find_area(testing::BACKYARD).unwrap()
+            .occupant_ids()
+            .contains(&black_cat_uid));
+
+        // confirm that 'cat_house' no longer has 'black_cat' as an occupant
+        assert!(world
+            .find_area(testing::CAT_HOUSE).unwrap()
+            .occupant_ids()
+            .contains(&black_cat_uid) == false);
+    }
 }

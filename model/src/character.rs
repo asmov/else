@@ -174,6 +174,27 @@ impl BuildableEntity for CharacterBuilder {
     }
 }
 
+impl MaybeIdentifiable for CharacterBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        Self::_try_uid(&self)
+    }
+}
+
+impl BuildableIdentity for CharacterBuilder {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+        self.entity_builder().identity(identity)
+    }
+
+    fn identity_builder(&mut self) -> &mut IdentityBuilder {
+        self.entity_builder().identity_builder()
+    }
+
+    fn get_identity(&self) -> Option<&IdentityBuilder> {
+        self.get_entity()
+            .and_then(|entity| entity.get_identity())
+    }
+}
+
 impl ThingBuilderVariant for CharacterBuilder {
     fn thing_builder(self) -> ThingBuilder {
         ThingBuilder::Character(self)

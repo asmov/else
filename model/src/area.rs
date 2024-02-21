@@ -30,6 +30,13 @@ impl Descriptive for Area {
     }
 }
 
+impl Area {
+    /// Returns all Thing UIDs currently located here.
+    pub fn occupant_ids(&self) -> &Vec<UID> {
+        &self.occupant_thing_ids
+    }
+}
+
 #[derive(Debug)]
 pub enum AreaField {
     Identity,
@@ -111,7 +118,7 @@ impl Builder for AreaBuilder {
         let occupant_thing_ids = self.occupant_thing_ids.iter()
             .map(|op| match op {
                 VecOp::Add(uid) => *uid,
-                VecOp::Modify(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::create"),
+                VecOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::create"),
                 VecOp::Remove(uid) => unreachable!("VecOp::Remove not possible in AreaBuilder::create") 
             })
             .collect();
@@ -145,7 +152,7 @@ impl Builder for AreaBuilder {
             for vecop in &self.occupant_thing_ids {
                 match *vecop {
                     VecOp::Add(uid) => original.occupant_thing_ids.push(uid),
-                    VecOp::Modify(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::modify"),
+                    VecOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::modify"),
                     VecOp::Remove(uid) => {
                         let index = original.occupant_thing_ids.iter().position(|&x| x == uid)
                             .ok_or_else(|| Error::ModelNotFoundFor{model: "Thing", uid, op: "AreaBuilder::remove_occupant()"})?;
@@ -215,7 +222,7 @@ impl Built for Area {
 
 pub trait BuildableAreaVector {
     fn add_area(&mut self, area: AreaBuilder) -> Result<()>; 
-    fn modify_area(&mut self, area: AreaBuilder) -> Result<()>; 
+    fn edit_area(&mut self, area: AreaBuilder) -> Result<()>; 
     fn remove_area(&mut self, area_uid: UID) -> Result<()>; 
 }
 

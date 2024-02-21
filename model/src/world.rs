@@ -12,6 +12,107 @@ pub struct World {
     next_id: ID,
 }
 
+impl Keyed for World {
+    fn key(&self) -> Option<&str> {
+        self.descriptor.key()
+    }
+}
+
+impl Identifiable for World {
+    fn uid(&self) -> UID {
+        self.uid
+    }
+}
+
+impl Descriptive for World {
+    fn descriptor(&self) -> &Descriptor {
+        &self.descriptor
+    }
+}
+
+impl Built for World {
+    type BuilderType = WorldBuilder;
+}
+
+impl World {
+    fn generate_id(&mut self) -> u64 {
+        let id = self.next_id;
+        self.next_id += 1;
+        id
+    }
+
+    pub fn thing(&self, uid: UID) -> Result<&Thing> {
+        self.things.iter().find(|thing| thing.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
+    }
+
+    pub fn thing_mut(&mut self, uid: UID) -> Result<&mut Thing> {
+        self.things.iter_mut().find(|thing| thing.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
+    }
+
+    pub fn area(&self, uid: UID) -> Result<&Area> {
+        self.areas.iter().find(|area| area.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
+    }
+
+    pub fn area_mut(&mut self, uid: UID) -> Result<&mut Area> {
+        self.areas.iter_mut().find(|area| area.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
+    }
+
+    pub fn find_areas(&self, query: &str) -> Vec<&Area> {
+        self.areas.iter()
+            .filter(|area| area.name() == query)
+            .collect()
+    }
+
+    pub fn find_area(&self, key: &str) -> Option<&Area> {
+        self.areas.iter().find(|area| area.key().is_some_and(|k| k == key))
+    }
+
+    pub fn things(&self) -> &Vec<Thing> {
+        &self.things
+    }
+
+    pub fn things_mut(&mut self) -> &mut Vec<Thing> {
+        &mut self.things
+    }
+
+    pub fn find_things(&self, query: &str) -> Vec<&Thing> {
+        self.things.iter()
+            .filter(|thing| thing.name() == query)
+            .collect()
+    }
+
+    pub fn find_thing(&self, key: &str) -> Option<&Thing> {
+        self.things.iter().find(|thing| thing.key().is_some_and(|k| k == key))
+    }
+
+    pub fn find_thing_mut(&mut self, key: &str) -> Option<&mut Thing> {
+        self.things.iter_mut().find(|thing| thing.key().is_some_and(|k| k == key))
+    }
+
+    pub fn spawn_thing(&mut self, mut thing: ThingBuilder) -> Result<(UID, Modification<WorldBuilder>)> {
+        let thing_id = self.generate_id();
+        let class_id = thing.class_id();
+        let world_identity = self.uid().into_identity();
+
+        let identity_builder = thing.entity_builder().identity_builder();
+        identity_builder
+            .universe_id(world_identity.universe_id())?
+            .world_id(world_identity.world_id())?
+            .class_id(class_id)?
+            .id(thing_id)?;
+        let uid = identity_builder.get_uid()?;
+
+        let mut world_editor = World::editor();
+        world_editor.add_thing(thing)?;
+        let modification = world_editor.modify(self)?;
+        Ok((uid, modification))
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum WorldField {
     Identity,
@@ -194,7 +295,7 @@ impl Builder for WorldBuilder {
             .map(|thing_vec_op| {
                 match thing_vec_op {
                     VecOp::Remove(_) => {},
-                    VecOp::Add(ref thing) | VecOp::Modify(ref thing) => {
+                    VecOp::Add(ref thing) | VecOp::Edit(ref thing) => {
                         Self::process_thing_location(thing, &mut areas, original)?
                     }
                 }
@@ -270,8 +371,8 @@ impl BuildableAreaVector for WorldBuilder {
         Ok(())
     }
 
-    fn modify_area(&mut self, area: AreaBuilder) -> Result<()> {
-        self.areas.push(VecOp::Modify(area));
+    fn edit_area(&mut self, area: AreaBuilder) -> Result<()> {
+        self.areas.push(VecOp::Edit(area));
         Ok(())
     }
 
@@ -292,6 +393,16 @@ impl BuildableThingVector for WorldBuilder {
     fn add_thing(&mut self, thing: ThingBuilder) -> Result<()> {
        self.things.push(VecOp::Add(thing)); 
        Ok(())
+    }
+
+    fn edit_thing(&mut self, thing: ThingBuilder) -> Result<()> {
+        self.things.push(VecOp::Edit(thing));
+        Ok(())
+    }
+
+    fn remove_thing(&mut self, thing_uid: UID) -> Result<()> {
+        self.things.push(VecOp::Remove(thing_uid));
+        Ok(())
     }
 }
 
@@ -335,7 +446,7 @@ impl WorldBuilder {
     fn find_area_builder_by_uid(areas: &mut Vec<VecOp<AreaBuilder, UID>>, area_uid: UID) -> Option<&mut VecOp<AreaBuilder, UID>> {
         areas.iter_mut()
             .find(|vec_op| match vec_op {
-                VecOp::Add(area_builder) | VecOp::Modify(area_builder) => {
+                VecOp::Add(area_builder) | VecOp::Edit(area_builder) => {
                     area_builder.try_uid()
                         .is_ok_and(|uid| uid == area_uid)
                 },
@@ -349,12 +460,12 @@ impl WorldBuilder {
         // otherwise create it
         let mut area_editor = Area::editor();
         area_editor.identity(IdentityBuilder::editor_from_uid(existing_area_uid))?;
-        areas.push(VecOp::Modify(area_editor));
+        areas.push(VecOp::Edit(area_editor));
 
         // find it again
         let current_builder = areas.iter_mut()
             .find(|vec_op| match vec_op {
-                VecOp::Modify(area_builder) => {
+                VecOp::Edit(area_builder) => {
                     area_builder.try_uid()
                         .is_ok_and(|uid| uid == existing_area_uid)
                 },
@@ -390,7 +501,7 @@ impl WorldBuilder {
                 };
 
                 match existing_area_vec_op {
-                    VecOp::Add(area_builder) | VecOp::Modify(area_builder) => {
+                    VecOp::Add(area_builder) | VecOp::Edit(area_builder) => {
                         area_builder.add_occupant(thing_uid)?;
                     },
                     VecOp::Remove(_) => {
@@ -418,7 +529,7 @@ impl WorldBuilder {
                 };
 
                 match existing_area_vec_op {
-                    VecOp::Add(area_builder) | VecOp::Modify(area_builder) => {
+                    VecOp::Add(area_builder) | VecOp::Edit(area_builder) => {
                         area_builder.remove_occupant(thing_uid)?;
                     },
                     VecOp::Remove(_) => {/* nothing to do */} 
@@ -435,103 +546,3 @@ impl WorldBuilder {
 
 }
 
-impl Keyed for World {
-    fn key(&self) -> Option<&str> {
-        self.descriptor.key()
-    }
-}
-
-impl Identifiable for World {
-    fn uid(&self) -> UID {
-        self.uid
-    }
-}
-
-impl Descriptive for World {
-    fn descriptor(&self) -> &Descriptor {
-        &self.descriptor
-    }
-}
-
-impl Built for World {
-    type BuilderType = WorldBuilder;
-}
-
-impl World {
-    fn generate_id(&mut self) -> u64 {
-        let id = self.next_id;
-        self.next_id += 1;
-        id
-    }
-
-    pub fn thing(&self, uid: UID) -> Result<&Thing> {
-        self.things.iter().find(|thing| thing.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
-    }
-
-    pub fn thing_mut(&mut self, uid: UID) -> Result<&mut Thing> {
-        self.things.iter_mut().find(|thing| thing.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
-    }
-
-    pub fn area(&self, uid: UID) -> Result<&Area> {
-        self.areas.iter().find(|area| area.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
-    }
-
-    pub fn area_mut(&mut self, uid: UID) -> Result<&mut Area> {
-        self.areas.iter_mut().find(|area| area.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
-    }
-
-    pub fn find_areas(&self, query: &str) -> Vec<&Area> {
-        self.areas.iter()
-            .filter(|area| area.name() == query)
-            .collect()
-    }
-
-    pub fn find_area(&self, key: &str) -> Option<&Area> {
-        self.areas.iter().find(|area| area.key().is_some_and(|k| k == key))
-    }
-
-    pub fn things(&self) -> &Vec<Thing> {
-        &self.things
-    }
-
-    pub fn things_mut(&mut self) -> &mut Vec<Thing> {
-        &mut self.things
-    }
-
-    pub fn find_things(&self, query: &str) -> Vec<&Thing> {
-        self.things.iter()
-            .filter(|thing| thing.name() == query)
-            .collect()
-    }
-
-    pub fn find_thing(&self, key: &str) -> Option<&Thing> {
-        self.things.iter().find(|thing| thing.key().is_some_and(|k| k == key))
-    }
-
-    pub fn find_thing_mut(&mut self, key: &str) -> Option<&mut Thing> {
-        self.things.iter_mut().find(|thing| thing.key().is_some_and(|k| k == key))
-    }
-
-    pub fn spawn_thing(&mut self, mut thing: ThingBuilder) -> Result<(UID, Modification<WorldBuilder>)> {
-        let thing_id = self.generate_id();
-        let class_id = thing.class_id();
-        let world_identity = self.uid().into_identity();
-
-        let identity_builder = thing.entity_builder().identity_builder();
-        identity_builder
-            .universe_id(world_identity.universe_id())?
-            .world_id(world_identity.world_id())?
-            .class_id(class_id)?
-            .id(thing_id)?;
-        let uid = identity_builder.get_uid()?;
-
-        let mut world_editor = World::editor();
-        world_editor.add_thing(thing)?;
-        let modification = world_editor.modify(self)?;
-        Ok((uid, modification))
-    }
-}

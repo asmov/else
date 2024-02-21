@@ -49,6 +49,20 @@ impl Exists for Thing {
     }
 }
 
+impl Built for Thing {
+    type BuilderType = ThingBuilder;
+
+    fn edit_self(&self) -> Self::BuilderType
+        where
+            Self: Identifiable,
+            Self::BuilderType: BuildableIdentity {
+        match self {
+            Thing::Character(character) => character.edit_self().thing_builder(),
+            Thing::Item(_item) => todo!(),
+        } 
+    }
+}
+
 impl Something for Thing {}
 
 pub trait ThingBuilderVariant: Builder + BuildableEntity {
@@ -149,4 +163,6 @@ impl BuildableIdentity for ThingBuilder {
 
 pub trait BuildableThingVector {
     fn add_thing(&mut self, thing: ThingBuilder) -> Result<()>;
+    fn edit_thing(&mut self, thing: ThingBuilder) -> Result<()>;
+    fn remove_thing(&mut self, thing_uid: UID) -> Result<()>;
 }

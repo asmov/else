@@ -1,8 +1,4 @@
-use crate::error::*;
-use crate::BuildableIdentity;
-use crate::Identifiable;
-use crate::World;
-use crate::identity::{MaybeIdentifiable, UID, ClassID};
+use crate::{error::*, identity::*, world::*};
 
 /// Performs all write operations for game data objects. Nothing is mutated directly on the object itself.  
 /// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
@@ -70,6 +66,17 @@ pub trait Built {
     fn builder(mode: BuilderMode) -> Self::BuilderType {
         Self::BuilderType::builder(mode)
     }
+
+    fn edit_self(&self) -> Self::BuilderType
+    where
+        Self: Identifiable,
+        Self::BuilderType: BuildableIdentity
+    {
+        let mut editor = Self::editor();
+        let identity_builder = IdentityBuilder::editor_from_uid(self.uid());
+        editor.identity(identity_builder).unwrap();
+        editor
+    }
 }
 
 /// Determines wheter a new data object is being created or an existing one is being modified.
@@ -83,7 +90,7 @@ pub enum BuilderMode {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum VecOp<T: MaybeIdentifiable, R: MaybeIdentifiable> {
     Add(T),
-    Modify(T),
+    Edit(T),
     Remove(R)
 }
 
@@ -97,7 +104,7 @@ impl<T: MaybeIdentifiable, R: MaybeIdentifiable> VecOp<T, R> {
 
     pub fn is_modify(&self) -> bool {
         match self {
-            VecOp::Modify(_) => true,
+            VecOp::Edit(_) => true,
             _ => false
         }
     }
@@ -167,7 +174,7 @@ impl Build {
                         }
                     }
                 },
-                VecOp::Modify(builder) => {
+                VecOp::Edit(builder) => {
                     match builder.builder_mode() {
                         BuilderMode::Editor => {
                             let builder_uid = builder.try_uid()?;
