@@ -1,18 +1,48 @@
 use crate::builder::*;
 
+/// A tree representation of every field changed during a model's creation or operation, including those of nested 
+/// models.
 pub struct FieldsChanged {
     /// Created by a Builder::create or Builder::modify.  
     /// Only TreeNodeType::Root, ChangeTreeNode::RootModel, and either ChangeOp::Create or ChangeOp::Modify are valid.
-    root: ChangeTreeNode
+    root: RootChangeNode
 }
 
 impl FieldsChanged {
-    pub fn new(class_ident: &'static ClassIdent) -> Self {
-        let root = ChangeTreeNode::RootModel(class_ident);
+    pub fn new(class_ident: &'static ClassIdent, op: ChangeOp) -> Self {
+        let root = RootChangeNode {
+            class_ident,
+            op,
+            children: Vec::new()
+        };
 
         Self {
             root 
         }
+    }
+
+    pub fn extend(&mut self, rh: FieldsChanged) {
+        self.root.children.extend(rh.root.children);
+    }
+}
+
+impl ChangeNode for FieldsChanged {
+    fn node_type(&self) -> TreeNodeType {
+        self.root.node_type()
+    }
+
+    fn op(&self) -> ChangeOp {
+        self.root.op()
+    }
+
+    fn subject(&self) -> ChangeSubject {
+        self.root.subject()
+    }
+}
+
+impl BranchChangeNode for FieldsChanged {
+    fn children(&self) -> &Vec<ChangeTreeNode> {
+        self.root.children()
     }
 }
 
@@ -33,8 +63,8 @@ pub enum ChangeOp {
 }
 
 pub enum ChangeSubject {
-    // Only available to the root node
-    RootModel,
+    /// Only available to the root node
+    Root,
     Field,
     Item,
 }
@@ -45,8 +75,8 @@ pub trait ChangeNode {
     fn subject(&self) -> ChangeSubject;
 }
 
-pub trait RootModelSubject {
-    fn class_id(&self) -> ClassID;
+pub trait RootSubject {
+    fn class_ident(&self) -> &'static ClassIdent;
 }
 
 pub trait FieldSubject {
@@ -57,15 +87,47 @@ pub trait ItemSubject {
     fn uid(&self) -> UID;
 }
 
-pub trait BranchChangeNode {
+pub trait BranchChangeNode: ChangeNode {
     fn children(&self) -> &Vec<ChangeTreeNode>;
 }
 
 pub enum ChangeTreeNode {
-    RootModel(&'static ClassIdent),
+    Root(RootChangeNode),
     Scalar(ScalarChangeNode),
     IdentityCollection(IdentityCollectionChangeNode),
     IdentityItem(IdentityItemChangeNode),
+}
+
+pub struct RootChangeNode {
+    class_ident: &'static ClassIdent,
+    op: ChangeOp,
+    children: Vec<ChangeTreeNode>
+}
+
+impl ChangeNode for RootChangeNode {
+    fn node_type(&self) -> TreeNodeType {
+        TreeNodeType::Root
+    }
+
+    fn op(&self) -> ChangeOp {
+        self.op
+    }
+
+    fn subject(&self) -> ChangeSubject {
+        ChangeSubject::Root
+    }
+}
+
+impl BranchChangeNode for RootChangeNode {
+    fn children(&self) -> &Vec<ChangeTreeNode> {
+        &self.children
+    }
+}
+
+impl RootSubject for RootChangeNode {
+    fn class_ident(&self) -> &'static ClassIdent {
+        self.class_ident
+    }
 }
 
 pub struct ScalarChangeNode {

@@ -200,7 +200,7 @@ impl Builder for WorldBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::new(WorldField::class_ident());
+        let mut fields_changed = FieldsChanged::new(WorldField::class_ident(), ChangeOp::Create);
         let identity = Creation::try_assign(&mut self.identity, WorldField::Identity)?;
         let frame = Self::try_assign_value(&mut self.frame, WorldField::Frame)?;
         let descriptor = Creation::try_assign(&mut self.descriptor, WorldField::Descriptor)?;
@@ -264,7 +264,7 @@ impl Builder for WorldBuilder {
     }
 
     fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::new(WorldField::class_ident());
+        let mut fields_changed = FieldsChanged::new(WorldField::class_ident(), ChangeOp::Modify);
 
         if self.descriptor.is_some() {
             original.descriptor = Creation::assign(&mut self.descriptor)?;
