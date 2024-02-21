@@ -1,5 +1,5 @@
 use serde;
-use crate::{builder::*, classes::*, error::*, identity::*};
+use crate::{builder::*, codebase::*, error::*, identity::*};
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`
@@ -77,12 +77,8 @@ pub enum DescriptorField {
 }
 
 impl Class for DescriptorField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
@@ -116,14 +112,14 @@ impl TryFrom<&str> for DescriptorField {
 }
 
 impl DescriptorField {
-    const CLASS_ID: ClassID = ClassIdent::Descriptor as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Descriptor as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Descriptor";
-    const FIELD_NAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "name", FieldValueType::String);
-    const FIELD_KEYWORDS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "keywords", FieldValueType::VecString);
-    const FIELD_KEY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "key", FieldValueType::String);
-    const FIELD_SHORT_DESCRIPTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "short_description", FieldValueType::String);
-    const FIELD_DESCRIPTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "description", FieldValueType::String);
-    const FIELD_NOTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "notes", FieldValueType::String);
+    const FIELD_NAME: Field = Field::new(&Self::CLASS_IDENT, "name", FieldValueType::String);
+    const FIELD_KEYWORDS: Field = Field::new(&Self::CLASS_IDENT, "keywords", FieldValueType::VecString);
+    const FIELD_KEY: Field = Field::new(&Self::CLASS_IDENT, "key", FieldValueType::String);
+    const FIELD_SHORT_DESCRIPTION: Field = Field::new(&Self::CLASS_IDENT, "short_description", FieldValueType::String);
+    const FIELD_DESCRIPTION: Field = Field::new(&Self::CLASS_IDENT, "description", FieldValueType::String);
+    const FIELD_NOTES: Field = Field::new(&Self::CLASS_IDENT, "notes", FieldValueType::String);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]

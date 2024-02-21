@@ -1,5 +1,5 @@
 use serde;
-use crate::{error::*, identity::*, builder::*, classes::*, descriptor::*};
+use crate::{error::*, identity::*, builder::*, codebase::*, descriptor::*};
 
 /// The placement of an Entity within the World; an Area or Route.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy)]

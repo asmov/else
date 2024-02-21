@@ -1,5 +1,5 @@
 use serde;
-use crate::{classes::*, error::*, builder::*};
+use crate::{codebase::*, error::*, builder::*};
 
 pub type UID        = u128;
 // UID is composed of:
@@ -247,22 +247,18 @@ impl Fields for IdentityField {
 }
 
 impl Class for IdentityField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl IdentityField {
-    const CLASS_ID: ClassID = ClassIdent::Identity as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Identity as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Identity";
-    const FIELD_UNIVERSE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "universe_id", FieldValueType::U64);
-    const FIELD_WORLD_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "world_id", FieldValueType::U64);
-    const FIELD_CLASS_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "class_id", FieldValueType::U64);
-    const FIELD_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "id", FieldValueType::U64);
+    const FIELD_UNIVERSE_ID: Field = Field::new(&Self::CLASS_IDENT, "universe_id", FieldValueType::U64);
+    const FIELD_WORLD_ID: Field = Field::new(&Self::CLASS_IDENT, "world_id", FieldValueType::U64);
+    const FIELD_CLASS_ID: Field = Field::new(&Self::CLASS_IDENT, "class_id", FieldValueType::U64);
+    const FIELD_ID: Field = Field::new(&Self::CLASS_IDENT, "id", FieldValueType::U64);
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

@@ -1,4 +1,4 @@
-use crate::{classes::*, error::*, identity::*, builder::*};
+use crate::{codebase::*, error::*, identity::*, builder::*};
 use super::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -45,23 +45,19 @@ impl Fields for RoutineCortexField {
 }
 
 impl Class for RoutineCortexField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl RoutineCortexField {
-    const CLASS_ID: ClassID = ClassIdent::RoutineCortex as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::RoutineCortex as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "RoutineCortex";
     const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
     const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    const FIELD_ROUTINE_ID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_ID, FieldValueType::U64);
-    const FIELD_ROUTINE_AWARENESS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
+    const FIELD_ROUTINE_ID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_ID, FieldValueType::U64);
+    const FIELD_ROUTINE_AWARENESS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

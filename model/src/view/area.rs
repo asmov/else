@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, descriptor::*, identity::*, route::*, view::thing::*, classes::*};
+use crate::{error::*, builder::*, descriptor::*, identity::*, route::*, view::thing::*, codebase::*};
 
 pub struct AreaView {
     uid: UID,
@@ -60,22 +60,18 @@ impl Fields for AreaViewField {
 }
 
 impl Class for AreaViewField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl AreaViewField {
-    const CLASS_ID: ClassID = ClassIdent::AreaView as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::AreaView as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "AreaView";
-    const FIELD_UID: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "uid", FieldValueType::UID);
-    const FIELD_DESCRIPTOR: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "descriptor", FieldValueType::Model);
-    const FIELD_THINGS: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "things", FieldValueType::VecModel);
-    const FIELD_ROUTES: &'static Field = &Field::new(Self::CLASS_ID, Self::CLASSNAME, "routes", FieldValueType::VecModel);
+    const FIELD_UID: &'static Field = &Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID);
+    const FIELD_DESCRIPTOR: &'static Field = &Field::new(&Self::CLASS_IDENT, "descriptor", FieldValueType::Model);
+    const FIELD_THINGS: &'static Field = &Field::new(&Self::CLASS_IDENT, "things", FieldValueType::VecModel);
+    const FIELD_ROUTES: &'static Field = &Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::VecModel);
 }
 
 pub struct AreaViewBuilder {

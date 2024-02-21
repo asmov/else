@@ -1,4 +1,8 @@
+pub mod fields_changed;
+
 use crate::{error::*, identity::*, world::*};
+
+pub use fields_changed::*;
 
 /// Performs all write operations for game data objects. Nothing is mutated directly on the object itself.  
 /// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
@@ -117,24 +121,16 @@ impl<T: MaybeIdentifiable, R: MaybeIdentifiable> VecOp<T, R> {
     }
 }
 
-pub struct FieldsChanged {}
-impl FieldsChanged {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
 pub struct Build;
 impl Build {
-    pub fn assign_vec<B,M,R>(builder_vec: &mut Vec<VecOp<B,R>>, field: impl Fields) -> Result<Vec<M>>
+    pub fn assign_vec<B,M,R>(builder_vec: &mut Vec<VecOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<M>>
     where
         B: Builder<BuilderType = B, ModelType = M> + BuildableIdentity,
         M: Identifiable,
         R: MaybeIdentifiable
     {
         let mut existing_vec = Vec::new();
-        let mut fields_changed = FieldsChanged::new();
-        Self::modify_vec(builder_vec, &mut existing_vec, &mut fields_changed, field)?;
+        Self::modify_vec(builder_vec, &mut existing_vec, fields_changed, field)?;
         Ok(existing_vec)
     }
 
@@ -149,8 +145,6 @@ impl Build {
         M: Identifiable,
         R: MaybeIdentifiable
     {
-        let mut fields_changed = FieldsChanged::new();
-
         builder_vec
             .drain(0..)
             .map(|vec_op| { match vec_op {
@@ -378,8 +372,9 @@ pub trait Fields {
 }
 
 pub trait Class: Fields {
-    fn class_id() -> ClassID;
-    fn classname() -> &'static str;
+    fn class_ident() -> &'static ClassIdent;
+    fn class_id() -> ClassID { Self::class_ident().class_id() }
+    fn classname() -> &'static str { Self::class_ident().classname() }
 }
 
 /// Represents data types for model fields that are available to APIs.
@@ -409,22 +404,17 @@ pub enum FieldValueType {
     VecString,
 }
 
-/// Represents a specific field of a model that is available to APIs
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct Field {
+#[derive(Debug)]
+pub struct ClassIdent {
     class_id: ClassID,
-    classname: &'static str,
-    name: &'static str,
-    value_type: FieldValueType
+    classname: &'static str
 }
 
-impl Field {
-    pub const fn new(class_id: ClassID, classname: &'static str, name: &'static str, value_type: FieldValueType) -> Self {
+impl ClassIdent {
+    pub const fn new(class_id: ClassID, classname: &'static str) -> Self {
         Self {
             class_id,
-            classname,
-            name,
-            value_type
+            classname
         }
     }
 
@@ -434,6 +424,36 @@ impl Field {
 
     pub const fn classname(&self) -> &'static str {
         self.classname
+    }
+}
+
+/// Represents a specific field of a model that is available to APIs
+#[derive(Debug)]
+pub struct Field {
+    class_ident: &'static ClassIdent,
+    name: &'static str,
+    value_type: FieldValueType
+}
+
+impl Field {
+    pub const fn new(class_ident: &'static ClassIdent, name: &'static str, value_type: FieldValueType) -> Self {
+        Self {
+            class_ident,
+            name,
+            value_type
+        }
+    }
+
+    pub const fn class_id(&self) -> ClassID {
+        self.class_ident.class_id()
+    }
+
+    pub const fn classname(&self) -> &'static str {
+        self.class_ident.classname()
+    }
+
+    pub const fn class_ident(&self) -> &'static ClassIdent {
+        self.class_ident
     }
 
     pub const fn name(&self) -> &'static str {

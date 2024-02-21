@@ -1,5 +1,5 @@
 
-pub enum ClassIdent {
+pub enum CodebaseClassID {
     Invalid = 0,
     Identity,
     Descriptor,

@@ -137,31 +137,26 @@ impl Fields for WorldField {
 }
 
 impl Class for WorldField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl WorldField {
-    const CLASS_ID: ClassID = ClassIdent::World as ClassID;
     const CLASSNAME: &'static str = "World";
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::World as ClassID, Self::CLASSNAME);
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_FRAME: &'static str = "frame";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_AREAS: &'static str = "areas";
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_THINGS: &'static str = "things";
-
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
-    const FIELD_FRAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_FRAME, FieldValueType::U64);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_AREAS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_AREAS, FieldValueType::VecModel);
-    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::VecModel);
-    const FIELD_THINGS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_THINGS, FieldValueType::VecModel);
+    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
+    const FIELD_FRAME: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_FRAME, FieldValueType::U64);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_AREAS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREAS, FieldValueType::VecModel);
+    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::VecModel);
+    const FIELD_THINGS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_THINGS, FieldValueType::VecModel);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -205,6 +200,7 @@ impl Builder for WorldBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let mut fields_changed = FieldsChanged::new(WorldField::class_ident());
         let identity = Creation::try_assign(&mut self.identity, WorldField::Identity)?;
         let frame = Self::try_assign_value(&mut self.frame, WorldField::Frame)?;
         let descriptor = Creation::try_assign(&mut self.descriptor, WorldField::Descriptor)?;
@@ -249,9 +245,9 @@ impl Builder for WorldBuilder {
         self.next_id = next_id;
 
         let uid = identity.into_uid();
-        let areas = Build::assign_vec(&mut self.areas, WorldField::Areas)?;
-        let routes = Build::assign_vec(&mut self.routes, WorldField::Routes)?;
-        let things = Build::assign_vec(&mut self.things, WorldField::Things)?;
+        let areas = Build::assign_vec(&mut self.areas, &mut fields_changed, WorldField::Areas)?;
+        let routes = Build::assign_vec(&mut self.routes, &mut fields_changed, WorldField::Routes)?;
+        let things = Build::assign_vec(&mut self.things, &mut fields_changed, WorldField::Things)?;
         let next_id = self.next_id + 1;
 
         let world = World {
@@ -268,6 +264,8 @@ impl Builder for WorldBuilder {
     }
 
     fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        let mut fields_changed = FieldsChanged::new(WorldField::class_ident());
+
         if self.descriptor.is_some() {
             original.descriptor = Creation::assign(&mut self.descriptor)?;
         }
@@ -308,7 +306,6 @@ impl Builder for WorldBuilder {
 
         self.areas = areas;
 
-        let mut fields_changed = FieldsChanged::new();
         Build::modify_vec(&mut self.areas, &mut original.areas, &mut fields_changed, WorldField::Areas)?;
         Build::modify_vec(&mut self.routes, &mut original.routes, &mut fields_changed, WorldField::Routes)?;
         Build::modify_vec(&mut self.things, &mut original.things, &mut fields_changed, WorldField::Things)?;

@@ -48,25 +48,21 @@ impl Fields for EndField {
 }
 
 impl Class for EndField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl EndField {
-    const CLASS_ID: ClassID = ClassIdent::End as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::End as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "End";
     const FIELDNAME_AREA_IDENTITY: &'static str = "area_identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_DIRECTION: &'static str = "direction";
 
-    const FIELD_AREA_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Model);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_DIRECTION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DIRECTION, FieldValueType::Model);
+    const FIELD_AREA_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_DIRECTION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DIRECTION, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

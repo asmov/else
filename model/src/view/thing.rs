@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, classes::*, descriptor::*, identity::*};
+use crate::{error::*, builder::*, codebase::*, descriptor::*, identity::*};
 
 pub struct ThingView {
     uid: UID,
@@ -42,22 +42,18 @@ impl Fields for ThingViewField {
 }
 
 impl Class for ThingViewField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl ThingViewField {
-    const CLASS_ID: ClassID = ClassIdent::ThingView as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::ThingView as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "ThingView";
     const FIELDNAME_UID: &'static str = "uid";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
-    const FIELD_UID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_UID, FieldValueType::UID);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
 }
 
 pub struct ThingViewBuilder {

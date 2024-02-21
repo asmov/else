@@ -1,4 +1,4 @@
-use crate::{classes::*, error::*, builder::*, identity::*, descriptor::*, thing::*, world::World};
+use crate::{codebase::*, error::*, builder::*, identity::*, descriptor::*, thing::*, world::World};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -57,27 +57,23 @@ impl Fields for AreaField {
 }
 
 impl Class for AreaField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl AreaField {
-    const CLASS_ID: ClassID = ClassIdent::Area as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Area as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Area";
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_OCCUPANTS: &'static str = "occupants";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ROUTES, FieldValueType::VecUID);
-    const FIELD_OCCUPANTS: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_OCCUPANTS, FieldValueType::VecUID);
+    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::VecUID);
+    const FIELD_OCCUPANTS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_OCCUPANTS, FieldValueType::VecUID);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

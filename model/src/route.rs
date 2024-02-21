@@ -4,7 +4,7 @@ pub mod endpoint;
 pub mod junction;
 pub mod point;
 
-use crate::{classes::*, error::*, builder::*, identity::*, descriptor::*};
+use crate::{codebase::*, error::*, builder::*, identity::*, descriptor::*};
 use serde;
 
 pub use crate::route::{end::*, endpoint::*, junction::*, point::*, direction::*};
@@ -73,27 +73,23 @@ impl Fields for RouteField {
 }
 
 impl Class for RouteField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl RouteField {
-    const CLASS_ID: ClassID = ClassIdent::Route as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Route as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Route";
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_POINT_A: &'static str = "point_a";
     const FIELDNAME_POINT_B: &'static str = "point_b";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_POINT_A: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_POINT_A, FieldValueType::Model);
-    const FIELD_POINT_B: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_POINT_B, FieldValueType::Model);
+    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_POINT_A: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_A, FieldValueType::Model);
+    const FIELD_POINT_B: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_B, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

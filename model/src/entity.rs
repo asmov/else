@@ -1,4 +1,4 @@
-use crate::{classes::*, error::*, identity::*, builder::*, descriptor::*, location::*};
+use crate::{codebase::*, error::*, identity::*, builder::*, descriptor::*, location::*};
 use serde;
 
 
@@ -65,17 +65,13 @@ impl Fields for EntityField {
 }
 
 impl Class for EntityField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl EntityField {
-    const CLASS_ID: ClassID = ClassIdent::Entity as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Entity as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Entity";
     const FIELDNAME_IDENTITY: &'static str = "identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
@@ -83,11 +79,11 @@ impl EntityField {
     //pub const FIELDNAME_INVENTORY: &'static str = "inventory";
     //pub const FIELDNAME_COMPOSITION: &'static str = "composition";
 
-    const FIELD_IDENTITY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
-    const FIELD_DESCRIPTOR: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_LOCATION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_LOCATION, FieldValueType::UID);
-    //pub const FIELD_INVENTORY: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
-    //pub const FIELD_COMPOSITION: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
+    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_LOCATION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_LOCATION, FieldValueType::UID);
+    //pub const FIELD_INVENTORY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
+    //pub const FIELD_COMPOSITION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

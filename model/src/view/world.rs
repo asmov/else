@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, classes::*, identity::*, route::*, timeframe::*, view::area::*};
+use crate::{error::*, builder::*, codebase::*, identity::*, route::*, timeframe::*, view::area::*};
 
 pub struct WorldView {
     uid: UID,
@@ -52,22 +52,18 @@ impl Fields for WorldViewField {
 }
 
 impl Class for WorldViewField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl WorldViewField {
-    const CLASS_ID: ClassID = ClassIdent::WorldView as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::WorldView as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "WorldView";
-    const FIELD_UID: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "uid", FieldValueType::UID);
-    const FIELD_FRAME: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "frame", FieldValueType::U64);
-    const FIELD_AREA: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "area", FieldValueType::Model);
-    const FIELD_ROUTES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, "routes", FieldValueType::VecUID);
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID);
+    const FIELD_FRAME: Field = Field::new(&Self::CLASS_IDENT, "frame", FieldValueType::U64);
+    const FIELD_AREA: Field = Field::new(&Self::CLASS_IDENT, "area", FieldValueType::Model);
+    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::VecUID);
 }
 
 pub struct WorldViewBuilder {

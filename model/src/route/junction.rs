@@ -37,23 +37,19 @@ impl Fields for JunctionField {
 }
 
 impl Class for JunctionField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl JunctionField {
-    const CLASS_ID: ClassID = ClassIdent::Junction as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Junction as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Junction";
     const FIELDNAME_ENTRANCES: &'static str = "entrances";
     const FIELDNAME_EXIT: &'static str = "exit";
 
-    const FIELD_ENTRANCES: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_ENTRANCES, FieldValueType::Model);
-    const FIELD_EXIT: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_EXIT, FieldValueType::Model);
+    const FIELD_ENTRANCES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTRANCES, FieldValueType::Model);
+    const FIELD_EXIT: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_EXIT, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

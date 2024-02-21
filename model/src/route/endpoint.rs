@@ -22,21 +22,17 @@ impl Fields for EndpointField {
 }
 
 impl Class for EndpointField {
-    fn class_id() -> ClassID {
-        Self::CLASS_ID
-    }
-
-    fn classname() -> &'static str {
-        Self::CLASSNAME
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
     }
 }
 
 impl EndpointField {
-    const CLASS_ID: ClassID = ClassIdent::Endpoint as ClassID;
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Endpoint as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Endpoint";
     const FIELDNAME_END: &'static str = "end";
 
-    const FIELD_END: Field = Field::new(Self::CLASS_ID, Self::CLASSNAME, Self::FIELDNAME_END, FieldValueType::Model);
+    const FIELD_END: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_END, FieldValueType::Model);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
