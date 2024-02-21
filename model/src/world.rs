@@ -187,6 +187,7 @@ impl Builder for WorldBuilder {
 
 
         let mut areas = self.areas;
+
         // handle movement of things between locations
         self.things
             .drain(0..)
@@ -331,22 +332,20 @@ impl WorldBuilder {
         Ok(())
     }
 
-    pub fn area_builder_existing(areas: &mut Vec<VecOp<AreaBuilder, UID>>, existing_area_uid: UID) -> Result<&mut VecOp<AreaBuilder, UID>> {
-        let current_area_vec_op = areas.iter_mut()
+    fn find_area_builder_by_uid(areas: &mut Vec<VecOp<AreaBuilder, UID>>, area_uid: UID) -> Option<&mut VecOp<AreaBuilder, UID>> {
+        areas.iter_mut()
             .find(|vec_op| match vec_op {
                 VecOp::Add(area_builder) | VecOp::Modify(area_builder) => {
                     area_builder.try_uid()
-                        .is_ok_and(|uid| uid == existing_area_uid)
+                        .is_ok_and(|uid| uid == area_uid)
                 },
                 VecOp::Remove(area_builder_uid) => {
-                    *area_builder_uid == existing_area_uid
+                    area_builder_uid == &area_uid
                 }
-            });
+            })
+    }
 
-        if let Some(vec_op) = current_area_vec_op {
-            return Ok(vec_op);
-        }
-
+    pub fn area_build_existing(areas: &mut Vec<VecOp<AreaBuilder, UID>>, existing_area_uid: UID) -> Result<&mut VecOp<AreaBuilder, UID>> {
         // otherwise create it
         let mut area_editor = Area::editor();
         area_editor.identity(IdentityBuilder::editor_from_uid(existing_area_uid))?;
@@ -384,7 +383,20 @@ impl WorldBuilder {
 
         match location {
             Location::Area(area_uid) => {
-                todo!()
+                let existing_area_vec_op = if let Some(existing) = Self::find_area_builder_by_uid(areas, area_uid) {
+                    existing
+                } else {
+                    Self::area_build_existing(areas, area_uid)?
+                };
+
+                match existing_area_vec_op {
+                    VecOp::Add(area_builder) | VecOp::Modify(area_builder) => {
+                        area_builder.add_occupant(thing_uid)?;
+                    },
+                    VecOp::Remove(_) => {
+                        return Err(Error::ModelNotFound{model: "Area", uid: area_uid })
+                    } 
+                }
             },
             Location::Route(route_uid) => {
                 todo!()
@@ -399,7 +411,12 @@ impl WorldBuilder {
         let existing_thing = existing_world.thing(thing_uid)?;
         match existing_thing.location() {
             Location::Area(area_uid) => {
-                let existing_area_vec_op = Self::area_builder_existing(areas, area_uid)?;
+                let existing_area_vec_op = if let Some(existing) = Self::find_area_builder_by_uid(areas, area_uid) {
+                    existing
+                } else {
+                    Self::area_build_existing(areas, area_uid)?
+                };
+
                 match existing_area_vec_op {
                     VecOp::Add(area_builder) | VecOp::Modify(area_builder) => {
                         area_builder.remove_occupant(thing_uid)?;

@@ -125,7 +125,10 @@ impl Build {
         M: Identifiable,
         R: MaybeIdentifiable
     {
-        todo!()
+        let mut existing_vec = Vec::new();
+        let mut fields_changed = FieldsChanged::new();
+        Self::modify_vec(builder_vec, &mut existing_vec, &mut fields_changed, field)?;
+        Ok(existing_vec)
     }
 
     // Modifies an existing Vec of models using a Builder's list of VecOps (Add, Modify, Remove)
