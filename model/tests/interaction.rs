@@ -110,7 +110,7 @@ mod tests {
 
         let mut world_editor = World::editor();
         world_editor.edit_thing(black_cat_editor).unwrap();
-        world_editor.modify(&mut world).unwrap();
+        dbg!(world_editor.modify(&mut world).unwrap());
 
         // confirm the change in location for 'black_cat'
         let new_location_uid = world

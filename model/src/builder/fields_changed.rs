@@ -18,6 +18,19 @@ impl FieldsChanged {
         }
     }
 
+    pub fn from_builder(builder: &impl Builder) -> Self {
+        let op = match builder.builder_mode() {
+            BuilderMode::Creator => ChangeOp::Create,
+            BuilderMode::Editor => ChangeOp::Modify
+        };
+
+        let root = ModelChangeNode::new(builder.class_ident(), op);
+
+        Self {
+            root 
+        }
+    }
+
     pub fn extend(&mut self, field: &'static Field, op: ChangeOp, rh: FieldsChanged) {
         let node = match field.value_type() {
             FieldValueType::Model(class_ident) => {
@@ -26,9 +39,9 @@ impl FieldsChanged {
                 model_node.children.extend(rh.root.children);
                 ChangeTreeNode::Model(model_node)
             },
-            FieldValueType::VecUID => todo!(),
-            FieldValueType::ModelCollection => todo!(),
-            FieldValueType::VecString => todo!(),
+            FieldValueType::UIDList => todo!(),
+            FieldValueType::ModelList => todo!(),
+            FieldValueType::StringList => todo!(),
             _ => panic!("FieldsChanged::extend() expects fieild types of Model or Collections")
         };
 

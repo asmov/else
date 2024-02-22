@@ -115,7 +115,7 @@ impl DescriptorField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Descriptor as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Descriptor";
     const FIELD_NAME: Field = Field::new(&Self::CLASS_IDENT, "name", FieldValueType::String);
-    const FIELD_KEYWORDS: Field = Field::new(&Self::CLASS_IDENT, "keywords", FieldValueType::VecString);
+    const FIELD_KEYWORDS: Field = Field::new(&Self::CLASS_IDENT, "keywords", FieldValueType::StringList);
     const FIELD_KEY: Field = Field::new(&Self::CLASS_IDENT, "key", FieldValueType::String);
     const FIELD_SHORT_DESCRIPTION: Field = Field::new(&Self::CLASS_IDENT, "short_description", FieldValueType::String);
     const FIELD_DESCRIPTION: Field = Field::new(&Self::CLASS_IDENT, "description", FieldValueType::String);

@@ -161,8 +161,13 @@ impl BuildableIdentity for ThingBuilder {
     }
 }
 
-pub trait BuildableThingVector {
+pub trait BuildableThingList {
     fn add_thing(&mut self, thing: ThingBuilder) -> Result<()>;
     fn edit_thing(&mut self, thing: ThingBuilder) -> Result<()>;
+    fn remove_thing(&mut self, thing_uid: UID) -> Result<()>;
+}
+
+pub trait BuildableThingUIDList {
+    fn add_thing(&mut self, thing_uid: UID) -> Result<()>;
     fn remove_thing(&mut self, thing_uid: UID) -> Result<()>;
 }

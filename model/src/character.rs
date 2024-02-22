@@ -76,7 +76,7 @@ impl CharacterField {
     const FIELDNAME_ENTITY: &'static str = "entity";
     const FIELDNAME_CORTEX: &'static str = "cortex";
 
-    const FIELD_ENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTITY, FieldValueType::Model(IdentityField::class_ident_const()));
+    const FIELD_ENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTITY, FieldValueType::Model(EntityField::class_ident_const()));
     //todo: this is the wrong class_ident
     const FIELD_CORTEX: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_CORTEX, FieldValueType::Model(RoutineCortexField::class_ident_const()));
 
@@ -128,16 +128,17 @@ impl Builder for CharacterBuilder {
     }
 
     fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         // todo
         if self.entity.is_some() {
-            let modification = self.entity.take().unwrap().modify(&mut original.entity)?;
+            Build::modify(&mut self.entity, &mut original.entity, &mut fields_changed, CharacterField::Entity)?;
+            /*let modification = self.entity.take().unwrap().modify(&mut original.entity)?;
             self.entity = Some(modification.take_builder());
-            fields_changed.push(CharacterField::Entity.field());
+            fields_changed.push(CharacterField::Entity.field());*/
         }
 
-        Ok(Modification::new_old(ThingBuilder::Character(self), fields_changed))
+        Ok(Modification::new(ThingBuilder::Character(self), fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {

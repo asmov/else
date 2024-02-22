@@ -1,13 +1,31 @@
+//! # Else Modeling
+//! This module defines the core system and standards that all else models are built upon and adhere to. Each model
+//! defines an accompanying [Builder] and schema ([Class], [Fields]).
+//! ## Builder
+//! A builder is used to create and modify its model type. Direct mutation of a model object is performed solely through
+//! [Builder::modify()].
+//! ## Schema
+//! A model's schema definition is used by its Builder and modeling helpers. Schema definitions are defined as an `enum`
+//! that implements [Fields] and [Class]. Each variant represents a field of its model.
+//! ## Creation and Modification
+//! The result of a [Builder::create()] or [Builder::modify()] is a [Creation] or [Modification] object, respectively.
+//! They act as a containers for both a fully processed Builder and a [FieldsChanged] report. Creation and Modification
+//! objects can be serialized and transmitted, allowing for incremental synchronization of state. FieldsChanged is not
+//! synchronized, however, as it reports solely on changes to the local system's state.
+//! Refer to [Sync] for more information.
+
 pub mod fields_changed;
 
 use crate::{error::*, identity::*, world::*};
 
 pub use fields_changed::*;
 
-/// Performs all write operations for game data objects. Nothing is mutated directly on the object itself.  
+/// Performs all write operations for model data objects. Nothing is mutated directly on the object itself.  
 /// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
 /// - BuilderMode::Creator => creator() and create()
 /// - BuilderMode::Editor  => editor() and modify()
+///
+/// Refer to the module documentation for more information.
 pub trait Builder: Sized {
     /// The model struct that this builder ultimately creates. If the model is a variant of an enum (like Thing), then
     /// BuilderType is that enum instead.
@@ -214,6 +232,7 @@ impl Build {
                                 .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
                             let modification = builder.modify(existing)?;
                             let builder = modification.take_builder();
+                            
                             Ok(VecOp::Add(builder))
                         }
                     }
@@ -458,11 +477,11 @@ pub enum FieldValueType {
     /// impl Builder
     Model(&'static ClassIdent),
     /// Vec<UID>
-    VecUID,
+    UIDList,
     /// Vec<impl Builder>
-    ModelCollection,
+    ModelList,
     /// Vec<String>
-    VecString,
+    StringList,
 }
 
 #[derive(Debug)]
