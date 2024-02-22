@@ -184,22 +184,19 @@ impl Builder for DescriptorBuilder {
     }
 
     fn modify(self, existing: &mut Descriptor) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if let Some(name) = &self.name {
             existing.name = name.clone();
-            fields_changed.push(DescriptorField::Name.field());
         }
         if self.description.is_some() {
             existing.description = self.description.clone();
-            fields_changed.push(DescriptorField::Description.field());
         }
         if self.notes.is_some() {
             existing.notes = self.notes.clone();
-            fields_changed.push(DescriptorField::Notes.field());
         }
 
-        Ok(Modification::new_old(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn set(&mut self, field_name: &str, raw_value: String) -> Result<()> {

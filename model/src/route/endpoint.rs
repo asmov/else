@@ -77,14 +77,13 @@ impl Builder for EndpointBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if self.end.is_some() {
             existing.end = Creation::assign(&mut self.end)?;
-            fields_changed.push(EndpointField::End.field())
         }
 
-        Ok(Modification::new_old(PointBuilder::Endpoint(self), fields_changed))
+        Ok(Modification::new(PointBuilder::Endpoint(self), fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {

@@ -135,7 +135,7 @@ impl Builder for AreaBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if self.identity.is_none() {
             self.identity(IdentityBuilder::from_original(&self, existing))?;
@@ -145,8 +145,6 @@ impl Builder for AreaBuilder {
             let descriptor = self.descriptor.unwrap();
             self.descriptor = Some(descriptor.modify(&mut existing.descriptor)?
                 .take_builder());
-            
-            fields_changed.push(AreaField::Descriptor.field());
         }
 
         if !self.occupant_thing_ids.is_empty() {
@@ -163,7 +161,7 @@ impl Builder for AreaBuilder {
             }
         }
 
-        Ok(Modification::new_old(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {

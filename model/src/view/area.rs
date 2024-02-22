@@ -129,21 +129,19 @@ impl Builder for AreaViewBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if self.identity.is_some() {
             existing.uid = Creation::assign(&mut self.identity)?.to_uid();
-            fields_changed.push(AreaViewField::UID.field());
         }
         if self.descriptor.is_some() {
             existing.descriptor = Creation::assign(&mut self.descriptor)?;
-            fields_changed.push(AreaViewField::Descriptor.field());
         }
 
         Creation::modify_vec(&mut self.things, &mut existing.things)?;
         Creation::modify_vec_uid(&mut self.routes, &mut existing.route_ids)?;
 
-        Ok(Modification::new_old(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {

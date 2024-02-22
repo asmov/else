@@ -308,7 +308,7 @@ impl Builder for WorldBuilder {
         Build::modify_vec(&mut self.routes, &mut existing.routes, &mut fields_changed, WorldField::Routes)?;
         Build::modify_vec(&mut self.things, &mut existing.things, &mut fields_changed, WorldField::Things)?;
 
-        Ok(Modification::new_old(self, Vec::new()))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {

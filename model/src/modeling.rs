@@ -296,6 +296,10 @@ where
         &self.builder
     }
 
+    pub fn fields_changed(&self) -> &FieldsChanged {
+        &self.fields_changed
+    }
+
     pub fn split(self) -> (B, FieldsChanged) {
         (self.builder, self.fields_changed)
     }

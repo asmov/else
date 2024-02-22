@@ -118,22 +118,19 @@ impl Builder for EndBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if self.area_identity.is_some() {
             existing.area_identity = Creation::assign(&mut self.area_identity)?;
-            fields_changed.push(EndField::AreaIdentity.field())
         }
         if self.descriptor.is_some() {
             existing.descriptor = Creation::assign(&mut self.descriptor)?;
-            fields_changed.push(EndField::Descriptor.field())
         }
         if let Some(direction) = &self.direction {
             existing.direction = direction.clone();
-            fields_changed.push(EndField::Direction.field())
         }
 
-        Ok(Modification::new_old(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {

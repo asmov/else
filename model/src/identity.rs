@@ -320,26 +320,22 @@ impl Builder for IdentityBuilder {
     }
 
     fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if let Some(id) = self.id {
             existing.id = id;
-            fields_changed.push(IdentityField::ID.field());
         }
         if let Some(region_id) = self.class_id {
             existing.class_id = region_id;
-            fields_changed.push(IdentityField::ClassID.field());
         }
         if let Some(world_id) = self.world_id {
             existing.world_id = world_id;
-            fields_changed.push(IdentityField::WorldID.field());
         }
         if let Some(universe_id) = self.universe_id {
             existing.universe_id = universe_id;
-            fields_changed.push(IdentityField::UniverseID.field());
         }
 
-        Ok(Modification::new_old(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {

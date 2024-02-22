@@ -101,19 +101,17 @@ impl Builder for JunctionBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if !self.entrances.is_empty() {
             Creation::modify_vec(&mut self.entrances, &mut existing.entrances)?;
-            fields_changed.push(JunctionField::Entrances.field())
         }
 
         if self.exit.is_some() {
             existing.exit = Creation::assign(&mut self.exit)?;
-            fields_changed.push(JunctionField::Exit.field())
         }
 
-        Ok(Modification::new_old(PointBuilder::Junction(self), fields_changed))
+        Ok(Modification::new(PointBuilder::Junction(self), fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {
