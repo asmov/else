@@ -278,13 +278,6 @@ impl<B> Modification<B>
 where
     B: Builder<BuilderType = B>
 {
-    pub fn new_old(builder: B, _fields_changed_old: Vec<&'static Field>) -> Self {
-        Self {
-            fields_changed: FieldsChanged::new(builder.class_ident(), ChangeOp::Modify),
-            builder,
-        }
-    }
-
     pub fn new(builder: B, fields_changed: FieldsChanged) -> Self {
         Self {
             builder,
