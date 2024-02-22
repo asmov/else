@@ -69,18 +69,22 @@ impl Builder for EndpointBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let end = Creation::try_assign(&mut self.end, EndpointField::End)?;
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let endpoint = Endpoint { end };
+        let end = Build::create(&mut self.end, &mut fields_changed, EndpointField::End)?;
+
+        let endpoint = Endpoint {
+            end
+        };
 
         Ok(Creation::new(PointBuilder::Endpoint(self), Point::Endpoint(endpoint)))
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
+        let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
         if self.end.is_some() {
-            existing.end = Creation::assign(&mut self.end)?;
+            Build::modify(&mut self.end, &mut existing.end, &mut fields_changed, EndpointField::End)?;
         }
 
         Ok(Modification::new(PointBuilder::Endpoint(self), fields_changed))

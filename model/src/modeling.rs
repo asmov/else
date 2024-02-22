@@ -175,10 +175,6 @@ where
         &self.model
     }
 
-    pub fn split_option(self) -> (Option<B>, B::ModelType) {
-        (Some(self.builder), self.model)
-    }
-
     pub fn split(self) -> (B, B::ModelType) {
         (self.builder, self.model)
     }
@@ -200,69 +196,6 @@ where
             .split();
         let _ = creator_option.insert(builder);
         Ok(model)
-    }
-
-    pub fn assign_vec(creators: &mut Vec<B>) -> Result<Vec<B::ModelType>> {
-        Ok(creators
-            .drain(0..)
-            .map(|creator| creator.create())
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .map(|creation| {
-                let (builder, model) = creation.split();
-                creators.push(builder);
-                model
-            })
-            .collect())
-    }
-
-    pub fn assign_vec_uid(creators: &mut Vec<B>) -> Result<Vec<UID>>
-    where
-        B::ModelType: Identifiable
-    {
-        Ok(creators
-            .drain(0..)
-            .map(|creator| creator.create())
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .map(|creation| {
-                let (builder, model) = creation.split();
-                creators.push(builder);
-                model.uid()
-            })
-            .collect())
-    }
-
-
-    //todo: conditionally call create() or modify() based on the builder's mode
-    //todo: move this to the Builder trait
-    pub fn modify_vec(creators: &mut Vec<B>, originals: &mut Vec<B::ModelType>) -> Result<()> {
-       Ok(creators 
-            .drain(0..)
-            .map(|creator| creator.create())
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .for_each(|creation| {
-                let (builder, model) = creation.split();
-                originals.push(model);
-                creators.push(builder);
-            }))
-    }
-
-    pub fn modify_vec_uid(creators: &mut Vec<B>, originals: &mut Vec<UID>) -> Result<()>
-    where
-        B::ModelType: Identifiable
-    {
-       Ok(creators 
-            .drain(0..)
-            .map(|creator| creator.create())
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .for_each(|creation| {
-                let (builder, model) = creation.split();
-                originals.push(model.uid());
-                creators.push(builder);
-            }))
     }
 }
 

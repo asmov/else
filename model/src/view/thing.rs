@@ -115,14 +115,33 @@ impl Builder for ThingViewBuilder {
     }
 }
 
-impl ThingViewBuilder {
-    pub fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        self.identity = Some(identity);
-        Ok(self)
+impl MaybeIdentifiable for ThingViewBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        todo!()
+    }
+}
+
+
+impl BuildableIdentity for ThingViewBuilder {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+        todo!()
     }
 
-    pub fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self> {
-        self.descriptor = Some(descriptor);
-        Ok(self)
+    fn identity_builder(&mut self) -> &mut IdentityBuilder {
+        todo!()
+    }
+
+    fn get_identity(&self) -> Option<&IdentityBuilder> {
+        todo!()
+    }
+}
+
+impl BuildableDescriptor for ThingViewBuilder {
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
+        todo!()
+    }
+
+    fn descriptor_builder(&mut self) -> &mut DescriptorBuilder {
+        todo!()
     }
 }

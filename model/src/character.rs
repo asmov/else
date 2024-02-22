@@ -131,8 +131,8 @@ impl Builder for CharacterBuilder {
         Ok(Creation::new(ThingBuilder::Character(self), Thing::Character(character)))
     }
 
-    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
         if self.entity.is_some() {
             Build::modify(&mut self.entity, &mut existing.entity, &mut fields_changed, CharacterField::Entity)?;

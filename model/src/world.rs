@@ -498,7 +498,7 @@ impl WorldBuilder {
 
                 match existing_area_list_op {
                     ListOp::Add(area_builder) | ListOp::Edit(area_builder) => {
-                        area_builder.add_occupant(thing_uid)?;
+                        area_builder.add_occupant_uid(thing_uid)?;
                     },
                     ListOp::Remove(_) => {
                         return Err(Error::ModelNotFound{model: "Area", uid: area_uid })
@@ -526,7 +526,7 @@ impl WorldBuilder {
 
                 match existing_area_list_op {
                     ListOp::Add(area_builder) | ListOp::Edit(area_builder) => {
-                        area_builder.remove_occupant(thing_uid)?;
+                        area_builder.remove_occupant_uid(thing_uid)?;
                     },
                     ListOp::Remove(_) => {/* nothing to do */} 
                 }

@@ -19,6 +19,12 @@ impl Keyed for End {
     }
 }
 
+impl Identifiable for End {
+    fn uid(&self) -> UID {
+        self.area_identity.uid()
+    }
+}
+
 impl Descriptive for End {
     /// The description of the Route that this end connects to, from the point-of-view of the Area.
     fn descriptor(&self) -> &Descriptor {
@@ -118,7 +124,7 @@ impl Builder for EndBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
+        let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
         if self.area_identity.is_some() {
             existing.area_identity = Creation::assign(&mut self.area_identity)?;
@@ -164,6 +170,14 @@ impl BuildableDescriptor for EndBuilder {
         }
 
         self.descriptor.as_mut().unwrap()
+    }
+}
+
+impl MaybeIdentifiable for EndBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        self.area_identity.as_ref()
+            .ok_or_else(|| Error::BuildableUID{})
+            .and_then(|uid| uid.try_uid())
     }
 }
 

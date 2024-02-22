@@ -74,6 +74,10 @@ pub enum ThingBuilder {
     Character(CharacterBuilder),
 }
 
+pub enum ThingBuilderRef<'thing> {
+    Character(&'thing CharacterBuilder),
+}
+
 impl Builder for ThingBuilder {
     type DomainType = World;
     type ModelType = Thing;
@@ -168,7 +172,7 @@ pub trait BuildableThingList {
     fn remove_thing(&mut self, thing_uid: UID) -> Result<()>;
 }
 
-pub trait BuildableThingUIDList {
-    fn add_thing(&mut self, thing_uid: UID) -> Result<()>;
-    fn remove_thing(&mut self, thing_uid: UID) -> Result<()>;
+pub trait BuildableOccupantList {
+    fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<()>;
+    fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<()>;
 }

@@ -119,7 +119,7 @@ impl Builder for WorldViewBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
+        let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
         if self.frame.is_some() {
             Build::modify_value(&mut self.frame, &mut fields_changed, WorldField::Frame)?;

@@ -183,8 +183,8 @@ impl Builder for DescriptorBuilder {
         Ok(Creation::new(self, descriptor))
     }
 
-    fn modify(self, existing: &mut Descriptor) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
+    fn modify(mut self, existing: &mut Descriptor) -> Result<Modification<Self::BuilderType>> {
+        let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
         if let Some(name) = &self.name {
             existing.name = name.clone();

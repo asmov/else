@@ -55,7 +55,7 @@ impl JunctionField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct JunctionBuilder {
     builder_mode: BuilderMode,
-    entrances: Vec<EndBuilder>,
+    entrances: Vec<ListOp<EndBuilder, UID>>,
     exit: Option<EndBuilder>
 }
 
@@ -84,13 +84,15 @@ impl Builder for JunctionBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
         // at least one entrance is required
         if self.entrances.is_empty() {
             return Err(Error::FieldNotSet { class: JunctionField::CLASSNAME, field: JunctionField::FIELDNAME_ENTRANCES });
         }
 
-        let entrances = Creation::assign_vec(&mut self.entrances)?;
-        let exit = Creation::try_assign(&mut self.exit, JunctionField::Exit)?;
+        let entrances = Build::create_vec(&mut self.entrances, &mut fields_changed, JunctionField::Entrances)?;
+        let exit = Build::create(&mut self.exit, &mut fields_changed, JunctionField::Exit)?;
 
         let junction = Junction {
             entrances,
@@ -101,14 +103,13 @@ impl Builder for JunctionBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
+        let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
         if !self.entrances.is_empty() {
-            Creation::modify_vec(&mut self.entrances, &mut existing.entrances)?;
+            Build::modify_vec(&mut self.entrances, &mut existing.entrances, &mut fields_changed, JunctionField::Entrances)?;
         }
-
         if self.exit.is_some() {
-            existing.exit = Creation::assign(&mut self.exit)?;
+            existing.exit = Build::create(&mut self.exit, &mut fields_changed, JunctionField::Exit)?;
         }
 
         Ok(Modification::new(PointBuilder::Junction(self), fields_changed))
@@ -121,7 +122,12 @@ impl Builder for JunctionBuilder {
 
 impl JunctionBuilder {
     pub fn add_entrance(&mut self, end: EndBuilder) -> Result<()> {
-        self.entrances.push(end);
+        self.entrances.push(ListOp::Add(end));
+        Ok(())
+    }
+
+    pub fn remove_entrance(&mut self, area_uid: UID) -> Result<()> {
+        self.entrances.push(ListOp::Remove(area_uid));
         Ok(())
     }
 

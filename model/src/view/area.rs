@@ -1,10 +1,10 @@
-use crate::{error::*, modeling::*, descriptor::*, identity::*, route::*, view::thing::*, codebase::*, world::*};
+use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, route::*, world::*, thing::*};
 
 pub struct AreaView {
     uid: UID,
     descriptor: Descriptor,
-    things: Vec<ThingView>, // only those visible to the viewer
-    route_ids: Vec<UID> // safe to hand to the client (for now)
+    occupant_uids: Vec<UID>, // only those visible to the viewer
+    route_uids: Vec<UID> // safe to hand to the client (for now)
 }
 
 impl Built for AreaView {
@@ -30,14 +30,14 @@ impl Descriptive for AreaView {
 }
 
 impl Routing for AreaView {
-    fn route_ids(&self) -> &Vec<UID> {
-        &self.route_ids
+    fn route_uids(&self) -> &Vec<UID> {
+        &self.route_uids
     }
 }
 
 impl AreaView {
-    pub fn things(&self) -> &Vec<ThingView> {
-        &self.things
+    pub fn occupant_uids(&self) -> &Vec<UID> {
+        &self.occupant_uids
     }
 }
 
@@ -82,8 +82,8 @@ pub struct AreaViewBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
-    things: Vec<ThingViewBuilder>,
-    routes: Vec<RouteBuilder>
+    occupant_uids: Vec<ListOp<IdentityBuilder, UID>>,
+    route_uids: Vec<ListOp<IdentityBuilder, UID>>
 }
 
 impl Builder for AreaViewBuilder {
@@ -96,8 +96,8 @@ impl Builder for AreaViewBuilder {
             builder_mode: BuilderMode::Creator,
             identity: None,
             descriptor: None,
-            things: Vec::new(),
-            routes: Vec::new()
+            occupant_uids: Vec::new(),
+            route_uids: Vec::new()
         }
     }
 
@@ -113,33 +113,32 @@ impl Builder for AreaViewBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let uid = Creation::try_assign(&mut self.identity, AreaViewField::UID)?.to_uid();
-        let descriptor = Creation::try_assign(&mut self.descriptor, AreaViewField::Descriptor)?;
-        let things = Creation::assign_vec(&mut self.things)?;
-        let route_ids = Creation::assign_vec_uid(&mut self.routes)?;
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let uid = Build::create(&mut self.identity, &mut fields_changed, AreaViewField::UID)?.to_uid();
+        let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, AreaViewField::Descriptor)?;
+        let occupant_uids = Build::create_uid_vec(&mut self.occupant_uids, &mut fields_changed, AreaViewField::Things)?;
+        let route_uids = Build::create_uid_vec(&mut self.route_uids, &mut fields_changed, AreaViewField::Routes)?;
 
         let area_view = AreaView {
             uid,
             descriptor,
-            things,
-            route_ids,
+            occupant_uids,
+            route_uids,
         };
 
         Ok(Creation::new(self, area_view))
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
+        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
-        if self.identity.is_some() {
-            existing.uid = Creation::assign(&mut self.identity)?.to_uid();
-        }
         if self.descriptor.is_some() {
-            existing.descriptor = Creation::assign(&mut self.descriptor)?;
+            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, AreaViewField::Descriptor)?;
         }
 
-        Creation::modify_vec(&mut self.things, &mut existing.things)?;
-        Creation::modify_vec_uid(&mut self.routes, &mut existing.route_ids)?;
+        Build::modify_uid_vec(&mut self.occupant_uids, &mut existing.occupant_uids, &mut fields_changed, AreaViewField::Things)?;
+        Build::modify_uid_vec(&mut self.route_uids, &mut existing.route_uids, &mut fields_changed, AreaViewField::Things)?;
 
         Ok(Modification::new(self, fields_changed))
     }
@@ -189,17 +188,26 @@ impl BuildableDescriptor for AreaViewBuilder {
     }
 }
 
-impl BuildableRouteVector for AreaViewBuilder {
-    fn add_route(&mut self, route: RouteBuilder) -> Result<()> {
-        self.routes.push(route);
+impl BuildableRouteUIDList for AreaViewBuilder {
+    fn add_route_uid(&mut self, uid: UID) -> Result<()> {
+        self.route_uids.push(ListOp::Add(IdentityBuilder::from_existing(self, &uid)));
+        Ok(())
+    }
+
+    fn remove_route_uid(&mut self, uid: UID) -> Result<()> {
+        self.route_uids.push(ListOp::Remove(uid));
         Ok(())
     }
 }
 
-impl AreaViewBuilder {
-    pub fn add_thing(&mut self, thing: ThingViewBuilder) -> Result<()> {
-        self.things.push(thing);
+impl BuildableOccupantList for AreaViewBuilder {
+    fn add_occupant_uid(&mut self, uid: UID) -> Result<()> {
+        self.occupant_uids.push(ListOp::Add(IdentityBuilder::from_existing(self, &uid)));
+        Ok(())
+    }
+
+    fn remove_occupant_uid(&mut self, uid: UID) -> Result<()> {
+        self.occupant_uids.push(ListOp::Remove(uid));
         Ok(())
     }
 }
-

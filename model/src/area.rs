@@ -85,7 +85,7 @@ pub struct AreaBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
-    occupant_thing_ids: Vec<ListOp<UID, UID>>
+    occupant_thing_ids: Vec<ListOp<IdentityBuilder, UID>>
 }
 
 impl Builder for AreaBuilder {
@@ -114,60 +114,39 @@ impl Builder for AreaBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let identity = Creation::try_assign(&mut self.identity, AreaField::Identity)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, AreaField::Descriptor)?;
-        let occupant_thing_ids = self.occupant_thing_ids.iter()
-            .map(|op| match op {
-                ListOp::Add(uid) => *uid,
-                ListOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::create"),
-                ListOp::Remove(uid) => unreachable!("VecOp::Remove not possible in AreaBuilder::create") 
-            })
-            .collect();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let uid = Build::create(&mut self.identity, &mut fields_changed, AreaField::Identity)?.uid();
+        let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, AreaField::Descriptor)?;
+        let occupant_thing_ids = Build::create_uid_vec(&mut self.occupant_thing_ids, &mut fields_changed, AreaField::Occupants)?;
 
         let area = Area {
-            uid: identity.into_uid(),
+            uid,
             descriptor,
+            occupant_thing_ids,
             route_id_map: Vec::new(), //todo
-            occupant_thing_ids
         };
 
         Ok(Creation::new(self, area))
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
-
-        if self.identity.is_none() {
-            self.identity(IdentityBuilder::from_original(&self, existing))?;
-        }
+        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
         if self.descriptor.is_some() {
-            let descriptor = self.descriptor.unwrap();
-            self.descriptor = Some(descriptor.modify(&mut existing.descriptor)?
-                .take_builder());
+            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, AreaField::Descriptor)?;
         }
-
         if !self.occupant_thing_ids.is_empty() {
-            for list_op in &self.occupant_thing_ids {
-                match *list_op {
-                    ListOp::Add(uid) => existing.occupant_thing_ids.push(uid),
-                    ListOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::modify"),
-                    ListOp::Remove(uid) => {
-                        let index = existing.occupant_thing_ids.iter().position(|&x| x == uid)
-                            .ok_or_else(|| Error::ModelNotFoundFor{model: "Thing", uid, op: "AreaBuilder::remove_occupant()"})?;
-                        existing.occupant_thing_ids.remove(index);
-                    }
-                }
-            }
+            Build::modify_uid_vec(&mut self.occupant_thing_ids, &mut existing.occupant_thing_ids, &mut fields_changed, AreaField::Occupants)?;
         }
 
         Ok(Modification::new(self, fields_changed))
     }
 
     fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
-        let area_uid = self.get_identity().unwrap().get_uid()?;
-        let area_dog_house_mut = world.area_mut(area_uid).unwrap(); //todo: don't unwrap
-        self.modify(area_dog_house_mut)
+        let area_uid = self.try_uid()?;
+        let area_mut = world.area_mut(area_uid).unwrap(); //todo: don't unwrap
+        self.modify(area_mut)
     }
 
     fn class_ident(&self) -> &'static ClassIdent {
@@ -226,12 +205,12 @@ pub trait BuildableAreaVector {
 }
 
 impl AreaBuilder {
-    pub fn add_occupant(&mut self, thing_uid: UID) -> Result<&mut Self> {
-        self.occupant_thing_ids.push(ListOp::Add(thing_uid));
+    pub fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self> {
+        self.occupant_thing_ids.push(ListOp::Add(IdentityBuilder::editor_from_uid(thing_uid)));
         Ok(self)
     }
 
-    pub fn remove_occupant(&mut self, thing_uid: UID) -> Result<&mut Self> {
+    pub fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self> {
         assert!(self.builder_mode() == BuilderMode::Editor, "AreaBuilder::remove_occupant only allowed in Editor mode");
         self.occupant_thing_ids.push(ListOp::Remove(thing_uid));
         Ok(self)

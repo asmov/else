@@ -415,7 +415,7 @@ impl IdentityBuilder {
         }
     }
 
-    pub fn from_original(builder: &impl Builder, identifiable: &impl Identifiable) -> Self {
+    pub fn from_existing(builder: &impl Builder, identifiable: &impl Identifiable) -> Self {
         let mut me = Self::builder(builder.builder_mode());
         me.uid(identifiable.uid()).unwrap();
         me
@@ -445,6 +445,21 @@ pub trait BuildableIdentity: Builder + MaybeIdentifiable {
         self.get_identity()
             .ok_or_else(|| Error::BuildableUID{})
             .and_then(|identity| identity.get_uid())
+    }
+}
+
+impl BuildableIdentity for IdentityBuilder {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+        *self = identity;
+        Ok(())
+    }
+
+    fn identity_builder(&mut self) -> &mut IdentityBuilder {
+        self
+    }
+
+    fn get_identity(&self) -> Option<&IdentityBuilder> {
+        Some(self)
     }
 }
 

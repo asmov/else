@@ -50,7 +50,7 @@ impl Route {
 }
 
 pub trait Routing {
-    fn route_ids(&self) -> &Vec<UID>;
+    fn route_uids(&self) -> &Vec<UID>;
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -230,5 +230,10 @@ impl RouteBuilder {
 
 pub trait BuildableRouteVector {
     fn add_route(&mut self, route: RouteBuilder) -> Result<()>; 
+}
+
+pub trait BuildableRouteUIDList {
+    fn add_route_uid(&mut self, uid: UID) -> Result<()>; 
+    fn remove_route_uid(&mut self, uid: UID) -> Result<()>; 
 }
 
