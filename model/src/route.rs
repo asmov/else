@@ -86,10 +86,10 @@ impl RouteField {
     const FIELDNAME_POINT_A: &'static str = "point_a";
     const FIELDNAME_POINT_B: &'static str = "point_b";
 
-    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
-    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_POINT_A: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_A, FieldValueType::Model);
-    const FIELD_POINT_B: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_B, FieldValueType::Model);
+    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model(IdentityField::class_ident_const()));
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
+    const FIELD_POINT_A: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_A, FieldValueType::Model(EndpointField::class_ident_const()));
+    const FIELD_POINT_B: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_B, FieldValueType::Model(EndpointField::class_ident_const()));
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -162,11 +162,11 @@ impl Builder for RouteBuilder {
             fields_changed.push(RouteField::PointB.field())
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        RouteField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        RouteField::class_ident()
     }
 }
 

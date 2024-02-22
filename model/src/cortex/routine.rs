@@ -56,8 +56,12 @@ impl RoutineCortexField {
     const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
     const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    const FIELD_ROUTINE_ID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_ID, FieldValueType::U64);
+    const FIELD_ROUTINE_ID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UID);
     const FIELD_ROUTINE_AWARENESS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -106,8 +110,8 @@ impl Builder for RoutineCortexBuilder {
         todo!()
     }
 
-    fn class_id(&self) -> ClassID {
-        RoutineCortexField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        RoutineCortexField::class_ident()
     }
 }
 

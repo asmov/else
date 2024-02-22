@@ -62,7 +62,7 @@ impl WorldViewField {
     const CLASSNAME: &'static str = "WorldView";
     const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID);
     const FIELD_FRAME: Field = Field::new(&Self::CLASS_IDENT, "frame", FieldValueType::U64);
-    const FIELD_AREA: Field = Field::new(&Self::CLASS_IDENT, "area", FieldValueType::Model);
+    const FIELD_AREA: Field = Field::new(&Self::CLASS_IDENT, "area", FieldValueType::Model(AreaViewField::class_ident_const()));
     const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::VecUID);
 }
 
@@ -129,11 +129,11 @@ impl Builder for WorldViewBuilder {
         
         Creation::modify_vec(&mut self.routes, &mut original.routes)?;
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        WorldViewField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        WorldViewField::class_ident()
     }
 }
 

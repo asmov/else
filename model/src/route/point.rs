@@ -58,10 +58,10 @@ impl Builder for PointBuilder {
         }
     }
 
-    fn class_id(&self) -> ClassID {
+    fn class_ident(&self) -> &'static ClassIdent {
         match self {
-            Self::Endpoint(modeler) => modeler.class_id(),
-            Self::Junction(modeler) => modeler.class_id(),
+            Self::Endpoint(modeler) => modeler.class_ident(),
+            Self::Junction(modeler) => modeler.class_ident(),
         }
     }
 }

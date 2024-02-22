@@ -1,28 +1,49 @@
-use crate::builder::*;
+use crate::{codebase::*, builder::*};
 
 /// A tree representation of every field changed during a model's creation or operation, including those of nested 
 /// models.
+#[derive(Debug)]
 pub struct FieldsChanged {
     /// Created by a Builder::create or Builder::modify.  
     /// Only TreeNodeType::Root, ChangeTreeNode::RootModel, and either ChangeOp::Create or ChangeOp::Modify are valid.
-    root: RootChangeNode
+    root: ModelChangeNode
 }
 
 impl FieldsChanged {
     pub fn new(class_ident: &'static ClassIdent, op: ChangeOp) -> Self {
-        let root = RootChangeNode {
-            class_ident,
-            op,
-            children: Vec::new()
-        };
+        let root = ModelChangeNode::new(class_ident, op);
 
         Self {
             root 
         }
     }
 
-    pub fn extend(&mut self, rh: FieldsChanged) {
-        self.root.children.extend(rh.root.children);
+    pub fn extend(&mut self, field: &'static Field, op: ChangeOp, rh: FieldsChanged) {
+        let node = match field.value_type() {
+            FieldValueType::Model(class_ident) => {
+                assert!(rh.root.class_ident().class_id() == class_ident.class_id());
+                let mut model_node = ModelChangeNode::new(class_ident, op);
+                model_node.children.extend(rh.root.children);
+                ChangeTreeNode::Model(model_node)
+            },
+            FieldValueType::VecUID => todo!(),
+            FieldValueType::ModelCollection => todo!(),
+            FieldValueType::VecString => todo!(),
+            _ => panic!("FieldsChanged::extend() expects fieild types of Model or Collections")
+        };
+
+        self.root.children.push(node);
+    }
+}
+
+const INVALID_CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Invalid as ClassID, "Invalid"); 
+
+// needed for Serde
+impl Default for FieldsChanged {
+    fn default() -> Self {
+        Self {
+            root: ModelChangeNode::new(&INVALID_CLASS_IDENT, ChangeOp::Create)
+        }
     }
 }
 
@@ -48,7 +69,6 @@ impl BranchChangeNode for FieldsChanged {
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum TreeNodeType {
-    Root,
     Leaf,
     Branch
 }
@@ -75,7 +95,7 @@ pub trait ChangeNode {
     fn subject(&self) -> ChangeSubject;
 }
 
-pub trait RootSubject {
+pub trait ModelSubject {
     fn class_ident(&self) -> &'static ClassIdent;
 }
 
@@ -91,22 +111,24 @@ pub trait BranchChangeNode: ChangeNode {
     fn children(&self) -> &Vec<ChangeTreeNode>;
 }
 
+#[derive(Debug)]
 pub enum ChangeTreeNode {
-    Root(RootChangeNode),
+    Model(ModelChangeNode),
     Scalar(ScalarChangeNode),
     IdentityCollection(IdentityCollectionChangeNode),
     IdentityItem(IdentityItemChangeNode),
 }
 
-pub struct RootChangeNode {
+#[derive(Debug)]
+pub struct ModelChangeNode {
     class_ident: &'static ClassIdent,
     op: ChangeOp,
     children: Vec<ChangeTreeNode>
 }
 
-impl ChangeNode for RootChangeNode {
+impl ChangeNode for ModelChangeNode {
     fn node_type(&self) -> TreeNodeType {
-        TreeNodeType::Root
+        TreeNodeType::Branch
     }
 
     fn op(&self) -> ChangeOp {
@@ -118,18 +140,29 @@ impl ChangeNode for RootChangeNode {
     }
 }
 
-impl BranchChangeNode for RootChangeNode {
+impl BranchChangeNode for ModelChangeNode {
     fn children(&self) -> &Vec<ChangeTreeNode> {
         &self.children
     }
 }
 
-impl RootSubject for RootChangeNode {
+impl ModelSubject for ModelChangeNode {
     fn class_ident(&self) -> &'static ClassIdent {
         self.class_ident
     }
 }
 
+impl ModelChangeNode {
+    pub fn new(class_ident: &'static ClassIdent, op: ChangeOp) -> Self {
+        Self {
+            class_ident,
+            op,
+            children: Vec::new()
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct ScalarChangeNode {
     field: &'static Field,
     op: ChangeOp
@@ -166,6 +199,7 @@ impl ScalarChangeNode {
 
 /// Represent a Vector or Map of `impl Identifiable`.
 /// Only Modify operations are valid for it. Only Add and Remove operations are valid for its children.
+#[derive(Debug)]
 pub struct IdentityCollectionChangeNode {
     field: &'static Field,
     op: ChangeOp,
@@ -226,6 +260,7 @@ impl IdentityCollectionChangeNode {
 
 /// Represents a single `impl Identifiable` item in a `IdentityCollectionChangeNode`.
 /// Only Add and Remove operations are valid for it.
+#[derive(Debug)]
 pub struct IdentityItemChangeNode {
     uid: UID,
     op: ChangeOp

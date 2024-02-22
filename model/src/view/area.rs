@@ -69,9 +69,13 @@ impl AreaViewField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::AreaView as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "AreaView";
     const FIELD_UID: &'static Field = &Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID);
-    const FIELD_DESCRIPTOR: &'static Field = &Field::new(&Self::CLASS_IDENT, "descriptor", FieldValueType::Model);
-    const FIELD_THINGS: &'static Field = &Field::new(&Self::CLASS_IDENT, "things", FieldValueType::VecModel);
-    const FIELD_ROUTES: &'static Field = &Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::VecModel);
+    const FIELD_DESCRIPTOR: &'static Field = &Field::new(&Self::CLASS_IDENT, "descriptor", FieldValueType::Model(DescriptorField::class_ident_const()));
+    const FIELD_THINGS: &'static Field = &Field::new(&Self::CLASS_IDENT, "things", FieldValueType::ModelCollection);
+    const FIELD_ROUTES: &'static Field = &Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::ModelCollection);
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 pub struct AreaViewBuilder {
@@ -138,11 +142,11 @@ impl Builder for AreaViewBuilder {
         Creation::modify_vec(&mut self.things, &mut original.things)?;
         Creation::modify_vec_uid(&mut self.routes, &mut original.route_ids)?;
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        AreaViewField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        AreaViewField::class_ident()
     }
 }
 

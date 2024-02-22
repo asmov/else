@@ -55,7 +55,7 @@ pub enum EntityField {
 impl Fields for EntityField {
     fn field(&self) -> &'static Field {
         match self {
-            Self::Identity => &Self::FIELD_IDENTITY,
+            Self::Identity => &Self::FIELD_UID,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::Location => &Self::FIELD_LOCATION,
             //Self::Inventory => &Self::FIELD_INVENTORY,
@@ -73,14 +73,14 @@ impl Class for EntityField {
 impl EntityField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Entity as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Entity";
-    const FIELDNAME_IDENTITY: &'static str = "identity";
+    const FIELDNAME_UID: &'static str = "uid";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_LOCATION: &'static str = "location";
     //pub const FIELDNAME_INVENTORY: &'static str = "inventory";
     //pub const FIELDNAME_COMPOSITION: &'static str = "composition";
 
-    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
-    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
     const FIELD_LOCATION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_LOCATION, FieldValueType::UID);
     //pub const FIELD_INVENTORY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
     //pub const FIELD_COMPOSITION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
@@ -144,11 +144,11 @@ impl Builder for EntityBuilder {
             fields_changed.push(EntityField::Location.field());
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        EntityField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        EntityField::class_ident()
     }
 }
 

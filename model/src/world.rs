@@ -95,7 +95,7 @@ impl World {
 
     pub fn spawn_thing(&mut self, mut thing: ThingBuilder) -> Result<(UID, Modification<WorldBuilder>)> {
         let thing_id = self.generate_id();
-        let class_id = thing.class_id();
+        let class_id = thing.class_ident().class_id();
         let world_identity = self.uid().into_identity();
 
         let identity_builder = thing.entity_builder().identity_builder();
@@ -126,7 +126,7 @@ pub enum WorldField {
 impl Fields for WorldField {
     fn field(&self) -> &'static Field {
         match self {
-            Self::Identity => &Self::FIELD_IDENTITY,
+            Self::Identity => &Self::FIELD_UID,
             Self::Frame => &Self::FIELD_FRAME,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::Areas => &Self::FIELD_AREAS,
@@ -145,18 +145,18 @@ impl Class for WorldField {
 impl WorldField {
     const CLASSNAME: &'static str = "World";
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::World as ClassID, Self::CLASSNAME);
-    const FIELDNAME_IDENTITY: &'static str = "identity";
+    const FIELDNAME_UID: &'static str = "uid";
     const FIELDNAME_FRAME: &'static str = "frame";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_AREAS: &'static str = "areas";
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_THINGS: &'static str = "things";
-    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID);
     const FIELD_FRAME: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_FRAME, FieldValueType::U64);
-    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_AREAS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREAS, FieldValueType::VecModel);
-    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::VecModel);
-    const FIELD_THINGS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_THINGS, FieldValueType::VecModel);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
+    const FIELD_AREAS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREAS, FieldValueType::ModelCollection);
+    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::ModelCollection);
+    const FIELD_THINGS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_THINGS, FieldValueType::ModelCollection);
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -201,21 +201,20 @@ impl Builder for WorldBuilder {
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::new(WorldField::class_ident(), ChangeOp::Create);
-        let identity = Creation::try_assign(&mut self.identity, WorldField::Identity)?;
-        let frame = Self::try_assign_value(&mut self.frame, WorldField::Frame)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, WorldField::Descriptor)?;
+
+        let identity = Build::create(&mut self.identity, &mut fields_changed, WorldField::Identity)?;
+        let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, WorldField::Descriptor)?;
+        let frame = Build::create_value(&mut self.frame, &mut fields_changed, WorldField::Frame)?;
 
         let mut next_id = self.generate_id();
-        let (universe_id, world_id) = {
-            (identity.universe_id(), identity.world_id())
-        };
+        let (universe_id, world_id) = (identity.universe_id(), identity.world_id());
 
         // set IDs for areas
         for area_vec_op in &mut self.areas {
             match area_vec_op {
-                VecOp::Add(area) => {
-                    let class_id = area.class_id();
-                    let identity_builder = area.identity_builder();
+                VecOp::Add(area_builder) => {
+                    let class_id = area_builder.class_ident().class_id();
+                    let identity_builder = area_builder.identity_builder();
                     identity_builder.universe_id(universe_id)?;
                     identity_builder.world_id(world_id)?;
                     identity_builder.class_id(class_id)?;
@@ -229,9 +228,9 @@ impl Builder for WorldBuilder {
         // set IDs for things
         for thing_vec_op in &mut self.things {
             match thing_vec_op {
-                VecOp::Add(thing) => {
-                    let class_id = thing.class_id();
-                    let identity_builder = thing.entity_builder().identity_builder();
+                VecOp::Add(thing_builder) => {
+                    let class_id = thing_builder.class_ident().class_id();
+                    let identity_builder = thing_builder.entity_builder().identity_builder();
                     identity_builder.universe_id(universe_id)?;
                     identity_builder.world_id(world_id)?;
                     identity_builder.class_id(class_id)?;
@@ -267,7 +266,7 @@ impl Builder for WorldBuilder {
         let mut fields_changed = FieldsChanged::new(WorldField::class_ident(), ChangeOp::Modify);
 
         if self.descriptor.is_some() {
-            original.descriptor = Creation::assign(&mut self.descriptor)?;
+            Build::modify(&mut self.descriptor, &mut original.descriptor, &mut fields_changed, WorldField::Descriptor)?;
         }
         if let Some(frame) = self.frame {
             original.frame = frame;
@@ -310,15 +309,15 @@ impl Builder for WorldBuilder {
         Build::modify_vec(&mut self.routes, &mut original.routes, &mut fields_changed, WorldField::Routes)?;
         Build::modify_vec(&mut self.things, &mut original.things, &mut fields_changed, WorldField::Things)?;
 
-        Ok(Modification::new(self, Vec::new()))
+        Ok(Modification::new_old(self, Vec::new()))
     }
 
     fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
         self.modify(world)
     }
 
-    fn class_id(&self) -> ClassID {
-        WorldField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        WorldField::class_ident()
     }
 }
 
@@ -422,7 +421,7 @@ impl WorldBuilder {
                         return Ok(())
                     }
 
-                    let class_id = builder.class_id();
+                    let class_id = builder.class_ident().class_id();
                     let identity_builder = builder.identity_builder();
                     identity_builder.universe_id(universe_id)?;
                     identity_builder.world_id(world_id)?;

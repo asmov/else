@@ -51,7 +51,7 @@ pub trait Builder: Sized {
         unimplemented!("Builder::sync_modify()")
     }
 
-    fn class_id(&self) -> ClassID;
+    fn class_ident(&self) -> &'static ClassIdent;
 }
 
 
@@ -123,6 +123,56 @@ impl<T: MaybeIdentifiable, R: MaybeIdentifiable> VecOp<T, R> {
 
 pub struct Build;
 impl Build {
+    pub fn create_value<T: Clone>(builder_option: &mut Option<T>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<T> {
+        let field = field.field();
+        let value = builder_option
+            .as_ref()
+            .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?
+            .clone();
+
+        //todo: fields_changed
+        Ok(value)
+    }
+
+    pub fn create<B, M>(builder_option: &mut Option<B>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<M>
+    where
+        B: Builder<BuilderType = B, ModelType = M>
+    {
+        let field = field.field();
+        let builder = builder_option.take()
+            .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?;
+
+        if builder.builder_mode() == BuilderMode::Editor {
+            panic!("BuilderMode::Editor is not allowed for Build::create()")
+        }
+
+        let creation = builder.create()?;
+        let (builder, model) = creation.split();
+        builder_option.insert(builder);
+        //todo: fields_changed
+        Ok(model)
+    }
+
+    pub fn modify<B, M>(builder_option: &mut Option<B>, existing: &mut M, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<()>
+    where
+        B: Builder<BuilderType = B, ModelType = M>
+    {
+        let field = field.field();
+        let builder = builder_option.take()
+            .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?;
+
+        if builder.builder_mode() == BuilderMode::Creator {
+            panic!("BuilderMode::Creator is not allowed for Build::modify()")
+        }
+
+        let modification = builder.modify(existing)?;
+        let (builder, built_fields_changed) = modification.split();
+        let _ = builder_option.insert(builder);
+        fields_changed.extend(field, ChangeOp::Modify, built_fields_changed);
+        Ok(())
+    }
+
+
     pub fn assign_vec<B,M,R>(builder_vec: &mut Vec<VecOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<M>>
     where
         B: Builder<BuilderType = B, ModelType = M> + BuildableIdentity,
@@ -331,7 +381,9 @@ where
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Modification<B: Builder> {
     #[serde(skip)]
-    fields_changed: Vec<&'static Field>,
+    fields_changed_old: Vec<&'static Field>,
+    #[serde(skip)]
+    fields_changed: FieldsChanged,
     builder: B
 }
 
@@ -339,19 +391,28 @@ impl<B> Modification<B>
 where
     B: Builder<BuilderType = B>
 {
-    pub fn new(builder: B, fields_changed: Vec<&'static Field>) -> Self {
+    pub fn new_old(builder: B, fields_changed_old: Vec<&'static Field>) -> Self {
         Self {
-            fields_changed,
-            builder
+            fields_changed: FieldsChanged::new(builder.class_ident(), ChangeOp::Modify),
+            builder,
+            fields_changed_old
         }
     }
 
-    pub fn fields_changed(&self) -> &Vec<&'static Field> {
-        &self.fields_changed
+    pub fn new(builder: B, fields_changed: FieldsChanged) -> Self {
+        Self {
+            builder,
+            fields_changed,
+            fields_changed_old: Vec::new(),
+        }
     }
 
     pub fn builder(&self) -> &B {
         &self.builder
+    }
+
+    pub fn split(self) -> (B, FieldsChanged) {
+        (self.builder, self.fields_changed)
     }
 
     pub fn take_builder(self) -> B {
@@ -378,7 +439,7 @@ pub trait Class: Fields {
 }
 
 /// Represents data types for model fields that are available to APIs.
-#[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug)]
 pub enum FieldValueType {
     /// bool
     Bool,
@@ -395,11 +456,11 @@ pub enum FieldValueType {
     /// Fieldless enum
     Enum,
     /// impl Builder
-    Model,
+    Model(&'static ClassIdent),
     /// Vec<UID>
     VecUID,
     /// Vec<impl Builder>
-    VecModel,
+    ModelCollection,
     /// Vec<String>
     VecString,
 }

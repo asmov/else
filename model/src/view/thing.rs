@@ -53,7 +53,7 @@ impl ThingViewField {
     const FIELDNAME_UID: &'static str = "uid";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID);
-    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
 }
 
 pub struct ThingViewBuilder {
@@ -105,11 +105,11 @@ impl Builder for ThingViewBuilder {
             fields_changed.push(ThingViewField::Descriptor.field());
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        ThingViewField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        ThingViewField::class_ident()
     }
 }
 

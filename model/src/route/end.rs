@@ -13,13 +13,6 @@ pub struct End {
     direction: Direction
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum EndField {
-    AreaIdentity,
-    Descriptor,
-    Direction
-}
-
 impl Keyed for End {
     fn key(&self) -> Option<&str> {
         self.descriptor.key()
@@ -35,6 +28,13 @@ impl Descriptive for End {
 
 impl Built for End {
     type BuilderType = EndBuilder;
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum EndField {
+    AreaIdentity,
+    Descriptor,
+    Direction
 }
 
 impl Fields for EndField {
@@ -60,9 +60,13 @@ impl EndField {
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_DIRECTION: &'static str = "direction";
 
-    const FIELD_AREA_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Model);
-    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
-    const FIELD_DIRECTION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DIRECTION, FieldValueType::Model);
+    const FIELD_AREA_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Model(IdentityField::class_ident_const()));
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
+    const FIELD_DIRECTION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DIRECTION, FieldValueType::Enum);
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -128,11 +132,11 @@ impl Builder for EndBuilder {
             fields_changed.push(EndField::Direction.field())
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        EndField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        EndField::class_ident()
     }
 }
 

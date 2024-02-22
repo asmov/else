@@ -169,10 +169,10 @@ impl Builder for CortexBuilder {
         }
     }
 
-    fn class_id(&self) -> crate::ClassID {
+    fn class_ident(&self) -> &'static ClassIdent {
         match self {
-            Self::Routine(modeler) => modeler.class_id(),
-            Self::Intelligent(modeler) => modeler.class_id(),
+            Self::Routine(modeler) => modeler.class_ident(),
+            Self::Intelligent(modeler) => modeler.class_ident(),
         }
     }
 }

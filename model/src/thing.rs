@@ -110,9 +110,9 @@ impl Builder for ThingBuilder {
         }
     }
 
-    fn class_id(&self) -> ClassID {
+    fn class_ident(&self) -> &'static ClassIdent {
         match self {
-            Self::Character(modeler) => modeler.class_id(),
+            Self::Character(modeler) => modeler.class_ident(),
         }
     }
 }

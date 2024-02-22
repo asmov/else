@@ -76,8 +76,13 @@ impl CharacterField {
     const FIELDNAME_ENTITY: &'static str = "entity";
     const FIELDNAME_CORTEX: &'static str = "cortex";
 
-    const FIELD_ENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTITY, FieldValueType::Model);
-    const FIELD_CORTEX: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_CORTEX, FieldValueType::Model);
+    const FIELD_ENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTITY, FieldValueType::Model(IdentityField::class_ident_const()));
+    //todo: this is the wrong class_ident
+    const FIELD_CORTEX: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_CORTEX, FieldValueType::Model(RoutineCortexField::class_ident_const()));
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -132,11 +137,11 @@ impl Builder for CharacterBuilder {
             fields_changed.push(CharacterField::Entity.field());
         }
 
-        Ok(Modification::new(ThingBuilder::Character(self), fields_changed))
+        Ok(Modification::new_old(ThingBuilder::Character(self), fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        CharacterField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        CharacterField::class_ident()
     }
 }
 

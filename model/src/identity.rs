@@ -259,6 +259,10 @@ impl IdentityField {
     const FIELD_WORLD_ID: Field = Field::new(&Self::CLASS_IDENT, "world_id", FieldValueType::U64);
     const FIELD_CLASS_ID: Field = Field::new(&Self::CLASS_IDENT, "class_id", FieldValueType::U64);
     const FIELD_ID: Field = Field::new(&Self::CLASS_IDENT, "id", FieldValueType::U64);
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -330,11 +334,11 @@ impl Builder for IdentityBuilder {
             fields_changed.push(IdentityField::UniverseID.field());
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        IdentityField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        IdentityField::class_ident()
     }
 }
 

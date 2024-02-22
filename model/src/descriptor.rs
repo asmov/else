@@ -120,6 +120,10 @@ impl DescriptorField {
     const FIELD_SHORT_DESCRIPTION: Field = Field::new(&Self::CLASS_IDENT, "short_description", FieldValueType::String);
     const FIELD_DESCRIPTION: Field = Field::new(&Self::CLASS_IDENT, "description", FieldValueType::String);
     const FIELD_NOTES: Field = Field::new(&Self::CLASS_IDENT, "notes", FieldValueType::String);
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
@@ -194,7 +198,7 @@ impl Builder for DescriptorBuilder {
             fields_changed.push(DescriptorField::Notes.field());
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
     fn set(&mut self, field_name: &str, raw_value: String) -> Result<()> {
@@ -215,8 +219,8 @@ impl Builder for DescriptorBuilder {
         Ok(())
     }
 
-    fn class_id(&self) -> ClassID {
-        DescriptorField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        DescriptorField::class_ident()
     }
 }
 

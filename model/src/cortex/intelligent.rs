@@ -121,8 +121,8 @@ impl Builder for IntelligentCortexBuilder {
         todo!()
     }
 
-    fn class_id(&self) -> ClassID {
-        IntelligentCortexField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        IntelligentCortexField::class_ident()
     }
 }
 

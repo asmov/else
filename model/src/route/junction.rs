@@ -48,8 +48,8 @@ impl JunctionField {
     const FIELDNAME_ENTRANCES: &'static str = "entrances";
     const FIELDNAME_EXIT: &'static str = "exit";
 
-    const FIELD_ENTRANCES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTRANCES, FieldValueType::Model);
-    const FIELD_EXIT: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_EXIT, FieldValueType::Model);
+    const FIELD_ENTRANCES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTRANCES, FieldValueType::ModelCollection);
+    const FIELD_EXIT: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_EXIT, FieldValueType::Model(EndField::class_ident_const()));
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -112,11 +112,11 @@ impl Builder for JunctionBuilder {
             fields_changed.push(JunctionField::Exit.field())
         }
 
-        Ok(Modification::new(PointBuilder::Junction(self), fields_changed))
+        Ok(Modification::new_old(PointBuilder::Junction(self), fields_changed))
     }
 
-    fn class_id(&self) -> ClassID {
-        JunctionField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        JunctionField::class_ident()
     }
 }
 

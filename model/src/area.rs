@@ -70,10 +70,14 @@ impl AreaField {
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_OCCUPANTS: &'static str = "occupants";
 
-    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model);
-    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model);
+    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model(IdentityField::class_ident_const()));
+    const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
     const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::VecUID);
     const FIELD_OCCUPANTS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_OCCUPANTS, FieldValueType::VecUID);
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -158,7 +162,7 @@ impl Builder for AreaBuilder {
             }
         }
 
-        Ok(Modification::new(self, fields_changed))
+        Ok(Modification::new_old(self, fields_changed))
     }
 
     fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
@@ -167,8 +171,8 @@ impl Builder for AreaBuilder {
         self.modify(area_dog_house_mut)
     }
 
-    fn class_id(&self) -> ClassID {
-        AreaField::class_id()
+    fn class_ident(&self) -> &'static ClassIdent {
+        AreaField::class_ident()
     }
 }
 
