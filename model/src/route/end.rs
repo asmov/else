@@ -109,16 +109,17 @@ impl Builder for EndBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let area_identity = Creation::try_assign(&mut self.area_identity, EndField::AreaIdentity)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, EndField::Descriptor)?;
-        let direction = self.direction.as_ref()
-            .ok_or_else(|| Error::FieldNotSet { class: EndField::CLASSNAME, field: EndField::FIELDNAME_DIRECTION })?
-            .clone();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let area_identity = Build::create(&mut self.area_identity, &mut fields_changed, EndField::AreaIdentity)?;
+        let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, EndField::Descriptor)?;
+        let direction = Build::create_value(&mut self.direction, &mut fields_changed, EndField::Direction)?;
 
         let end = End {
             area_identity,
             descriptor,
-            direction };
+            direction
+        };
 
         Ok(Creation::new(self, end))
     }
@@ -126,14 +127,11 @@ impl Builder for EndBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
-        if self.area_identity.is_some() {
-            existing.area_identity = Creation::assign(&mut self.area_identity)?;
-        }
         if self.descriptor.is_some() {
-            existing.descriptor = Creation::assign(&mut self.descriptor)?;
+            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, EndField::Descriptor)?;
         }
-        if let Some(direction) = &self.direction {
-            existing.direction = direction.clone();
+        if self.direction.is_some() { 
+            existing.direction = Build::modify_value(&self.direction, &mut fields_changed, EndField::Descriptor)?;
         }
 
         Ok(Modification::new(self, fields_changed))

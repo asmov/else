@@ -178,25 +178,6 @@ where
     pub fn split(self) -> (B, B::ModelType) {
         (self.builder, self.model)
     }
-
-    pub fn try_assign(creator: &mut Option<B>, field: impl Fields) -> Result<B::ModelType> {
-        let field = field.field();
-        let (builder, model)= creator.take()
-            .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?
-            .create()?
-            .split();
-
-        let _ = creator.insert(builder);
-        Ok(model)
-    }
-
-    pub fn assign(creator_option: &mut Option<B>) -> Result<B::ModelType> {
-        let (builder, model) = creator_option.take().unwrap()
-            .create()?
-            .split();
-        let _ = creator_option.insert(builder);
-        Ok(model)
-    }
 }
 
 /// The result of a Builder::modify() call. It is what is serialized and sync'd out to any mirrors, if necessary.

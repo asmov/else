@@ -128,13 +128,15 @@ impl Builder for RouteBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let identity = Creation::try_assign(&mut self.identity, RouteField::Identity)?;
-        let descriptor = Creation::try_assign(&mut self.descriptor, RouteField::Descriptor)?;
-        let point_a = Creation::try_assign(&mut self.point_a, RouteField::PointA)?;
-        let point_b = Creation::try_assign(&mut self.point_b, RouteField::PointB)?;
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let uid = Build::create(&mut self.identity, &mut fields_changed, RouteField::Identity)?.uid();
+        let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, RouteField::Descriptor)?;
+        let point_a = Build::create(&mut self.point_a, &mut fields_changed, RouteField::PointA)?;
+        let point_b = Build::create(&mut self.point_b, &mut fields_changed, RouteField::PointB)?;
 
         let route = Route {
-            uid: identity.to_uid(),
+            uid,
             descriptor,
             point_a,
             point_b,
@@ -144,19 +146,16 @@ impl Builder for RouteBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
+        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
-        if self.identity.is_some() {
-            existing.uid = Creation::assign(&mut self.identity)?.to_uid();
-        }
         if self.descriptor.is_some() {
-            existing.descriptor = Creation::assign(&mut self.descriptor)?;
+            Build::create(&mut self.descriptor, &mut fields_changed, RouteField::Descriptor)?;
         }
         if self.point_a.is_some() {
-            existing.point_a = Creation::assign(&mut self.point_a)?;
+            Build::create(&mut self.point_a, &mut fields_changed, RouteField::PointA)?;
         }
         if self.point_b.is_some() {
-            existing.point_b = Creation::assign(&mut self.point_b)?;
+            Build::create(&mut self.point_b, &mut fields_changed, RouteField::PointB)?;
         }
 
         Ok(Modification::new(self, fields_changed))
