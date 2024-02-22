@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, identity::*, descriptor::*, route::*};
+use crate::{error::*, modeling::*, identity::*, descriptor::*, route::*};
 use serde;
 
 /// Connects a single Area to a Route.  
@@ -78,6 +78,7 @@ pub struct EndBuilder {
 }
 
 impl Builder for EndBuilder {
+    type DomainType = World;
     type ModelType = End;
     type BuilderType = Self;
 

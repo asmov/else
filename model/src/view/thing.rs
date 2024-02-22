@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, codebase::*, descriptor::*, identity::*};
+use crate::{error::*, modeling::*, codebase::*, descriptor::*, identity::*, world::*};
 
 pub struct ThingView {
     uid: UID,
@@ -63,6 +63,7 @@ pub struct ThingViewBuilder {
 }
 
 impl Builder for ThingViewBuilder {
+    type DomainType = World;
     type ModelType = ThingView;
     type BuilderType = Self;
 

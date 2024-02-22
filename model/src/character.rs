@@ -1,4 +1,5 @@
-pub use crate::{location::*, codebase::*, error::*, identity::*, builder::*, descriptor::*, entity::*, something::*, thing::*, cortex::*};
+pub use crate::{location::*, codebase::*, error::*, identity::*, modeling::*, descriptor::*, entity::*, something::*,
+    thing::*, cortex::*, world::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -93,6 +94,7 @@ pub struct CharacterBuilder {
 }
 
 impl Builder for CharacterBuilder {
+    type DomainType = World;
     type ModelType = Character;
     type BuilderType = ThingBuilder;
 

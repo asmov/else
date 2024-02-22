@@ -1,4 +1,4 @@
-use crate::{area::*, builder::*, character::*, entity::*, error::*, identity::*, location::*, route::*, timeframe::*};
+use crate::{area::*, modeling::*, character::*, entity::*, error::*, identity::*, location::*, route::*, timeframe::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -165,15 +165,16 @@ pub struct WorldBuilder {
     identity: Option<IdentityBuilder>,
     frame: Option<Frame>,
     descriptor: Option<DescriptorBuilder>,
-    areas: Vec<VecOp<AreaBuilder, UID>>,
-    routes: Vec<VecOp<RouteBuilder, UID>>,
-    things: Vec<VecOp<ThingBuilder, UID>>,
+    areas: Vec<ListOp<AreaBuilder, UID>>,
+    routes: Vec<ListOp<RouteBuilder, UID>>,
+    things: Vec<ListOp<ThingBuilder, UID>>,
     next_id: ID,
 }
 
 impl Builder for WorldBuilder {
-    type ModelType = World;
+    type DomainType = World;
     type BuilderType = Self;
+    type ModelType = World;
 
     fn creator() -> Self {
         Self {
@@ -210,9 +211,9 @@ impl Builder for WorldBuilder {
         let (universe_id, world_id) = (identity.universe_id(), identity.world_id());
 
         // set IDs for areas
-        for area_vec_op in &mut self.areas {
-            match area_vec_op {
-                VecOp::Add(area_builder) => {
+        for area_list_op in &mut self.areas {
+            match area_list_op {
+                ListOp::Add(area_builder) => {
                     let class_id = area_builder.class_ident().class_id();
                     let identity_builder = area_builder.identity_builder();
                     identity_builder.universe_id(universe_id)?;
@@ -226,9 +227,9 @@ impl Builder for WorldBuilder {
         }
 
         // set IDs for things
-        for thing_vec_op in &mut self.things {
-            match thing_vec_op {
-                VecOp::Add(thing_builder) => {
+        for thing_list_op in &mut self.things {
+            match thing_list_op {
+                ListOp::Add(thing_builder) => {
                     let class_id = thing_builder.class_ident().class_id();
                     let identity_builder = thing_builder.entity_builder().identity_builder();
                     identity_builder.universe_id(universe_id)?;
@@ -289,19 +290,19 @@ impl Builder for WorldBuilder {
         // handle movement of things between locations
         self.things
             .drain(0..)
-            .map(|thing_vec_op| {
-                match thing_vec_op {
-                    VecOp::Remove(_) => {},
-                    VecOp::Add(ref thing) | VecOp::Edit(ref thing) => {
+            .map(|thing_list_op| {
+                match thing_list_op {
+                    ListOp::Remove(_) => {},
+                    ListOp::Add(ref thing) | ListOp::Edit(ref thing) => {
                         Self::process_thing_location(thing, &mut areas, original)?
                     }
                 }
 
-                Ok(thing_vec_op)
+                Ok(thing_list_op)
             })
             .collect::<Result<Vec<_>>>()?
             .into_iter()
-            .for_each(|thing_vec_op| self.things.push(thing_vec_op));
+            .for_each(|thing_list_op| self.things.push(thing_list_op));
 
         self.areas = areas;
 
@@ -312,7 +313,7 @@ impl Builder for WorldBuilder {
         Ok(Modification::new_old(self, Vec::new()))
     }
 
-    fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
+    fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
         self.modify(world)
     }
 
@@ -363,41 +364,41 @@ impl BuildableDescriptor for WorldBuilder {
 
 impl BuildableAreaVector for WorldBuilder {
     fn add_area(&mut self, area: AreaBuilder) -> Result<()> {
-        self.areas.push(VecOp::Add(area));
+        self.areas.push(ListOp::Add(area));
         Ok(())
     }
 
     fn edit_area(&mut self, area: AreaBuilder) -> Result<()> {
-        self.areas.push(VecOp::Edit(area));
+        self.areas.push(ListOp::Edit(area));
         Ok(())
     }
 
     fn remove_area(&mut self, area_uid: UID) -> Result<()> {
-        self.areas.push(VecOp::Remove(area_uid));
+        self.areas.push(ListOp::Remove(area_uid));
         Ok(())
     }
 }
 
 impl BuildableRouteVector for WorldBuilder {
     fn add_route(&mut self, route: RouteBuilder) -> Result<()> {
-        self.routes.push(VecOp::Add(route));
+        self.routes.push(ListOp::Add(route));
         Ok(())
     }
 }
 
 impl BuildableThingList for WorldBuilder {
     fn add_thing(&mut self, thing: ThingBuilder) -> Result<()> {
-       self.things.push(VecOp::Add(thing)); 
+       self.things.push(ListOp::Add(thing)); 
        Ok(())
     }
 
     fn edit_thing(&mut self, thing: ThingBuilder) -> Result<()> {
-        self.things.push(VecOp::Edit(thing));
+        self.things.push(ListOp::Edit(thing));
         Ok(())
     }
 
     fn remove_thing(&mut self, thing_uid: UID) -> Result<()> {
-        self.things.push(VecOp::Remove(thing_uid));
+        self.things.push(ListOp::Remove(thing_uid));
         Ok(())
     }
 }
@@ -411,12 +412,12 @@ impl WorldBuilder {
 
     fn build_local_identities(
         original: &mut World,
-        operations: &mut Vec<VecOp<impl BuildableIdentity, UID>>,
+        operations: &mut Vec<ListOp<impl BuildableIdentity, UID>>,
         universe_id: UniverseID, world_id: WorldID
     ) -> Result<()> {
         for op in operations {
             match op {
-                VecOp::Add(builder) => {
+                ListOp::Add(builder) => {
                     if builder.has_identity() {
                         return Ok(())
                     }
@@ -439,29 +440,29 @@ impl WorldBuilder {
         Ok(())
     }
 
-    fn find_area_builder_by_uid(areas: &mut Vec<VecOp<AreaBuilder, UID>>, area_uid: UID) -> Option<&mut VecOp<AreaBuilder, UID>> {
+    fn find_area_builder_by_uid(areas: &mut Vec<ListOp<AreaBuilder, UID>>, area_uid: UID) -> Option<&mut ListOp<AreaBuilder, UID>> {
         areas.iter_mut()
-            .find(|vec_op| match vec_op {
-                VecOp::Add(area_builder) | VecOp::Edit(area_builder) => {
+            .find(|list_op| match list_op {
+                ListOp::Add(area_builder) | ListOp::Edit(area_builder) => {
                     area_builder.try_uid()
                         .is_ok_and(|uid| uid == area_uid)
                 },
-                VecOp::Remove(area_builder_uid) => {
+                ListOp::Remove(area_builder_uid) => {
                     area_builder_uid == &area_uid
                 }
             })
     }
 
-    pub fn area_build_existing(areas: &mut Vec<VecOp<AreaBuilder, UID>>, existing_area_uid: UID) -> Result<&mut VecOp<AreaBuilder, UID>> {
+    pub fn area_build_existing(areas: &mut Vec<ListOp<AreaBuilder, UID>>, existing_area_uid: UID) -> Result<&mut ListOp<AreaBuilder, UID>> {
         // otherwise create it
         let mut area_editor = Area::editor();
         area_editor.identity(IdentityBuilder::editor_from_uid(existing_area_uid))?;
-        areas.push(VecOp::Edit(area_editor));
+        areas.push(ListOp::Edit(area_editor));
 
         // find it again
         let current_builder = areas.iter_mut()
-            .find(|vec_op| match vec_op {
-                VecOp::Edit(area_builder) => {
+            .find(|list_op| match list_op {
+                ListOp::Edit(area_builder) => {
                     area_builder.try_uid()
                         .is_ok_and(|uid| uid == existing_area_uid)
                 },
@@ -472,7 +473,7 @@ impl WorldBuilder {
         Ok(current_builder)
     }
 
-    fn process_thing_location(thing_builder: &ThingBuilder, areas: &mut Vec<VecOp<AreaBuilder, UID>>, existing_world: &mut World) -> Result<()> {
+    fn process_thing_location(thing_builder: &ThingBuilder, areas: &mut Vec<ListOp<AreaBuilder, UID>>, existing_world: &mut World) -> Result<()> {
         let entity_builder = match thing_builder.get_entity() {
             Some(entity_builder) => entity_builder,
             None => return Ok(())
@@ -490,17 +491,17 @@ impl WorldBuilder {
 
         match location {
             Location::Area(area_uid) => {
-                let existing_area_vec_op = if let Some(existing) = Self::find_area_builder_by_uid(areas, area_uid) {
+                let existing_area_list_op = if let Some(existing) = Self::find_area_builder_by_uid(areas, area_uid) {
                     existing
                 } else {
                     Self::area_build_existing(areas, area_uid)?
                 };
 
-                match existing_area_vec_op {
-                    VecOp::Add(area_builder) | VecOp::Edit(area_builder) => {
+                match existing_area_list_op {
+                    ListOp::Add(area_builder) | ListOp::Edit(area_builder) => {
                         area_builder.add_occupant(thing_uid)?;
                     },
-                    VecOp::Remove(_) => {
+                    ListOp::Remove(_) => {
                         return Err(Error::ModelNotFound{model: "Area", uid: area_uid })
                     } 
                 }
@@ -514,21 +515,21 @@ impl WorldBuilder {
         Ok(())
     }
 
-    fn remove_thing_from_location(areas: &mut Vec<VecOp<AreaBuilder, u128>>, thing_uid: UID, existing_world: &mut World, new_location: Location) -> Result<()> {
+    fn remove_thing_from_location(areas: &mut Vec<ListOp<AreaBuilder, u128>>, thing_uid: UID, existing_world: &mut World, new_location: Location) -> Result<()> {
         let existing_thing = existing_world.thing(thing_uid)?;
         match existing_thing.location() {
             Location::Area(area_uid) => {
-                let existing_area_vec_op = if let Some(existing) = Self::find_area_builder_by_uid(areas, area_uid) {
+                let existing_area_list_op = if let Some(existing) = Self::find_area_builder_by_uid(areas, area_uid) {
                     existing
                 } else {
                     Self::area_build_existing(areas, area_uid)?
                 };
 
-                match existing_area_vec_op {
-                    VecOp::Add(area_builder) | VecOp::Edit(area_builder) => {
+                match existing_area_list_op {
+                    ListOp::Add(area_builder) | ListOp::Edit(area_builder) => {
                         area_builder.remove_occupant(thing_uid)?;
                     },
-                    VecOp::Remove(_) => {/* nothing to do */} 
+                    ListOp::Remove(_) => {/* nothing to do */} 
                 }
             },
             Location::Route(route_uid) => {

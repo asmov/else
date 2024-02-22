@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, route::*};
+use crate::{error::*, modeling::*, route::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -60,6 +60,7 @@ pub struct JunctionBuilder {
 }
 
 impl Builder for JunctionBuilder {
+    type DomainType = World;
     type ModelType = Junction;
     type BuilderType = PointBuilder;
 

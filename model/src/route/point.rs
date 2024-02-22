@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, route::*};
+use crate::{error::*, modeling::*, route::*, world::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -14,6 +14,7 @@ pub enum PointBuilder {
 }
 
 impl Builder for PointBuilder {
+    type DomainType = World;
     type ModelType = Point;
     type BuilderType = Self;
 

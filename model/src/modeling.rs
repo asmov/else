@@ -16,36 +16,43 @@
 
 pub mod fields_changed;
 
-use crate::{error::*, identity::*, world::*};
+use crate::{error::*, identity::*};
 
 pub use fields_changed::*;
 
-/// Performs all write operations for model data objects. Nothing is mutated directly on the object itself.  
-/// Respective to its `BuilderMode` construction, initialization and finalization is handled by:
-/// - BuilderMode::Creator => creator() and create()
-/// - BuilderMode::Editor  => editor() and modify()
+/// Performs all construction and mutation operations for its corresponding model type.
+///
+/// It operates in one of two modes at a time: [BuilderMode::Creator] or [BuilderMode::Editor]. Creator constructs and Editor mutates. The [BuilderMode]
+/// is set at initialization, typically using [Builder::creator()] or [Builder::editor()].
+///
+/// Setters are provided for each field of a the corresponding model. Internally, in a Builder's struct, each setter stores an operation using either
+/// `Option` for a single value or or [ListOp] for multiple values. Mutation occurs only against what is set.
+///
+/// Ultimately:
+/// - Creator uses [Builder::create()] to construct a new model, returning a [Creation].
+/// - Editor uses [Builder::modify()] to mutate an existing model, returning a [Modification].
 ///
 /// Refer to the module documentation for more information.
 pub trait Builder: Sized {
-    /// The model struct that this builder ultimately creates. If the model is a variant of an enum (like Thing), then
-    /// BuilderType is that enum instead.
-    type ModelType: Sized;
+    /// The model that stores all state for the rest of its suite. This is expected to be some form of state container
+    /// for the rest of the models, all of which share the same DomainType.
+    type DomainType: Sized;
+
     /// The builder struct that is returned on creation and modification. Typically, Self, unless we're a variant of
     /// of a Builder enum (like ThingBuilder). In which case, typically, the BuilderType is that enum instead.
     type BuilderType: Builder;
+
+    /// The model struct that this builder ultimately creates. If the model is a variant of an enum (like Thing), then
+    /// BuilderType is that enum instead.
+    type ModelType: Sized;
 
     fn creator() -> Self;
 
     fn editor() -> Self;
 
-    fn builder(mode: BuilderMode) -> Self {
-        match mode {
-            BuilderMode::Creator => Self::creator(),
-            BuilderMode::Editor => Self::editor()
-        }
-    }
-
     fn builder_mode(&self) -> BuilderMode;
+
+    fn class_ident(&self) -> &'static ClassIdent;
 
     fn create(self) -> Result<Creation<Self::BuilderType>>; 
 
@@ -65,11 +72,17 @@ pub trait Builder: Sized {
         Ok(value)
     }
 
-    fn sync_modify(self, _world: &mut World) -> Result<Modification<Self::BuilderType>> {
-        unimplemented!("Builder::sync_modify()")
+    /// Typically called by [Sync] to systematically synchronize state changes with an upstream provider.
+    fn synchronize(self, _domain: &mut Self::DomainType) -> Result<Modification<Self::BuilderType>> {
+        unimplemented!("Builder::modify_domain()")
     }
 
-    fn class_ident(&self) -> &'static ClassIdent;
+    fn builder(mode: BuilderMode) -> Self {
+        match mode {
+            BuilderMode::Creator => Self::creator(),
+            BuilderMode::Editor => Self::editor()
+        }
+    }
 }
 
 
@@ -110,30 +123,30 @@ pub enum BuilderMode {
 
 /// Represents an Add, Remove, or Modify operation against a Vec
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub enum VecOp<T: MaybeIdentifiable, R: MaybeIdentifiable> {
+pub enum ListOp<T: MaybeIdentifiable, R: MaybeIdentifiable> {
     Add(T),
     Edit(T),
     Remove(R)
 }
 
-impl<T: MaybeIdentifiable, R: MaybeIdentifiable> VecOp<T, R> {
+impl<T: MaybeIdentifiable, R: MaybeIdentifiable> ListOp<T, R> {
     pub fn is_add(&self) -> bool {
         match self {
-            VecOp::Add(_) => true,
+            ListOp::Add(_) => true,
             _ => false,
         }
     }
 
     pub fn is_modify(&self) -> bool {
         match self {
-            VecOp::Edit(_) => true,
+            ListOp::Edit(_) => true,
             _ => false
         }
     }
 
     pub fn is_remove(&self) -> bool {
         match self {
-            VecOp::Remove(_) => true,
+            ListOp::Remove(_) => true,
             _ => false
         }
     }
@@ -191,7 +204,7 @@ impl Build {
     }
 
 
-    pub fn assign_vec<B,M,R>(builder_vec: &mut Vec<VecOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<M>>
+    pub fn assign_vec<B,M,R>(builder_vec: &mut Vec<ListOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<M>>
     where
         B: Builder<BuilderType = B, ModelType = M> + BuildableIdentity,
         M: Identifiable,
@@ -204,7 +217,7 @@ impl Build {
 
     // Modifies an existing Vec of models using a Builder's list of VecOps (Add, Modify, Remove)
     pub fn modify_vec<B,M,R>(
-        builder_vec: &mut Vec<VecOp<B,R>>,
+        builder_vec: &mut Vec<ListOp<B,R>>,
         existing_vec: &mut Vec<M>,
         fields_changed: &mut FieldsChanged,
         field: impl Fields) -> Result<()>
@@ -215,14 +228,14 @@ impl Build {
     {
         builder_vec
             .drain(0..)
-            .map(|vec_op| { match vec_op {
-                VecOp::Add(builder) => {
+            .map(|list_op| { match list_op {
+                ListOp::Add(builder) => {
                     match builder.builder_mode() {
                         BuilderMode::Creator => {
                             let creation = builder.create()?;
                             let (builder, model) = creation.split();
                             existing_vec.push(model);
-                            Ok(VecOp::Add(builder))
+                            Ok(ListOp::Add(builder))
                         },
                         BuilderMode::Editor => {
                             let builder_uid = builder.try_uid()?;
@@ -233,11 +246,11 @@ impl Build {
                             let modification = builder.modify(existing)?;
                             let builder = modification.take_builder();
                             
-                            Ok(VecOp::Add(builder))
+                            Ok(ListOp::Add(builder))
                         }
                     }
                 },
-                VecOp::Edit(builder) => {
+                ListOp::Edit(builder) => {
                     match builder.builder_mode() {
                         BuilderMode::Editor => {
                             let builder_uid = builder.try_uid()?;
@@ -247,26 +260,26 @@ impl Build {
                                 .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
                             let modification = builder.modify(existing)?;
                             let builder = modification.take_builder();
-                            Ok(VecOp::Add(builder))
+                            Ok(ListOp::Add(builder))
                         },
                         BuilderMode::Creator => unreachable!("BuilderMode::Creator is not allowed for VecOp::Modify in Build::modify_vec()")
                     }
                 },
-                VecOp::Remove(maybe_identifiable) => {
+                ListOp::Remove(maybe_identifiable) => {
                     let builder_uid = maybe_identifiable.try_uid()?;
                     let index = existing_vec
                         .iter()
                         .position(|existing| existing.uid() == builder_uid)
                         .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
                     existing_vec.remove(index);
-                    Ok(VecOp::Remove(maybe_identifiable))
+                    Ok(ListOp::Remove(maybe_identifiable))
                 }
             }
         })
         .collect::<Result<Vec<_>>>()?
         .into_iter()
-        .for_each(|vec_op| {
-            builder_vec.push(vec_op);
+        .for_each(|list_op| {
+            builder_vec.push(list_op);
         });
 
         Ok(())

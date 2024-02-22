@@ -1,5 +1,5 @@
 use serde;
-use crate::{codebase::*, error::*, builder::*};
+use crate::{codebase::*, error::*, modeling::*, world::*};
 
 pub type UID        = u128;
 // UID is composed of:
@@ -275,6 +275,7 @@ pub struct IdentityBuilder {
 }
 
 impl Builder for IdentityBuilder {
+    type DomainType = World;
     type ModelType = Identity;
     type BuilderType = Self;
 

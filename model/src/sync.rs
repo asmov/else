@@ -27,14 +27,14 @@ impl Sync {
                 Sync::World(Operation::Modification(
                     modification
                         .take_builder()
-                        .sync_modify(world)?
+                        .synchronize(world)?
                 ))
             },
             Sync::Area(Operation::Modification(modification)) => {
                 Sync::Area(Operation::Modification(
                     modification
                         .take_builder()
-                        .sync_modify(world)?
+                        .synchronize(world)?
                 ))
             },
             _ => todo!()

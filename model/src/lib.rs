@@ -2,7 +2,7 @@ pub use elsezone_rust_common::{self as elserust, s};
 
 pub mod codebase;
 pub mod error;
-pub mod builder;
+pub mod modeling;
 pub mod identity;
 pub mod descriptor;
 pub mod inventory;
@@ -28,7 +28,7 @@ pub mod testing;
 
 pub use codebase::*;
 pub use error::*;
-pub use builder::*;
+pub use modeling::*;
 pub use identity::*;
 pub use descriptor::*;
 pub use inventory::*;

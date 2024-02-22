@@ -1,5 +1,5 @@
 use serde;
-use crate::{builder::*, codebase::*, error::*, identity::*};
+use crate::{modeling::*, codebase::*, error::*, identity::*, world::*};
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`
@@ -138,6 +138,7 @@ pub struct DescriptorBuilder {
 }
 
 impl Builder for DescriptorBuilder {
+    type DomainType = World;
     type ModelType = Descriptor;
     type BuilderType = Self;
 

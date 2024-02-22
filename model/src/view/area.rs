@@ -1,4 +1,4 @@
-use crate::{error::*, builder::*, descriptor::*, identity::*, route::*, view::thing::*, codebase::*};
+use crate::{error::*, modeling::*, descriptor::*, identity::*, route::*, view::thing::*, codebase::*, world::*};
 
 pub struct AreaView {
     uid: UID,
@@ -87,6 +87,7 @@ pub struct AreaViewBuilder {
 }
 
 impl Builder for AreaViewBuilder {
+    type DomainType = World;
     type ModelType = AreaView;
     type BuilderType = Self;
 

@@ -1,4 +1,4 @@
-use crate::{codebase::*, error::*, identity::*, builder::*};
+use crate::{codebase::*, error::*, identity::*, modeling::*};
 use super::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -72,6 +72,7 @@ pub struct RoutineCortexBuilder {
 }
 
 impl Builder for RoutineCortexBuilder {
+    type DomainType = World;
     type ModelType = RoutineCortex;
     type BuilderType = CortexBuilder;
 

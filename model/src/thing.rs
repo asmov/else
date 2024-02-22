@@ -1,4 +1,4 @@
-use crate::{error::*, location::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*};
+use crate::{error::*, location::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*, world::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -75,6 +75,7 @@ pub enum ThingBuilder {
 }
 
 impl Builder for ThingBuilder {
+    type DomainType = World;
     type ModelType = Thing;
     type BuilderType = Self;
 

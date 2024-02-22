@@ -2,7 +2,7 @@ pub mod routine;
 pub mod intelligent;
 
 use serde;
-use crate::{error::*, builder::*};
+use crate::{error::*, modeling::*, world::*};
 
 pub use intelligent::*;
 pub use routine::*;
@@ -125,6 +125,7 @@ pub enum CortexBuilder {
 }
 
 impl Builder for CortexBuilder {
+    type DomainType = World;
     type ModelType = Cortex;
     type BuilderType = Self;
 

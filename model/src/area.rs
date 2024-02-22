@@ -1,4 +1,4 @@
-use crate::{codebase::*, error::*, builder::*, identity::*, descriptor::*, thing::*, world::World};
+use crate::{codebase::*, error::*, modeling::*, identity::*, descriptor::*, thing::*, world::World};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -85,10 +85,11 @@ pub struct AreaBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
-    occupant_thing_ids: Vec<VecOp<UID, UID>>
+    occupant_thing_ids: Vec<ListOp<UID, UID>>
 }
 
 impl Builder for AreaBuilder {
+    type DomainType = World;
     type ModelType = Area;
     type BuilderType = Self;
 
@@ -117,9 +118,9 @@ impl Builder for AreaBuilder {
         let descriptor = Creation::try_assign(&mut self.descriptor, AreaField::Descriptor)?;
         let occupant_thing_ids = self.occupant_thing_ids.iter()
             .map(|op| match op {
-                VecOp::Add(uid) => *uid,
-                VecOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::create"),
-                VecOp::Remove(uid) => unreachable!("VecOp::Remove not possible in AreaBuilder::create") 
+                ListOp::Add(uid) => *uid,
+                ListOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::create"),
+                ListOp::Remove(uid) => unreachable!("VecOp::Remove not possible in AreaBuilder::create") 
             })
             .collect();
 
@@ -149,11 +150,11 @@ impl Builder for AreaBuilder {
         }
 
         if !self.occupant_thing_ids.is_empty() {
-            for vecop in &self.occupant_thing_ids {
-                match *vecop {
-                    VecOp::Add(uid) => original.occupant_thing_ids.push(uid),
-                    VecOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::modify"),
-                    VecOp::Remove(uid) => {
+            for list_op in &self.occupant_thing_ids {
+                match *list_op {
+                    ListOp::Add(uid) => original.occupant_thing_ids.push(uid),
+                    ListOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::modify"),
+                    ListOp::Remove(uid) => {
                         let index = original.occupant_thing_ids.iter().position(|&x| x == uid)
                             .ok_or_else(|| Error::ModelNotFoundFor{model: "Thing", uid, op: "AreaBuilder::remove_occupant()"})?;
                         original.occupant_thing_ids.remove(index);
@@ -165,7 +166,7 @@ impl Builder for AreaBuilder {
         Ok(Modification::new_old(self, fields_changed))
     }
 
-    fn sync_modify(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
+    fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
         let area_uid = self.get_identity().unwrap().get_uid()?;
         let area_dog_house_mut = world.area_mut(area_uid).unwrap(); //todo: don't unwrap
         self.modify(area_dog_house_mut)
@@ -228,13 +229,13 @@ pub trait BuildableAreaVector {
 
 impl AreaBuilder {
     pub fn add_occupant(&mut self, thing_uid: UID) -> Result<&mut Self> {
-        self.occupant_thing_ids.push(VecOp::Add(thing_uid));
+        self.occupant_thing_ids.push(ListOp::Add(thing_uid));
         Ok(self)
     }
 
     pub fn remove_occupant(&mut self, thing_uid: UID) -> Result<&mut Self> {
         assert!(self.builder_mode() == BuilderMode::Editor, "AreaBuilder::remove_occupant only allowed in Editor mode");
-        self.occupant_thing_ids.push(VecOp::Remove(thing_uid));
+        self.occupant_thing_ids.push(ListOp::Remove(thing_uid));
         Ok(self)
     }
  }

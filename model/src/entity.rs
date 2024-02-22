@@ -1,4 +1,4 @@
-use crate::{codebase::*, error::*, identity::*, builder::*, descriptor::*, location::*};
+use crate::{codebase::*, error::*, identity::*, modeling::*, descriptor::*, location::*, world::*};
 use serde;
 
 
@@ -99,6 +99,7 @@ pub struct EntityBuilder {
 }
 
 impl Builder for EntityBuilder {
+    type DomainType = World;
     type ModelType = Entity;
     type BuilderType = Self;
 

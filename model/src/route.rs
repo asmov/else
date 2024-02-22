@@ -4,7 +4,7 @@ pub mod endpoint;
 pub mod junction;
 pub mod point;
 
-use crate::{codebase::*, error::*, builder::*, identity::*, descriptor::*};
+use crate::{codebase::*, error::*, modeling::*, identity::*, descriptor::*, world::*};
 use serde;
 
 pub use crate::route::{end::*, endpoint::*, junction::*, point::*, direction::*};
@@ -102,6 +102,7 @@ pub struct RouteBuilder {
 }
 
 impl Builder for RouteBuilder {
+    type DomainType = World;
     type ModelType = Route;
     type BuilderType = Self;
 
