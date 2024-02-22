@@ -90,6 +90,10 @@ impl RouteField {
     const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
     const FIELD_POINT_A: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_A, FieldValueType::Model(EndpointField::class_ident_const()));
     const FIELD_POINT_B: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_B, FieldValueType::Model(EndpointField::class_ident_const()));
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

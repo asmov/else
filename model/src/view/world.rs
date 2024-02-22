@@ -1,9 +1,10 @@
-use crate::{error::*, modeling::*, codebase::*, identity::*, route::*, timeframe::*, view::area::*, world::*};
+use crate::{error::*, modeling::*, codebase::*, identity::*, route::*, timeframe::*, view::area::*, view::thing::*, world::*};
 
 pub struct WorldView {
     uid: UID,
     frame: Frame,
     area_view: AreaView,
+    thing_views: Vec<ThingView>,
     routes: Vec<Route>
 }
 
@@ -31,13 +32,18 @@ impl WorldView {
     pub fn routes(&self) -> &Vec<Route> {
         &self.routes
     }
+
+    pub fn thing_views(&self) -> &Vec<ThingView> {
+        &self.thing_views
+    }
 }
 
 pub enum WorldViewField {
     UID,
     Frame,
     Area,
-    Routes
+    Routes,
+    Things
 }
 
 impl Fields for WorldViewField {
@@ -46,7 +52,8 @@ impl Fields for WorldViewField {
             Self::UID => &Self::FIELD_UID,
             Self::Frame => &Self::FIELD_FRAME,
             Self::Area => &Self::FIELD_AREA,
-            Self::Routes => &Self::FIELD_ROUTES
+            Self::Routes => &Self::FIELD_ROUTES,
+            Self::Things => &Self::FIELD_THINGS
         }
     }
 }
@@ -63,7 +70,12 @@ impl WorldViewField {
     const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID);
     const FIELD_FRAME: Field = Field::new(&Self::CLASS_IDENT, "frame", FieldValueType::U64);
     const FIELD_AREA: Field = Field::new(&Self::CLASS_IDENT, "area", FieldValueType::Model(AreaViewField::class_ident_const()));
-    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::UIDList);
+    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::Model(RouteField::class_ident_const()));
+    const FIELD_THINGS: Field = Field::new(&Self::CLASS_IDENT, "things", FieldValueType::Model(ThingViewField::class_ident_const()));
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 pub struct WorldViewBuilder {
@@ -71,7 +83,8 @@ pub struct WorldViewBuilder {
     identity: Option<IdentityBuilder>,
     frame: Option<Frame>,
     area_view: Option<AreaViewBuilder>,
-    routes: Vec<ListOp<RouteBuilder, UID>>
+    routes: Vec<ListOp<RouteBuilder, UID>>,
+    thing_views: Vec<ListOp<ThingViewBuilder, UID>>
 }
 
 impl Builder for WorldViewBuilder {
@@ -85,7 +98,8 @@ impl Builder for WorldViewBuilder {
             identity: None,
             frame: None,
             area_view: None,
-            routes: Vec::new()
+            routes: Vec::new(),
+            thing_views: Vec::new()
         }
     }
 
@@ -107,12 +121,14 @@ impl Builder for WorldViewBuilder {
         let frame = Build::create_value(&self.frame, &mut fields_changed, WorldViewField::Frame)?;
         let area_view = Build::create(&mut self.area_view, &mut fields_changed, WorldViewField::Area)?;
         let routes = Build::create_vec(&mut self.routes, &mut fields_changed, WorldViewField::Routes)?;
+        let thing_views = Build::create_vec(&mut self.thing_views, &mut fields_changed, WorldViewField::Things)?;
 
         let world_view = WorldView {
             uid,
             frame,
             area_view,
-            routes
+            routes,
+            thing_views
         };
 
         Ok(Creation::new(self, world_view))
@@ -129,6 +145,7 @@ impl Builder for WorldViewBuilder {
         }
         
         Build::modify_vec(&mut self.routes, &mut existing.routes, &mut fields_changed, WorldViewField::Routes)?;
+        Build::modify_vec(&mut self.thing_views, &mut existing.thing_views, &mut fields_changed, WorldViewField::Things)?;
 
         Ok(Modification::new(self, fields_changed))
     }
@@ -156,6 +173,11 @@ impl WorldViewBuilder {
 
     pub fn add_route(&mut self, route: RouteBuilder) -> Result<&mut Self> {
         self.routes.push(ListOp::Add(route));
+        Ok(self)
+    }
+
+    pub fn add_thing_view(&mut self, thing_view: ThingViewBuilder) -> Result<&mut Self> {
+        self.thing_views.push(ListOp::Add(thing_view));
         Ok(self)
     }
 }
