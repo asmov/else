@@ -117,19 +117,19 @@ impl Builder for EndBuilder {
         Ok(Creation::new(self, end))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
         if self.area_identity.is_some() {
-            original.area_identity = Creation::assign(&mut self.area_identity)?;
+            existing.area_identity = Creation::assign(&mut self.area_identity)?;
             fields_changed.push(EndField::AreaIdentity.field())
         }
         if self.descriptor.is_some() {
-            original.descriptor = Creation::assign(&mut self.descriptor)?;
+            existing.descriptor = Creation::assign(&mut self.descriptor)?;
             fields_changed.push(EndField::Descriptor.field())
         }
         if let Some(direction) = &self.direction {
-            original.direction = direction.clone();
+            existing.direction = direction.clone();
             fields_changed.push(EndField::Direction.field())
         }
 

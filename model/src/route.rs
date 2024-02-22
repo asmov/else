@@ -143,23 +143,23 @@ impl Builder for RouteBuilder {
         Ok(Creation::new(self, route))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
         if self.identity.is_some() {
-            original.uid = Creation::assign(&mut self.identity)?.to_uid();
+            existing.uid = Creation::assign(&mut self.identity)?.to_uid();
             fields_changed.push(RouteField::Identity.field())
         }
         if self.descriptor.is_some() {
-            original.descriptor = Creation::assign(&mut self.descriptor)?;
+            existing.descriptor = Creation::assign(&mut self.descriptor)?;
             fields_changed.push(RouteField::Descriptor.field())
         }
         if self.point_a.is_some() {
-            original.point_a = Creation::assign(&mut self.point_a)?;
+            existing.point_a = Creation::assign(&mut self.point_a)?;
             fields_changed.push(RouteField::PointA.field())
         }
         if self.point_b.is_some() {
-            original.point_b = Creation::assign(&mut self.point_b)?;
+            existing.point_b = Creation::assign(&mut self.point_b)?;
             fields_changed.push(RouteField::PointB.field())
         }
 

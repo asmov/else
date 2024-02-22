@@ -20,7 +20,7 @@ mod tests {
         let mut character_creator = model::Character::creator();
         character_creator.cortex({
             let mut routine_cortex_creator = model::RoutineCortexBuilder::creator();
-            routine_cortex_creator.routine_id(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
+            routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
             routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
             routine_cortex_creator.cortex_builder()
         }).unwrap();
@@ -53,7 +53,7 @@ mod tests {
         let mut gray_cat = model::Character::creator();
         gray_cat.cortex({
             let mut routine_cortex_creator = model::RoutineCortexBuilder::creator();
-            routine_cortex_creator.routine_id(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
+            routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
             routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
             routine_cortex_creator.cortex_builder()
         }).unwrap();

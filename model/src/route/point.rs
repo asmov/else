@@ -40,17 +40,17 @@ impl Builder for PointBuilder {
         }
     }
 
-    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         match self {
             PointBuilder::Endpoint(builder) => {
-                if let Point::Endpoint(orig_endpoint) = original {
+                if let Point::Endpoint(orig_endpoint) = existing {
                     builder.modify(orig_endpoint)
                 } else {
                     unreachable!("Dispatch mismatch for PointBuilder::modify(Endpoint)");
                 }
             },
             PointBuilder::Junction(builder) => {
-                if let Point::Junction(orig_junction) = original {
+                if let Point::Junction(orig_junction) = existing {
                     builder.modify(orig_junction)
                 } else {
                     unreachable!("Dispatch mismatch for PointBuilder::modify(Junction)");

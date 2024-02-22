@@ -4,12 +4,12 @@ use super::*;
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct IntelligentCortex {
     interface_id: InterfaceID,
-    routine_id: RoutineID,
+    routine_id: UID,
     routine_awareness: Awareness,
 }
 
 impl Sensory for IntelligentCortex {
-    fn routine_id(&self) -> RoutineID {
+    fn routine_uid(&self) -> UID {
         self.routine_id
     }
 
@@ -71,7 +71,7 @@ impl IntelligentCortexField {
 pub struct IntelligentCortexBuilder {
     builder_mode: BuilderMode,
     interface_id: Option<InterfaceID>,
-    routine_id: Option<RoutineID>,
+    routine_id: Option<UID>,
     routine_awareness: Option<Awareness>
 }
 
@@ -118,7 +118,7 @@ impl Builder for IntelligentCortexBuilder {
         })*/
     }
 
-    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         todo!()
     }
 
@@ -128,7 +128,7 @@ impl Builder for IntelligentCortexBuilder {
 }
 
 impl IntelligentCortex {
-    pub fn routine_id(&mut self, routine_id: RoutineID) -> Result<()> {
+    pub fn routine_id(&mut self, routine_id: UID) -> Result<()> {
         self.routine_id = routine_id;
         Ok(())
     }

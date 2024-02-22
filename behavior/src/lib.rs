@@ -124,8 +124,8 @@ impl Stimulation for CharacterRoutine {
 }
 
 impl CharacterRoutine {
-    const ID_VOID: RoutineID = 0;
-    const ID_MULTIPLIER: RoutineID = 1;
+    const ID_VOID: UID = 0;
+    const ID_MULTIPLIER: UID = 1;
 
     pub fn new(character: &Character) -> CharacterRoutine {
         let routine_id = character.routine_id();

@@ -2,12 +2,10 @@ pub mod routine;
 pub mod intelligent;
 
 use serde;
-use crate::{error::*, modeling::*, world::*};
+use crate::{error::*, modeling::*, world::*, identity::*};
 
 pub use intelligent::*;
 pub use routine::*;
-
-pub type RoutineID = u8;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum Cortex {
@@ -24,7 +22,7 @@ pub enum Cortex {
 
 /// Data model trait for a Cortex
 pub trait Sensory {
-    fn routine_id(&self) -> RoutineID;
+    fn routine_uid(&self) -> UID;
     fn routine_awareness(&self) -> Awareness;
 }
 
@@ -32,7 +30,7 @@ pub trait Sensory {
 pub trait Sensitive {
     fn cortex(&self) -> &Cortex;
 
-    fn routine_id(&self) -> RoutineID {
+    fn routine_id(&self) -> UID {
         self.cortex().routine_id()
     }
 
@@ -57,12 +55,12 @@ impl Sensitive for Cortex {
         self
     }
 
-    fn routine_id(&self) -> RoutineID {
+    fn routine_id(&self) -> UID {
         match self {
-            Cortex::Routine(cortex) => cortex.routine_id(),
+            Cortex::Routine(cortex) => cortex.routine_uid(),
             //Cortex::Machine(_) => todo!(),
             //Cortex::PsuedoIntelligent(_) => todo!(),
-            Cortex::Intelligent(cortex) => cortex.routine_id(),
+            Cortex::Intelligent(cortex) => cortex.routine_uid(),
         }
     }
 
@@ -151,17 +149,17 @@ impl Builder for CortexBuilder {
         }
     }
 
-    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         match self {
             CortexBuilder::Routine(builder) => {
-                if let Cortex::Routine(original_routine_cortex) = original {
+                if let Cortex::Routine(original_routine_cortex) = existing {
                     builder.modify(original_routine_cortex)
                 } else {
                     unreachable!("Dispatch mismatch in CortexBuilder::modify() for RoutineCortex")
                 }
             },
             CortexBuilder::Intelligent(builder) => {
-                if let Cortex::Intelligent(original_intelligent_cortex) = original {
+                if let Cortex::Intelligent(original_intelligent_cortex) = existing {
                     builder.modify(original_intelligent_cortex)
                 } else {
                     unreachable!("Dispatch mismatch in CortexBuilder::modify() for IntelligentCortex")

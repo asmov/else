@@ -134,16 +134,16 @@ impl Builder for AreaBuilder {
         Ok(Creation::new(self, area))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
         if self.identity.is_none() {
-            self.identity(IdentityBuilder::from_original(&self, original))?;
+            self.identity(IdentityBuilder::from_original(&self, existing))?;
         }
 
         if self.descriptor.is_some() {
             let descriptor = self.descriptor.unwrap();
-            self.descriptor = Some(descriptor.modify(&mut original.descriptor)?
+            self.descriptor = Some(descriptor.modify(&mut existing.descriptor)?
                 .take_builder());
             
             fields_changed.push(AreaField::Descriptor.field());
@@ -152,12 +152,12 @@ impl Builder for AreaBuilder {
         if !self.occupant_thing_ids.is_empty() {
             for list_op in &self.occupant_thing_ids {
                 match *list_op {
-                    ListOp::Add(uid) => original.occupant_thing_ids.push(uid),
+                    ListOp::Add(uid) => existing.occupant_thing_ids.push(uid),
                     ListOp::Edit(_) => unreachable!("VecOp::Modify not possible in AreaBuilder::modify"),
                     ListOp::Remove(uid) => {
-                        let index = original.occupant_thing_ids.iter().position(|&x| x == uid)
+                        let index = existing.occupant_thing_ids.iter().position(|&x| x == uid)
                             .ok_or_else(|| Error::ModelNotFoundFor{model: "Thing", uid, op: "AreaBuilder::remove_occupant()"})?;
-                        original.occupant_thing_ids.remove(index);
+                        existing.occupant_thing_ids.remove(index);
                     }
                 }
             }

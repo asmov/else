@@ -124,9 +124,11 @@ impl Builder for EntityBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let uid = Creation::try_assign(&mut self.identity, EntityField::Identity)?.to_uid();
-        let descriptor = Creation::try_assign(&mut self.descriptor, EntityField::Descriptor)?;
-        let location = Self::try_assign_value(&mut self.location, EntityField::Location)?;
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let uid = Build::create(&mut self.identity, &mut fields_changed, EntityField::Identity)?.to_uid();
+        let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, EntityField::Descriptor)?;
+        let location = Build::create_value(&self.location, &mut fields_changed, EntityField::Location)?;
 
         let entity = Entity {
             uid,
@@ -137,19 +139,17 @@ impl Builder for EntityBuilder {
         Ok(Creation::new(self, entity))
     }
 
-    fn modify(mut self, original: &mut Entity) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+    fn modify(mut self, existing: &mut Entity) -> Result<Modification<Self::BuilderType>> {
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if self.descriptor.is_some() { 
-            Modification::assign(&mut self.descriptor, &mut original.descriptor)?;
-            fields_changed.push(EntityField::Descriptor.field())
+            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, EntityField::Descriptor)?;
         }
         if self.location.is_some() {
-            original.location = self.location.unwrap();
-            fields_changed.push(EntityField::Location.field());
+            existing.location = Build::modify_value(&self.location, &mut fields_changed, EntityField::Location)?;
         }
 
-        Ok(Modification::new_old(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {

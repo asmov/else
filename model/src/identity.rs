@@ -8,16 +8,16 @@ pub type WorldID    = u32;
 pub type ClassID    = u16;
 pub type ID         = u64;
 
-const UID_BITS:         usize = std::mem::size_of::<UID>()         * 8;
-const UNIVERSE_ID_BITS: usize = std::mem::size_of::<UniverseID>()  * 8;
-const WORLD_ID_BITS:    usize = std::mem::size_of::<WorldID>()     * 8;
+const UID_BITS:         usize = std::mem::size_of::<UID>()        * 8;
+const UNIVERSE_ID_BITS: usize = std::mem::size_of::<UniverseID>() * 8;
+const WORLD_ID_BITS:    usize = std::mem::size_of::<WorldID>()    * 8;
 const CLASS_ID_BITS:    usize = std::mem::size_of::<ClassID>()    * 8;
-const ID_BITS:          usize = std::mem::size_of::<ID>()          * 8;
+const ID_BITS:          usize = std::mem::size_of::<ID>()         * 8;
 
-const UNIVERSE_ID_SHIFT:    usize = UID_BITS          - UNIVERSE_ID_BITS;
-const WORLD_ID_SHIFT:       usize = UNIVERSE_ID_SHIFT - WORLD_ID_BITS;
-const CLASS_ID_SHIFT:       usize = WORLD_ID_SHIFT    - CLASS_ID_BITS;
-const ID_SHIFT:             usize = CLASS_ID_SHIFT    - ID_BITS;
+const UNIVERSE_ID_SHIFT: usize = UID_BITS          - UNIVERSE_ID_BITS;
+const WORLD_ID_SHIFT:    usize = UNIVERSE_ID_SHIFT - WORLD_ID_BITS;
+const CLASS_ID_SHIFT:    usize = WORLD_ID_SHIFT    - CLASS_ID_BITS;
+const ID_SHIFT:          usize = CLASS_ID_SHIFT    - ID_BITS;
 
 #[derive(PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone, Copy, Debug)]
 pub struct Identity {
@@ -72,21 +72,21 @@ impl Built for Identity {
 }
 
 impl Identity {
-    pub fn new(universe_id: UniverseID, world_id: WorldID, region_id: ClassID, id: ID) -> Self {
+    pub fn new(universe_id: UniverseID, world_id: WorldID, class_id: ClassID, id: ID) -> Self {
         Self {
             universe_id,
             world_id,
-            class_id: region_id,
+            class_id,
             id
         }
     }
 
     pub const fn from_uid(value: UID) -> Self {
         Self {
-            universe_id:    (value >> UNIVERSE_ID_SHIFT)    as UniverseID,
-            world_id:       (value >> WORLD_ID_SHIFT)       as WorldID,
-            class_id:      (value >> CLASS_ID_SHIFT)      as ClassID,
-            id:             (value >> ID_SHIFT)             as ID 
+            universe_id: (value >> UNIVERSE_ID_SHIFT) as UniverseID,
+            world_id:    (value >> WORLD_ID_SHIFT)    as WorldID,
+            class_id:    (value >> CLASS_ID_SHIFT)    as ClassID,
+            id:          (value >> ID_SHIFT)          as ID 
         }
     }
 
@@ -94,12 +94,16 @@ impl Identity {
         0
         | ((self.universe_id as UID) << UNIVERSE_ID_SHIFT)
         | ((self.world_id    as UID) << WORLD_ID_SHIFT)
-        | ((self.class_id   as UID) << CLASS_ID_SHIFT)
+        | ((self.class_id    as UID) << CLASS_ID_SHIFT)
         | ((self.id          as UID) << ID_SHIFT)
     }
 
     pub const fn into_uid(self) -> UID {
         self.to_uid()
+    }
+
+    pub fn split(self) -> (UniverseID, WorldID, ClassID, ID) {
+        (self.universe_id, self.world_id, self.class_id, self.id)
     }
 
     pub fn id_to_string(&self) -> String {
@@ -315,23 +319,23 @@ impl Builder for IdentityBuilder {
         Ok(Creation::new(self, identity))
     }
 
-    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self>> {
+    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self>> {
         let mut fields_changed = Vec::new();
 
         if let Some(id) = self.id {
-            original.id = id;
+            existing.id = id;
             fields_changed.push(IdentityField::ID.field());
         }
         if let Some(region_id) = self.class_id {
-            original.class_id = region_id;
+            existing.class_id = region_id;
             fields_changed.push(IdentityField::ClassID.field());
         }
         if let Some(world_id) = self.world_id {
-            original.world_id = world_id;
+            existing.world_id = world_id;
             fields_changed.push(IdentityField::WorldID.field());
         }
         if let Some(universe_id) = self.universe_id {
-            original.universe_id = universe_id;
+            existing.universe_id = universe_id;
             fields_changed.push(IdentityField::UniverseID.field());
         }
 

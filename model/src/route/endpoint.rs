@@ -76,11 +76,11 @@ impl Builder for EndpointBuilder {
         Ok(Creation::new(PointBuilder::Endpoint(self), Point::Endpoint(endpoint)))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
         if self.end.is_some() {
-            original.end = Creation::assign(&mut self.end)?;
+            existing.end = Creation::assign(&mut self.end)?;
             fields_changed.push(EndpointField::End.field())
         }
 

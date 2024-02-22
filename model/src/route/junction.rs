@@ -100,16 +100,16 @@ impl Builder for JunctionBuilder {
         Ok(Creation::new(PointBuilder::Junction(self), Point::Junction(junction)))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
         if !self.entrances.is_empty() {
-            Creation::modify_vec(&mut self.entrances, &mut original.entrances)?;
+            Creation::modify_vec(&mut self.entrances, &mut existing.entrances)?;
             fields_changed.push(JunctionField::Entrances.field())
         }
 
         if self.exit.is_some() {
-            original.exit = Creation::assign(&mut self.exit)?;
+            existing.exit = Creation::assign(&mut self.exit)?;
             fields_changed.push(JunctionField::Exit.field())
         }
 

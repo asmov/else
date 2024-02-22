@@ -118,26 +118,27 @@ impl Builder for CharacterBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let entity = Creation::try_assign(&mut self.entity, CharacterField::Entity)?;
-        let cortex = Creation::try_assign(&mut self.cortex, CharacterField::Cortex)?;
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let entity = Build::create(&mut self.entity, &mut fields_changed, CharacterField::Entity)?;
+        let cortex = Build::create(&mut self.cortex, &mut fields_changed, CharacterField::Cortex)?;
 
         let character = Character {
-            entity: entity,
-            cortex: cortex
+            entity,
+            cortex
         };
 
         Ok(Creation::new(ThingBuilder::Character(self), Thing::Character(character)))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<ThingBuilder>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        // todo
         if self.entity.is_some() {
-            Build::modify(&mut self.entity, &mut original.entity, &mut fields_changed, CharacterField::Entity)?;
-            /*let modification = self.entity.take().unwrap().modify(&mut original.entity)?;
-            self.entity = Some(modification.take_builder());
-            fields_changed.push(CharacterField::Entity.field());*/
+            Build::modify(&mut self.entity, &mut existing.entity, &mut fields_changed, CharacterField::Entity)?;
+        }
+        if self.cortex.is_some() {
+            Build::modify(&mut self.cortex, &mut existing.cortex, &mut fields_changed, CharacterField::Cortex)?;
         }
 
         Ok(Modification::new(ThingBuilder::Character(self), fields_changed))

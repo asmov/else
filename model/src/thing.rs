@@ -99,10 +99,10 @@ impl Builder for ThingBuilder {
         }
     }
 
-    fn modify(self, original: &mut Thing) -> Result<Modification<Self::BuilderType>> {
+    fn modify(self, existing: &mut Thing) -> Result<Modification<Self::BuilderType>> {
         match self {
             ThingBuilder::Character(character_builder) => {
-                if let Thing::Character(character) = original {
+                if let Thing::Character(character) = existing {
                     character_builder.modify(character)
                 } else {
                     unreachable!("Dispatch type mismatch in ThingBuilder::modify for Character")

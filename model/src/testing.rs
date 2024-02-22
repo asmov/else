@@ -80,7 +80,7 @@ pub fn create_world() -> World {
         let mut character_creator = model::Character::creator();
         character_creator.cortex({
             let mut routine_cortex_creator = RoutineCortexBuilder::creator();
-            routine_cortex_creator.routine_id(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
+            routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
             routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
             routine_cortex_creator.cortex_builder()
         }).unwrap();

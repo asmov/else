@@ -71,7 +71,7 @@ pub struct WorldViewBuilder {
     identity: Option<IdentityBuilder>,
     frame: Option<Frame>,
     area_view: Option<AreaViewBuilder>,
-    routes: Vec<RouteBuilder>
+    routes: Vec<ListOp<RouteBuilder, UID>>
 }
 
 impl Builder for WorldViewBuilder {
@@ -101,10 +101,12 @@ impl Builder for WorldViewBuilder {
     }
 
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
-        let uid = Creation::try_assign(&mut self.identity, WorldViewField::UID)?.to_uid();
-        let frame = Self::try_assign_value(&mut self.frame, WorldViewField::Frame)?;
-        let area_view = Creation::try_assign(&mut self.area_view, WorldViewField::Area)?;
-        let routes = Creation::assign_vec(&mut self.routes)?;
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let uid = Build::create(&mut self.identity, &mut fields_changed, WorldViewField::UID)?.to_uid();
+        let frame = Build::create_value(&self.frame, &mut fields_changed, WorldViewField::Frame)?;
+        let area_view = Build::create(&mut self.area_view, &mut fields_changed, WorldViewField::Area)?;
+        let routes = Build::create_vec(&mut self.routes, &mut fields_changed, WorldViewField::Routes)?;
 
         let world_view = WorldView {
             uid,
@@ -116,21 +118,19 @@ impl Builder for WorldViewBuilder {
         Ok(Creation::new(self, world_view))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if self.frame.is_some() {
-            original.frame = self.frame.unwrap();
-            fields_changed.push(WorldViewField::Frame.field());
+            Build::modify_value(&mut self.frame, &mut fields_changed, WorldField::Frame)?;
         }
         if self.area_view.is_some() {
-            Modification::assign(&mut self.area_view, &mut original.area_view)?;
-            fields_changed.push(WorldViewField::Area.field());
+            Build::modify(&mut self.area_view, &mut existing.area_view, &mut fields_changed, WorldField::Areas)?;
         }
         
-        Creation::modify_vec(&mut self.routes, &mut original.routes)?;
+        Build::modify_vec(&mut self.routes, &mut existing.routes, &mut fields_changed, WorldViewField::Routes)?;
 
-        Ok(Modification::new_old(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {
@@ -155,7 +155,7 @@ impl WorldViewBuilder {
     }
 
     pub fn add_route(&mut self, route: RouteBuilder) -> Result<&mut Self> {
-        self.routes.push(route);
+        self.routes.push(ListOp::Add(route));
         Ok(self)
     }
 }

@@ -98,11 +98,11 @@ impl Builder for ThingViewBuilder {
         Ok(Creation::new(self, thing_view))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> crate::Result<Modification<Self::BuilderType>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> crate::Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Vec::new();
 
         if self.descriptor.is_some() {
-            Modification::assign(&mut self.descriptor, &mut original.descriptor)?;
+            Modification::assign(&mut self.descriptor, &mut existing.descriptor)?;
             fields_changed.push(ThingViewField::Descriptor.field());
         }
 

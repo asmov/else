@@ -56,20 +56,10 @@ pub trait Builder: Sized {
 
     fn create(self) -> Result<Creation<Self::BuilderType>>; 
 
-    fn modify(self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>>; 
+    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>>; 
 
     fn set(&mut self, _raw_field: &str, _raw_value: String) -> Result<()> {
         unimplemented!("Builder::set()")
-    }
-
-    fn try_assign_value<T: Clone>(builder_option: &mut Option<T>, field: impl Fields) -> Result<T> {
-        let field = field.field();
-        let value = builder_option
-            .as_ref()
-            .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?
-            .clone();
-
-        Ok(value)
     }
 
     /// Typically called by [Sync] to systematically synchronize state changes with an upstream provider.
@@ -137,7 +127,7 @@ impl<T: MaybeIdentifiable, R: MaybeIdentifiable> ListOp<T, R> {
         }
     }
 
-    pub fn is_modify(&self) -> bool {
+    pub fn is_edit(&self) -> bool {
         match self {
             ListOp::Edit(_) => true,
             _ => false
@@ -154,11 +144,22 @@ impl<T: MaybeIdentifiable, R: MaybeIdentifiable> ListOp<T, R> {
 
 pub struct Build;
 impl Build {
-    pub fn create_value<T: Clone>(builder_option: &mut Option<T>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<T> {
+    pub fn create_value<T: Clone>(builder_option: &Option<T>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<T> {
         let field = field.field();
         let value = builder_option
             .as_ref()
             .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?
+            .clone();
+
+        //todo: fields_changed
+        Ok(value)
+    }
+
+    pub fn modify_value<T: Clone>(builder_option: &Option<T>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<T> {
+        let field = field.field();
+        let value = builder_option
+            .as_ref()
+            .expect("Calls to Build::modify_value() should be made after a guard against Option::is_some()")
             .clone();
 
         //todo: fields_changed
@@ -204,7 +205,7 @@ impl Build {
     }
 
 
-    pub fn assign_vec<B,M,R>(builder_vec: &mut Vec<ListOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<M>>
+    pub fn create_vec<B,M,R>(builder_vec: &mut Vec<ListOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<M>>
     where
         B: Builder<BuilderType = B, ModelType = M> + BuildableIdentity,
         M: Identifiable,

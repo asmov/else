@@ -208,7 +208,8 @@ impl Builder for WorldBuilder {
         let frame = Build::create_value(&mut self.frame, &mut fields_changed, WorldField::Frame)?;
 
         let mut next_id = self.generate_id();
-        let (universe_id, world_id) = (identity.universe_id(), identity.world_id());
+        let uid = identity.to_uid();
+        let (universe_id, world_id, _, _) = identity.split();
 
         // set IDs for areas
         for area_list_op in &mut self.areas {
@@ -244,11 +245,11 @@ impl Builder for WorldBuilder {
 
         self.next_id = next_id;
 
-        let uid = identity.into_uid();
-        let areas = Build::assign_vec(&mut self.areas, &mut fields_changed, WorldField::Areas)?;
-        let routes = Build::assign_vec(&mut self.routes, &mut fields_changed, WorldField::Routes)?;
-        let things = Build::assign_vec(&mut self.things, &mut fields_changed, WorldField::Things)?;
-        let next_id = self.next_id + 1;
+        let areas = Build::create_vec(&mut self.areas, &mut fields_changed, WorldField::Areas)?;
+        let routes = Build::create_vec(&mut self.routes, &mut fields_changed, WorldField::Routes)?;
+        let things = Build::create_vec(&mut self.things, &mut fields_changed, WorldField::Things)?;
+
+        let next_id = self.next_id + 1; //todo: ?
 
         let world = World {
             uid,
@@ -263,52 +264,49 @@ impl Builder for WorldBuilder {
         Ok(Creation::new(self, world))
     }
 
-    fn modify(mut self, original: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::new(WorldField::class_ident(), ChangeOp::Modify);
 
         if self.descriptor.is_some() {
-            Build::modify(&mut self.descriptor, &mut original.descriptor, &mut fields_changed, WorldField::Descriptor)?;
+            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, WorldField::Descriptor)?;
         }
-        if let Some(frame) = self.frame {
-            original.frame = frame;
+        if self.frame.is_some() {
+            existing.frame = Build::modify_value(&self.frame, &mut fields_changed, WorldField::Frame)?;
         }
 
-        let (universe_id, world_id) = {
-            let identity = Identity::from_uid(original.uid());
-            (identity.universe_id(), identity.world_id())
-        };
+        let (universe_id, world_id, _, _) = Identity::from_uid(existing.uid()).split();
+
+        // reassign these to self later
+        let mut areas = self.areas;
+        let mut routes = self.routes;
+        let mut things = self.things;
 
         // build identities
-        // todo: use appropriate class ids for things
-        Self::build_local_identities(original, &mut self.areas, universe_id, world_id)?;
-        Self::build_local_identities(original, &mut self.routes, universe_id, world_id)?;
-        Self::build_local_identities(original, &mut self.things, universe_id, world_id)?;
-
-
-        let mut areas = self.areas;
+        Self::build_local_identities(existing, &mut areas, universe_id, world_id)?;
+        Self::build_local_identities(existing, &mut routes, universe_id, world_id)?;
+        Self::build_local_identities(existing, &mut things, universe_id, world_id)?;
 
         // handle movement of things between locations
-        self.things
-            .drain(0..)
+        things.iter_mut()
             .map(|thing_list_op| {
                 match thing_list_op {
                     ListOp::Remove(_) => {},
                     ListOp::Add(ref thing) | ListOp::Edit(ref thing) => {
-                        Self::process_thing_location(thing, &mut areas, original)?
+                        Self::process_thing_location(thing, &mut areas, existing)?
                     }
                 }
 
                 Ok(thing_list_op)
             })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .for_each(|thing_list_op| self.things.push(thing_list_op));
+            .collect::<Result<Vec<_>>>()?;
 
         self.areas = areas;
+        self.routes = routes;
+        self.things = things;
 
-        Build::modify_vec(&mut self.areas, &mut original.areas, &mut fields_changed, WorldField::Areas)?;
-        Build::modify_vec(&mut self.routes, &mut original.routes, &mut fields_changed, WorldField::Routes)?;
-        Build::modify_vec(&mut self.things, &mut original.things, &mut fields_changed, WorldField::Things)?;
+        Build::modify_vec(&mut self.areas, &mut existing.areas, &mut fields_changed, WorldField::Areas)?;
+        Build::modify_vec(&mut self.routes, &mut existing.routes, &mut fields_changed, WorldField::Routes)?;
+        Build::modify_vec(&mut self.things, &mut existing.things, &mut fields_changed, WorldField::Things)?;
 
         Ok(Modification::new_old(self, Vec::new()))
     }
@@ -404,6 +402,7 @@ impl BuildableThingList for WorldBuilder {
 }
 
 impl WorldBuilder {
+    //todo: generate_uid(..) { IdentityGenerator::generate_uid(&mut self, universe_id: UID, world_id: UID, class_id: ClassID) -> UID }
     fn generate_id(&mut self) -> ID {
         let id = self.next_id;
         self.next_id += 1;
@@ -411,7 +410,7 @@ impl WorldBuilder {
     }
 
     fn build_local_identities(
-        original: &mut World,
+        existing: &mut World,
         operations: &mut Vec<ListOp<impl BuildableIdentity, UID>>,
         universe_id: UniverseID, world_id: WorldID
     ) -> Result<()> {
@@ -427,7 +426,7 @@ impl WorldBuilder {
                     identity_builder.universe_id(universe_id)?;
                     identity_builder.world_id(world_id)?;
                     identity_builder.class_id(class_id)?;
-                    identity_builder.id(original.generate_id())?;
+                    identity_builder.id(existing.generate_id())?;
                 },
                 _ => {},
             }
