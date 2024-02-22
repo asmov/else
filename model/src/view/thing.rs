@@ -87,8 +87,10 @@ impl Builder for ThingViewBuilder {
     }
 
     fn create(mut self) -> crate::Result<Creation<Self::BuilderType>> {
-        let uid = Creation::try_assign(&mut self.identity, ThingViewField::UID)?.to_uid();
-        let descriptor = Creation::try_assign(&mut self.descriptor, ThingViewField::Descriptor)?;
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let uid = Build::create(&mut self.identity, &mut fields_changed, ThingViewField::UID)?.to_uid();
+        let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, ThingViewField::Descriptor)?;
 
         let thing_view = ThingView {
             uid,
@@ -99,14 +101,13 @@ impl Builder for ThingViewBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> crate::Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Vec::new();
+        let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if self.descriptor.is_some() {
-            Modification::assign(&mut self.descriptor, &mut existing.descriptor)?;
-            fields_changed.push(ThingViewField::Descriptor.field());
+            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, ThingViewField::Descriptor)?;
         }
 
-        Ok(Modification::new_old(self, fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {
