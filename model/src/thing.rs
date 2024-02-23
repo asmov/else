@@ -69,6 +69,15 @@ pub trait ThingBuilderVariant: Builder + BuildableEntity {
     fn thing_builder(self) -> ThingBuilder;
 }
 
+impl Thing {
+    const CLASSNAME: &'static str = "Thing";
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Thing as ClassID, Self::CLASSNAME);
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
+}
+
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum ThingBuilder {
     Character(CharacterBuilder),

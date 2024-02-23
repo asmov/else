@@ -119,7 +119,7 @@ pub fn create_world() -> World {
                     descriptor_creator
                 }).unwrap();
                 end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_a)).unwrap();
-                end_creator.direction(Direction::West).unwrap();
+                end_creator.direction(Direction::level(HorizontalDirection::West)).unwrap();
                 end_creator
             }).unwrap();
             endpoint_creator.point_builder()
@@ -135,7 +135,7 @@ pub fn create_world() -> World {
                     descriptor_creator
                 }).unwrap();
                 end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_b)).unwrap();
-                end_creator.direction(Direction::East).unwrap();
+                end_creator.direction(Direction::level(HorizontalDirection::East)).unwrap();
                 end_creator
             }).unwrap();
             endpoint_creator.point_builder()
@@ -165,7 +165,7 @@ pub fn create_world() -> World {
                     descriptor_creator
                 }).unwrap();
                 end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_a)).unwrap();
-                end_creator.direction(Direction::East).unwrap();
+                end_creator.direction(Direction::level(HorizontalDirection::East)).unwrap();
                 end_creator
             }).unwrap();
             endpoint_creator.point_builder()
@@ -181,7 +181,7 @@ pub fn create_world() -> World {
                     descriptor_creator
                 }).unwrap();
                 end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_b)).unwrap();
-                end_creator.direction(Direction::West).unwrap();
+                end_creator.direction(Direction::level(HorizontalDirection::West)).unwrap();
                 end_creator
             }).unwrap();
             endpoint_creator.point_builder()

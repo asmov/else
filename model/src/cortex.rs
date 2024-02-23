@@ -1,8 +1,8 @@
 pub mod routine;
 pub mod intelligent;
 
-use serde;
-use crate::{error::*, modeling::*, world::*, identity::*};
+use { serde, strum };
+use crate::{error::*, modeling::*, world::*, identity::*, codebase::*};
 
 pub use intelligent::*;
 pub use routine::*;
@@ -43,11 +43,20 @@ pub trait SensitiveMut: Sensitive {
     fn cortext_mut(&mut self) -> &mut Cortex;
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, strum::Display, strum::EnumString)]
 pub enum Awareness {
     Shock,
     Conscious,
     Subconscious,
+}
+
+impl Awareness {
+    const CLASSNAME: &'static str = "Awareness";
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Awareness as ClassID, Self::CLASSNAME);
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 impl Sensitive for Cortex {

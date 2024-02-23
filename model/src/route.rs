@@ -55,7 +55,7 @@ pub trait Routing {
 
 #[derive(Clone, Copy, Debug)]
 pub enum RouteField {
-    Identity,
+    UID,
     Descriptor,
     PointA,
     PointB
@@ -64,7 +64,7 @@ pub enum RouteField {
 impl Fields for RouteField {
     fn field(&self) -> &'static Field {
         match self {
-            Self::Identity => &Self::FIELD_IDENTITY,
+            Self::UID => &Self::FIELD_UID,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::PointA => &Self::FIELD_POINT_A,
             Self::PointB => &Self::FIELD_POINT_B
@@ -81,12 +81,12 @@ impl Class for RouteField {
 impl RouteField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Route as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Route";
-    const FIELDNAME_IDENTITY: &'static str = "identity";
+    const FIELDNAME_UID: &'static str = "uid";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_POINT_A: &'static str = "point_a";
     const FIELDNAME_POINT_B: &'static str = "point_b";
 
-    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model(IdentityField::class_ident_const()));
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::Model(IdentityField::class_ident_const()));
     const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
     const FIELD_POINT_A: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_A, FieldValueType::Model(EndpointField::class_ident_const()));
     const FIELD_POINT_B: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_POINT_B, FieldValueType::Model(EndpointField::class_ident_const()));
@@ -134,7 +134,7 @@ impl Builder for RouteBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let uid = Build::create(&mut self.identity, &mut fields_changed, RouteField::Identity)?.uid();
+        let uid = Build::create(&mut self.identity, &mut fields_changed, RouteField::UID)?.uid();
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, RouteField::Descriptor)?;
         let point_a = Build::create(&mut self.point_a, &mut fields_changed, RouteField::PointA)?;
         let point_b = Build::create(&mut self.point_b, &mut fields_changed, RouteField::PointB)?;

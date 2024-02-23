@@ -39,8 +39,8 @@ impl FieldsChanged {
                 model_node.children.extend(rh.root.children);
                 ChangeTreeNode::Model(model_node)
             },
-            FieldValueType::UIDList => todo!(),
-            FieldValueType::ModelList => todo!(),
+            FieldValueType::UIDList(_class_ident) => todo!(),
+            FieldValueType::ModelList(_class_ident) => todo!(),
             FieldValueType::StringList => todo!(),
             _ => panic!("FieldsChanged::extend() expects fieild types of Model or Collections")
         };

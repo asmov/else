@@ -68,10 +68,10 @@ impl Class for AreaViewField {
 impl AreaViewField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::AreaView as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "AreaView";
-    const FIELD_UID: &'static Field = &Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID);
+    const FIELD_UID: &'static Field = &Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID(&Self::CLASS_IDENT));
     const FIELD_DESCRIPTOR: &'static Field = &Field::new(&Self::CLASS_IDENT, "descriptor", FieldValueType::Model(DescriptorField::class_ident_const()));
-    const FIELD_THINGS: &'static Field = &Field::new(&Self::CLASS_IDENT, "things", FieldValueType::ModelList);
-    const FIELD_ROUTES: &'static Field = &Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::ModelList);
+    const FIELD_THINGS: &'static Field = &Field::new(&Self::CLASS_IDENT, "things", FieldValueType::ModelList(Thing::class_ident_const()));
+    const FIELD_ROUTES: &'static Field = &Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::ModelList(RouteField::class_ident_const()));
 
     pub const fn class_ident_const() -> &'static ClassIdent {
         &Self::CLASS_IDENT

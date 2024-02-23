@@ -17,8 +17,12 @@ pub enum Error {
     #[error("{model} not found for {op}: {uid}")]
     ModelNotFoundFor{ model: &'static str, uid: u128, op: &'static str },
 
+    //todo: clean this up
     #[error("Buildable UID not available")]
-    BuildableUID{}
+    BuildableUID{},
+
+    #[error("Unable to parse {what}: {src}")]
+    ParseError{ what: &'static str, src: String }
 }
 
 pub type Result<T> = ::core::result::Result<T, Error>;

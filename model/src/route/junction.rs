@@ -48,7 +48,7 @@ impl JunctionField {
     const FIELDNAME_ENTRANCES: &'static str = "entrances";
     const FIELDNAME_EXIT: &'static str = "exit";
 
-    const FIELD_ENTRANCES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTRANCES, FieldValueType::ModelList);
+    const FIELD_ENTRANCES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTRANCES, FieldValueType::ModelList(EndField::class_ident_const()));
     const FIELD_EXIT: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_EXIT, FieldValueType::Model(EndField::class_ident_const()));
 }
 

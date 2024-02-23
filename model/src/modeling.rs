@@ -17,6 +17,8 @@
 pub mod fields_changed;
 pub mod build;
 
+use std::{fmt::Display, str::FromStr};
+
 use crate::{error::*, identity::*};
 
 pub use fields_changed::*;
@@ -226,6 +228,13 @@ pub trait Class: Fields {
     fn classname() -> &'static str { Self::class_ident().classname() }
 }
 
+/// Represents a struct that is not a model and does not have a builder.
+/// It must be able to be constucted by a string.
+/// The results of FromStr and Display should be interchangeable.
+pub trait NonPrimitive: FromStr + Display + Sized {
+    fn class_ident(&self) -> &'static ClassIdent;
+}
+
 /// Represents data types for model fields that are available to APIs.
 #[derive(Clone, Copy, Debug)]
 pub enum FieldValueType {
@@ -237,18 +246,20 @@ pub enum FieldValueType {
     U64,
     /// f64
     F64,
-    /// u128
-    UID,
-    /// String
+   /// String
     String, 
-    /// Fieldless enum
-    Enum,
+    /// u128
+    UID(&'static ClassIdent),
+     /// Fieldless enum
+    Enum(&'static ClassIdent),
+    /// No builder, implements NonPrimitive (FromStr, Display, Sized)
+    NonPrimitive(&'static ClassIdent),
     /// impl Builder
     Model(&'static ClassIdent),
     /// Vec<UID>
-    UIDList,
+    UIDList(&'static ClassIdent),
     /// Vec<impl Builder>
-    ModelList,
+    ModelList(&'static ClassIdent),
     /// Vec<String>
     StringList,
 }

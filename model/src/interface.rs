@@ -1,37 +1,64 @@
 use serde;
-use crate::identity::*;
+use crate::{error::*, modeling::*, identity::*, codebase::*};
 
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq, Copy, Clone)]
-pub struct InterfaceID {
-    universe_id: UniverseID,
-    serial: u64,
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
+pub struct Interface {
+    uid: UID,
 }
 
-impl InterfaceID {
-    pub fn new(universe_id: UniverseID, serial: u64) -> Self {
-        Self {
-            universe_id,
-            serial,
+impl Keyed for Interface{}
+
+impl Identifiable for Interface {
+    fn uid(&self) -> UID {
+        self.uid
+    }
+}
+
+impl Interface {
+    fn id_to_tty(&self) -> String {
+        Identity::from_uid(self.uid).id_to_string()
+    }
+}
+
+pub enum InterfaceField {
+    UID
+}
+
+impl Fields for InterfaceField {
+    fn field(&self) -> &'static Field {
+        match self {
+            Self::UID => &Self::FIELD_UID
         }
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub struct Interface {
-    interface_id: InterfaceID,
-    tty_name: String,
+impl Class for InterfaceField {
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
+}
+
+impl InterfaceField {
+    const CLASSNAME: &'static str = "Interface";
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Interface as ClassID, Self::CLASSNAME);
+    const FIELDNAME_UID: &'static str = "uid";
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID(&Self::CLASS_IDENT));
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub struct InterfaceContact {
-    interface_id: InterfaceID,
+    interface_uid: UID,
     contacts: Vec<Contact>
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub struct InterfaceLogin {
-    interface_id: InterfaceID,
+    interface_uid: UID,
     login_accounts: Vec<Login>
 }
 

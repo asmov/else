@@ -79,9 +79,9 @@ impl EntityField {
     //pub const FIELDNAME_INVENTORY: &'static str = "inventory";
     //pub const FIELDNAME_COMPOSITION: &'static str = "composition";
 
-    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID);
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID(&Self::CLASS_IDENT));
     const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
-    const FIELD_LOCATION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_LOCATION, FieldValueType::UID);
+    const FIELD_LOCATION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_LOCATION, FieldValueType::UID(Location::class_ident_const()));
     //pub const FIELD_INVENTORY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INVENTORY, FieldValueType::Object);
     //pub const FIELD_COMPOSITION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_COMPOSITION, FieldValueType::Object);
 

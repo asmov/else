@@ -67,7 +67,7 @@ impl Class for WorldViewField {
 impl WorldViewField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::WorldView as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "WorldView";
-    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID);
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, "uid", FieldValueType::UID(&Self::CLASS_IDENT));
     const FIELD_FRAME: Field = Field::new(&Self::CLASS_IDENT, "frame", FieldValueType::U64);
     const FIELD_AREA: Field = Field::new(&Self::CLASS_IDENT, "area", FieldValueType::Model(AreaViewField::class_ident_const()));
     const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, "routes", FieldValueType::Model(RouteField::class_ident_const()));

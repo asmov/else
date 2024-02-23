@@ -1,4 +1,4 @@
-use crate::{codebase::*, error::*, modeling::*, identity::*, descriptor::*, thing::*, world::World};
+use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, thing::*, world::World, RouteField};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -48,7 +48,7 @@ pub enum AreaField {
 impl Fields for AreaField {
     fn field(&self) -> &'static Field {
         match self {
-            Self::Identity => &Self::FIELD_IDENTITY,
+            Self::Identity => &Self::FIELD_UID,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::Routes => &Self::FIELD_ROUTES,
             Self::Occupants => &Self::FIELD_OCCUPANTS,
@@ -65,15 +65,15 @@ impl Class for AreaField {
 impl AreaField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::Area as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "Area";
-    const FIELDNAME_IDENTITY: &'static str = "identity";
+    const FIELDNAME_UID: &'static str = "identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_OCCUPANTS: &'static str = "occupants";
 
-    const FIELD_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_IDENTITY, FieldValueType::Model(IdentityField::class_ident_const()));
+    const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID(&Self::CLASS_IDENT));
     const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
-    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::UIDList);
-    const FIELD_OCCUPANTS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_OCCUPANTS, FieldValueType::UIDList);
+    const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::UIDList(RouteField::class_ident_const()));
+    const FIELD_OCCUPANTS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_OCCUPANTS, FieldValueType::UIDList(Thing::class_ident_const()));
 
     pub const fn class_ident_const() -> &'static ClassIdent {
         &Self::CLASS_IDENT

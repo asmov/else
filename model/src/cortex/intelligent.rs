@@ -1,16 +1,16 @@
-use crate::{codebase::*, error::*, identity::*, modeling::*, interface::*};
+use crate::{codebase::*, error::*, identity::*, modeling::*, cortex::routine::*, interface::*};
 use super::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct IntelligentCortex {
-    interface_id: InterfaceID,
-    routine_id: UID,
+    interface_uid: UID,
+    routine_uid: UID,
     routine_awareness: Awareness,
 }
 
 impl Sensory for IntelligentCortex {
     fn routine_uid(&self) -> UID {
-        self.routine_id
+        self.routine_uid
     }
 
     fn routine_awareness(&self) -> Awareness {
@@ -19,8 +19,8 @@ impl Sensory for IntelligentCortex {
 }
 
 impl IntelligentCortex {
-    pub fn interface_id(&self) -> InterfaceID {
-        self.interface_id
+    pub fn interface_id(&self) -> UID {
+        self.interface_uid
     }
 }
 
@@ -50,18 +50,18 @@ impl Class for IntelligentCortexField {
 impl IntelligentCortexField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::IntelligentCortex as ClassID, Self::CLASSNAME);
     pub const CLASSNAME: &'static str = "IntelligentCortex";
-    pub const FIELDNAME_INTERFACE_ID: &'static str = "interface_id";
-    pub const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
+    pub const FIELDNAME_INTERFACE_UID: &'static str = "interface_uid";
+    pub const FIELDNAME_ROUTINE_UID: &'static str = "routine_uid";
     pub const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    pub const FIELD_INTERFACE_ID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACE_ID, FieldValueType::U64);
-    pub const FIELD_ROUTINE_ID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_ID, FieldValueType::U64);
-    pub const FIELD_ROUTINE_AWARENESS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum);
+    pub const FIELD_INTERFACE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACE_UID, FieldValueType::UID(InterfaceField::class_ident_const()));
+    pub const FIELD_ROUTINE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_UID, FieldValueType::UID(RoutineCortexField::class_ident_const()));
+    pub const FIELD_ROUTINE_AWARENESS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum(Awareness::class_ident_const()));
 
     pub const fn field(&self) -> &'static Field {
         match self {
-            Self::InterfaceID => &Self::FIELD_ROUTINE_ID,
-            Self::RoutineID => &Self::FIELD_ROUTINE_ID,
+            Self::InterfaceID => &Self::FIELD_ROUTINE_UID,
+            Self::RoutineID => &Self::FIELD_ROUTINE_UID,
             Self::RoutineAwareness => &Self::FIELD_ROUTINE_AWARENESS,
         }
     }
@@ -70,8 +70,8 @@ impl IntelligentCortexField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct IntelligentCortexBuilder {
     builder_mode: BuilderMode,
-    interface_id: Option<InterfaceID>,
-    routine_id: Option<UID>,
+    interface_uid: Option<UID>,
+    routine_uid: Option<UID>,
     routine_awareness: Option<Awareness>
 }
 
@@ -83,8 +83,8 @@ impl Builder for IntelligentCortexBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            interface_id: None,
-            routine_id: None,
+            interface_uid: None,
+            routine_uid: None,
             routine_awareness: None
         }
     }
@@ -129,7 +129,7 @@ impl Builder for IntelligentCortexBuilder {
 
 impl IntelligentCortex {
     pub fn routine_id(&mut self, routine_id: UID) -> Result<()> {
-        self.routine_id = routine_id;
+        self.routine_uid = routine_id;
         Ok(())
     }
 

@@ -10,7 +10,9 @@ pub enum CodebaseClassID {
     End,
     Endpoint,
     Junction,
+    Location,
     Entity,
+    Thing,
     Character,
     Cortex,
     RoutineCortex,
@@ -18,5 +20,8 @@ pub enum CodebaseClassID {
     Item,
     WorldView,
     AreaView,
-    ThingView
+    ThingView,
+    Direction,
+    Awareness,
+    Interface
 }
