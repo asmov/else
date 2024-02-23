@@ -54,9 +54,12 @@ impl IntelligentCortexField {
     pub const FIELDNAME_ROUTINE_UID: &'static str = "routine_uid";
     pub const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    pub const FIELD_INTERFACE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACE_UID, FieldValueType::UID(InterfaceField::class_ident_const()));
-    pub const FIELD_ROUTINE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_UID, FieldValueType::UID(RoutineCortexField::class_ident_const()));
-    pub const FIELD_ROUTINE_AWARENESS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum(Awareness::class_ident_const()));
+    pub const FIELD_INTERFACE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACE_UID,
+        FieldValueType::UID(InterfaceField::class_ident_const()));
+    pub const FIELD_ROUTINE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_UID,
+        FieldValueType::UID(RoutineCortexField::class_ident_const()));
+    pub const FIELD_ROUTINE_AWARENESS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_AWARENESS,
+        FieldValueType::Enum(Awareness::class_ident_const()));
 
     pub const fn field(&self) -> &'static Field {
         match self {

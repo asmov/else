@@ -50,6 +50,42 @@ impl InterfaceField {
     }
 }
 
+pub struct InterfaceBuilder {
+    builder_mode: BuilderMode,
+    identity: Option<IdentityBuilder>
+}
+
+impl Builder for InterfaceBuilder {
+    type BuilderType = Self;
+    type ModelType = Interface;
+
+    fn creator() -> Self {
+        todo!()
+    }
+
+    fn editor() -> Self {
+        todo!()
+    }
+
+    fn builder_mode(&self) -> BuilderMode {
+        todo!()
+    }
+
+    fn class_ident(&self) -> &'static ClassIdent {
+        todo!()
+    }
+
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
+        todo!()
+    }
+
+    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        todo!()
+    }
+}
+
+
+/*todo
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub struct InterfaceContact {
     interface_uid: UID,
@@ -83,5 +119,5 @@ pub enum Contact{
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub struct EmailContact {
-
 }
+*/

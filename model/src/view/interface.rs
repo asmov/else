@@ -1,0 +1,114 @@
+use serde;
+use crate::{error::*, identity::*, modeling::*, codebase::*, descriptor::*, interface::*, view::world::*};
+
+pub struct InterfaceView {
+    interface: Interface,
+    world_view: WorldView
+}
+
+impl Keyed for InterfaceView {}
+
+impl Identifiable for InterfaceView {
+    fn uid(&self) -> UID {
+        self.interface.uid()
+    }
+}
+
+impl InterfaceView {
+    pub fn interface(&self) -> &Interface {
+        &self.interface
+    }
+
+    pub fn world_view(&self) -> &WorldView {
+        &self.world_view
+    }
+}
+
+pub enum InterfaceViewField {
+    Interface,
+    World
+}
+
+impl Fields for InterfaceViewField {
+    fn field(&self) -> &'static Field {
+        match self {
+            Self::Interface => &Self::FIELD_INTERFACE,
+            Self::World => &Self::FIELD_WORLD
+        }
+    }
+}
+
+impl Class for InterfaceViewField {
+    fn class_ident() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
+}
+
+impl InterfaceViewField {
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::InterfaceView as ClassID, Self::CLASSNAME);
+    const CLASSNAME: &'static str = "InterfaceView";
+    const FIELDNAME_INTERFACE: &'static str = "interface";
+    const FIELDNAME_WORLD: &'static str = "world";
+
+    const FIELD_INTERFACE: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACE,
+        FieldValueType::Model(InterfaceField::class_ident_const()));
+    const FIELD_WORLD: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_WORLD,
+        FieldValueType::Model(WorldViewField::class_ident_const()));
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    } 
+}
+
+pub struct InterfaceViewBuilder {
+    builder_mode: BuilderMode,
+    interface: Option<Interface>,
+    world_view: Option<WorldView>
+}
+
+impl Builder for InterfaceViewBuilder {
+    type DomainType = InterfaceView;
+    type BuilderType = Self;
+    type ModelType = InterfaceView;
+
+    fn creator() -> Self {
+        Self {
+            builder_mode: BuilderMode::Creator,
+            interface: None,
+            world_view: None
+        }
+    }
+
+    fn editor() -> Self {
+        Self {
+            builder_mode: BuilderMode::Editor,
+            ..Self::creator()
+        }
+    }
+
+    fn builder_mode(&self) -> BuilderMode {
+        self.builder_mode
+    }
+
+    fn class_ident(&self) -> &'static ClassIdent {
+        InterfaceViewField::class_ident_const()
+    }
+
+    fn create(self) -> Result<Creation<Self::BuilderType>> {
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+
+        let interface = Build::create(&mut self.interface, &mut fields_changed, InterfaceViewField::Interface)?;
+        let world_view = Build::create(&mut self.world_view, &mut fields_changed, InterfaceViewField::World)?;
+
+        let interface_view = InterfaceView {
+            interface,
+            world_view 
+        };
+
+        Ok(Creation::new(self, interface_view))
+    }
+
+    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        todo!()
+    }
+}

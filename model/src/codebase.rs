@@ -21,7 +21,8 @@ pub enum CodebaseClassID {
     WorldView,
     AreaView,
     ThingView,
+    InterfaceView,
     Direction,
     Awareness,
-    Interface
+    Interface,
 }
