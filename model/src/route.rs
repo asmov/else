@@ -4,7 +4,7 @@ pub mod endpoint;
 pub mod junction;
 pub mod point;
 
-use crate::{codebase::*, error::*, modeling::*, identity::*, descriptor::*, world::*};
+use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, world::*, AreaField};
 use serde;
 
 pub use crate::route::{end::*, endpoint::*, junction::*, point::*, direction::*};
@@ -46,6 +46,18 @@ impl Route {
 
     pub fn point_b(&self) -> &Point {
         &self.point_b
+    }
+
+    pub fn end_for_area(&self, area_uid: UID) -> Option<&End> {
+        match self.point_a.end_for_area(area_uid) {
+            Some(end) => Some(end),
+            None => {
+               match self.point_b.end_for_area(area_uid) {
+                   Some(end) => Some(end),
+                   None => None
+               } 
+            }
+        }
     }
 }
 
@@ -235,7 +247,7 @@ pub trait BuildableRouteVector {
 }
 
 pub trait BuildableRouteUIDList {
-    fn add_route_uid(&mut self, uid: UID) -> Result<()>; 
-    fn remove_route_uid(&mut self, uid: UID) -> Result<()>; 
+    fn add_route_uid(&mut self, uid: UID) -> Result<&mut Self>; 
+    fn remove_route_uid(&mut self, uid: UID) -> Result<&mut Self>; 
 }
 

@@ -315,3 +315,42 @@ impl Field {
         self.value_type
     }
 }
+
+/// Provides the gateway method for synchronization of model change between systems.
+///
+/// Synchronization basically passes Builders around and replays them against the [Builder::modify] and [Builder::create].
+///
+/// Example implementation:  
+/// - An `enum` with a variant for each domain model to be synchronized.
+/// - Each variant's associated type is an [Operation] for that model's [Builder].
+/// - [DomainSynchronizer::sync] drills down to the modification/creation/deletion object, takes its builder, and calls its
+/// [SynchronizedDomainBuilder::synchronize].
+pub trait DomainSynchronizer<D>
+where
+    Self: Sized,
+    D: Sized
+{
+    fn sync(self, domain: &mut D) -> Result<Self>;
+}
+
+/// Provides the method for a domain-level model builder to synchronize changes from another system.
+pub trait SynchronizedDomainBuilder<D>
+where
+    Self: Builder,
+    D: Sized
+{
+    fn synchronize(self, domain: &mut D) -> Result<Modification<Self::BuilderType>>;
+}
+
+/// Represents a [Builder] operation that is to be synchronized with another system: Creation, Modification, or Deletion.
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub enum Operation<B>
+where
+    B: Builder<BuilderType = B>,
+    B::ModelType: std::fmt::Debug + serde::de::DeserializeOwned + serde::Serialize
+{
+    Creation(Creation<B>),
+    Modification(Modification<B>),
+    //todo: Deletion(Deletion<B>)
+}
+

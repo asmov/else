@@ -7,6 +7,24 @@ pub enum Point {
     Junction (Junction)
 }
 
+impl Point {
+    pub fn end_for_area(&self, area_uid: UID) -> Option<&End> {
+        match self {
+            Point::Endpoint(endpoint) => {
+                if endpoint.end().area_uid() == area_uid {
+                    Some(endpoint.end())
+                } else {
+                    None
+                }
+            },
+            Point::Junction(junction) => {
+                junction.entrances().iter()
+                    .find(|end| end.area_uid() == area_uid)
+            },
+        }
+    }
+}
+
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum PointBuilder {
     Endpoint (EndpointBuilder),

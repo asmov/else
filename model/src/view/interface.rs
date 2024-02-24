@@ -1,9 +1,5 @@
-pub mod sync;
-
 use serde;
-use crate::{codebase::*, descriptor::*, error::*, identity::*, interface::{self, *}, modeling::*, view::world::*};
-
-pub use sync::*;
+use crate::{codebase::*, error::*, identity::*, interface::*, modeling::*, view::world::*};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct InterfaceView {
@@ -120,5 +116,23 @@ impl Builder for InterfaceViewBuilder {
         Build::modify(&mut self.world_view, &mut existing.world_view, &mut fields_changed, InterfaceViewField::World)?;
 
         Ok(Modification::new(self, fields_changed))
+    }
+}
+
+impl SynchronizedDomainBuilder<InterfaceView> for InterfaceViewBuilder {
+    fn synchronize(self, interface_view: &mut InterfaceView) -> Result<Modification<Self::BuilderType>> {
+        self.modify(interface_view)
+    }
+}
+
+impl InterfaceViewBuilder {
+    pub fn interface(&mut self, interface: InterfaceBuilder) -> Result<&mut Self> {
+        self.interface = Some(interface);
+        Ok(self)
+    }
+
+    pub fn world_view(&mut self, world_view: WorldViewBuilder) -> Result<&mut Self> {
+        self.world_view = Some(world_view);
+        Ok(self)
     }
 }

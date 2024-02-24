@@ -123,13 +123,13 @@ mod tests {
         // confirm that 'backyard' has 'black_cat' as an occupant
         assert!(world
             .find_area(testing::BACKYARD).unwrap()
-            .occupant_ids()
+            .occupant_uids()
             .contains(&black_cat_uid));
 
         // confirm that 'cat_house' no longer has 'black_cat' as an occupant
         assert!(world
             .find_area(testing::CAT_HOUSE).unwrap()
-            .occupant_ids()
+            .occupant_uids()
             .contains(&black_cat_uid) == false);
     }
 }

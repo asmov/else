@@ -8,6 +8,12 @@ pub struct Endpoint {
     end: End
 }
 
+impl Endpoint {
+    pub fn end(&self) -> &End {
+        &self.end
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum EndpointField {
     End

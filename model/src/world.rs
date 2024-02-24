@@ -1,9 +1,5 @@
-pub mod sync;
-
-use crate::{area::*, modeling::*, character::*, entity::*, error::*, identity::*, location::*, route::*, timeframe::*};
 use serde;
-
-pub use sync::*;
+use crate::{area::*, modeling::*, character::*, route::*, timeframe::*, sync::*};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct World {
@@ -39,6 +35,10 @@ impl Built for World {
 }
 
 impl World {
+    pub fn frame(&self) -> Frame {
+        self.frame
+    }
+
     fn generate_id(&mut self) -> u64 {
         let id = self.next_id;
         self.next_id += 1;
@@ -50,6 +50,7 @@ impl World {
             .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
     }
 
+    //todo: remove
     pub fn thing_mut(&mut self, uid: UID) -> Result<&mut Thing> {
         self.things.iter_mut().find(|thing| thing.uid() == uid)
             .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
@@ -60,6 +61,7 @@ impl World {
             .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
     }
 
+    //todo: remove
     pub fn area_mut(&mut self, uid: UID) -> Result<&mut Area> {
         self.areas.iter_mut().find(|area| area.uid() == uid)
             .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
@@ -71,14 +73,21 @@ impl World {
             .collect()
     }
 
-    pub fn find_area(&self, key: &str) -> Option<&Area> {
+    pub fn find_area(&self, key: &str) -> Result<&Area> {
         self.areas.iter().find(|area| area.key().is_some_and(|k| k == key))
+            .ok_or_else(|| Error::ModelKeyNotFound { model: AreaField::classname(), key: key.to_string() })
+    }
+
+    pub fn route(&self, uid: UID) -> Result<&Route> {
+        self.routes.iter().find(|route| route.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: RouteField::classname(), uid})
     }
 
     pub fn things(&self) -> &Vec<Thing> {
         &self.things
     }
 
+    //todo: remove
     pub fn things_mut(&mut self) -> &mut Vec<Thing> {
         &mut self.things
     }
@@ -93,6 +102,7 @@ impl World {
         self.things.iter().find(|thing| thing.key().is_some_and(|k| k == key))
     }
 
+    //todo: remove
     pub fn find_thing_mut(&mut self, key: &str) -> Option<&mut Thing> {
         self.things.iter_mut().find(|thing| thing.key().is_some_and(|k| k == key))
     }
@@ -397,6 +407,12 @@ impl BuildableThingList for WorldBuilder {
     fn remove_thing(&mut self, thing_uid: UID) -> Result<()> {
         self.things.push(ListOp::Remove(thing_uid));
         Ok(())
+    }
+}
+
+impl SynchronizedDomainBuilder<World> for WorldBuilder {
+    fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
+        self.modify(world)
     }
 }
 

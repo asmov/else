@@ -2,7 +2,7 @@
 mod tests {
     use elsezone_model::{self as model, Descriptive};
     use bincode;
-    use model::{testing, BuildableDescriptor, Builder, Built, DomainSynchronizer, Identifiable};
+    use model::{testing, BuildableAreaVector, BuildableDescriptor, Builder, Built, DomainSynchronizer, Identifiable};
     use std::fs::File;
     use std::io::{Write, Read, Seek, SeekFrom};
     use tempfile;
@@ -42,20 +42,20 @@ mod tests {
         let (mut world_upstream, _tempfile, mut world_downstream) = setup_world_io();
 
         // change the area description on the upstream world
-        let area_dog_house = world_upstream.find_area(testing::DOG_HOUSE).unwrap();
-        let mut editor = model::Area::editor();
-        editor.descriptor_builder().description(NEW_DESCRIPTION.to_string()).unwrap();
-        let modification = {
-            let area_dog_house_mut = world_upstream.area_mut(area_dog_house.uid()).unwrap();
-            editor.modify(area_dog_house_mut).unwrap()
-        };
+        let mut world_editor = world_upstream.edit_self();
+        let mut area_editor = world_upstream
+            .find_area(testing::DOG_HOUSE).unwrap()
+            .edit_self();
+        area_editor.descriptor_builder().description(NEW_DESCRIPTION.to_string()).unwrap();
+        world_editor.edit_area(area_editor).unwrap();
+        let modification = world_editor.modify(&mut world_upstream).unwrap();
 
         // verify that the area description has changed on the upstream world
         let area_dog_house = world_upstream.find_area(model::testing::DOG_HOUSE).unwrap();
         assert_eq!(NEW_DESCRIPTION, area_dog_house.description().unwrap());
 
         // "send" the modification downstream 
-        let upstream_sync = model::Sync::Area(model::Operation::Modification(modification));
+        let upstream_sync = model::Sync::World(model::Operation::Modification(modification));
         let sync_bytes = bincode::serde::encode_to_vec(upstream_sync, binconfig).unwrap();
         let downstream_sync: model::Sync  = bincode::serde::decode_from_slice(&sync_bytes, binconfig).unwrap().0;
 

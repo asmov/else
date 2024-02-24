@@ -294,6 +294,22 @@ async fn negotiate_client_session(mut conn: server::Connection) -> server::Conne
 }
 
 async fn client_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSync) -> server::StreamResult {
+
+    // init session
+    let session;
+    {
+        let timeframe;
+        {
+            let runtime_lock = runtime.lock().await;
+            session = ClientSession::todo_from_universe_server(runtime_lock.world().unwrap()).unwrap(); //todo: don't panic
+            timeframe = runtime_lock.timeframe().unwrap().clone();
+        };
+
+        let bytes = bincode::serde::encode_to_vec(&session.interface_view(), bincode::config::standard()).unwrap();
+        let msg = ZoneToClientMessage::InitInterfaceView(timeframe, bytes);
+        conn.send(msg).await?;
+    }
+
     let mut timeframe_subscriber = {
         let mut runtime_lock = runtime.lock().await;
         runtime_lock.subscribe_timeframe()

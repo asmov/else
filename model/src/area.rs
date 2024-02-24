@@ -8,8 +8,8 @@ use serde;
 pub struct Area {
     uid: UID,
     descriptor: Descriptor,
-    route_id_map: Vec<ID>,
-    occupant_thing_ids: Vec<UID>
+    route_uids: Vec<UID>,
+    occupant_uids: Vec<UID>
 }
 
 impl Keyed for Area {
@@ -32,8 +32,12 @@ impl Descriptive for Area {
 
 impl Area {
     /// Returns all Thing UIDs currently located here.
-    pub fn occupant_ids(&self) -> &Vec<UID> {
-        &self.occupant_thing_ids
+    pub fn occupant_uids(&self) -> &Vec<UID> {
+        &self.occupant_uids
+    }
+
+    pub fn route_uids(&self) -> &Vec<UID> {
+        &self.route_uids
     }
 }
 
@@ -85,7 +89,8 @@ pub struct AreaBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
-    occupant_thing_ids: Vec<ListOp<IdentityBuilder, UID>>
+    occupant_uids: Vec<ListOp<IdentityBuilder, UID>>,
+    route_uids: Vec<ListOp<IdentityBuilder, UID>>
 }
 
 impl Builder for AreaBuilder {
@@ -97,7 +102,8 @@ impl Builder for AreaBuilder {
             builder_mode: BuilderMode::Creator,
             identity: None,
             descriptor: None,
-            occupant_thing_ids: Vec::new()
+            occupant_uids: Vec::new(),
+            route_uids: Vec::new()
         }
     }
 
@@ -117,13 +123,14 @@ impl Builder for AreaBuilder {
 
         let uid = Build::create(&mut self.identity, &mut fields_changed, AreaField::Identity)?.uid();
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, AreaField::Descriptor)?;
-        let occupant_thing_ids = Build::create_uid_vec(&mut self.occupant_thing_ids, &mut fields_changed, AreaField::Occupants)?;
+        let occupant_uids = Build::create_uid_vec(&mut self.occupant_uids, &mut fields_changed, AreaField::Occupants)?;
+        let route_uids = Build::create_uid_vec(&mut self.route_uids, &mut fields_changed, AreaField::Routes)?;
 
         let area = Area {
             uid,
             descriptor,
-            occupant_thing_ids,
-            route_id_map: Vec::new(), //todo
+            occupant_uids,
+            route_uids
         };
 
         Ok(Creation::new(self, area))
@@ -135,8 +142,11 @@ impl Builder for AreaBuilder {
         if self.descriptor.is_some() {
             Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, AreaField::Descriptor)?;
         }
-        if !self.occupant_thing_ids.is_empty() {
-            Build::modify_uid_vec(&mut self.occupant_thing_ids, &mut existing.occupant_thing_ids, &mut fields_changed, AreaField::Occupants)?;
+        if !self.occupant_uids.is_empty() {
+            Build::modify_uid_vec(&mut self.occupant_uids, &mut existing.occupant_uids, &mut fields_changed, AreaField::Occupants)?;
+        }
+        if !self.route_uids.is_empty() {
+            Build::modify_uid_vec(&mut self.route_uids, &mut existing.route_uids, &mut fields_changed, AreaField::Routes)?;
         }
 
         Ok(Modification::new(self, fields_changed))
@@ -199,14 +209,26 @@ pub trait BuildableAreaVector {
 
 impl AreaBuilder {
     pub fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self> {
-        self.occupant_thing_ids.push(ListOp::Add(IdentityBuilder::editor_from_uid(thing_uid)));
+        self.occupant_uids.push(ListOp::Add(IdentityBuilder::editor_from_uid(thing_uid)));
         Ok(self)
     }
 
     pub fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self> {
         assert!(self.builder_mode() == BuilderMode::Editor, "AreaBuilder::remove_occupant only allowed in Editor mode");
-        self.occupant_thing_ids.push(ListOp::Remove(thing_uid));
+        self.occupant_uids.push(ListOp::Remove(thing_uid));
         Ok(self)
     }
  }
+
+ impl BuildableRouteUIDList for AreaBuilder {
+    fn add_route_uid(&mut self, route_uid: UID) -> Result<&mut Self> {
+        self.route_uids.push(ListOp::Add(IdentityBuilder::editor_from_uid(route_uid)));
+        Ok(self)
+    }
+
+    fn remove_route_uid(&mut self, route_uid: UID) -> Result<&mut Self> {
+        self.route_uids.push(ListOp::Remove(route_uid));
+        Ok(self)
+    }
+}
 

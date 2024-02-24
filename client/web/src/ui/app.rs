@@ -1,4 +1,4 @@
-use model::Descriptive;
+use model::{Descriptive, Identifiable, Routing};
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VChild};
 use crate::{net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
 use elsezone_model as model;
@@ -11,7 +11,7 @@ pub enum AppMsg {
     Connected,
     Frame(model::Frame),
     TerminalOutput(String, EntryCategory),
-    Synchronized,
+    Synchronized(model::InterfaceView, model::Frame),
     Ready,
 }
 
@@ -28,11 +28,13 @@ pub struct Stats {
 }
 
 pub struct App {
+    terminal_title: AttrValue,
     terminal_output_entries: Vec<VChild<terminal::Entry>>,
     stats: Stats,
     stats_output: Vec<AttrValue>,
     ready: bool,
-    frame: model::Frame
+    frame: model::Frame,
+    interface_view: Option<model::InterfaceView>
 }
 
 impl Component for App {
@@ -51,11 +53,13 @@ impl Component for App {
         let stats_output = vec![];
 
         let app = Self{
+            terminal_title: AttrValue::Static("Terminal"),
             terminal_output_entries: Vec::new(),
             stats,
             stats_output,
             ready: false,
-            frame: 0
+            frame: 0,
+            interface_view: None
         };
 
         ctx.link().send_message(AppMsg::Start);
@@ -66,7 +70,7 @@ impl Component for App {
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <div id="app" class="container h-screen mx-auto p-1">
-                <Terminal title="Terminal" stats={self.stats_output.clone()} output_entries={self.terminal_output_entries.clone()}/>
+                <Terminal title={self.terminal_title.clone()} stats={self.stats_output.clone()} output_entries={self.terminal_output_entries.clone()}/>
             </div>
         }
     }
@@ -83,7 +87,7 @@ impl Component for App {
                         net::Status::Connected => AppMsg::Connected,
                         net::Status::Disconnected => AppMsg::Disconnected,
                         net::Status::Frame(frame) => AppMsg::Frame(frame),
-                        net::Status::Synchronized => AppMsg::Synchronized
+                        net::Status::Synchronized(interface_view, frame) => AppMsg::Synchronized(interface_view, frame),
                     }
                 });
 
@@ -95,7 +99,15 @@ impl Component for App {
             AppMsg::Connected => {
                 self.terminal_output("Synchronizing with zone server.", EntryCategory::Technical);
             },
-            AppMsg::Synchronized => {
+            AppMsg::Synchronized(interface_view, frame) => {
+                self.interface_view = Some(interface_view);
+                self.frame = frame;
+
+                let interface_view = self.interface_view.as_ref().unwrap();
+
+                self.stats.device = AttrValue::Rc(interface_view.interface().device_name().into());
+                self.refresh_stats();
+
                 if !self.ready {
                     self.ready = true;
                     ctx.link().send_message(AppMsg::Ready);
@@ -103,20 +115,35 @@ impl Component for App {
             }
             AppMsg::Ready => {
                 self.terminal_output(&format!("Integrated into world at frame {}.", self.frame), EntryCategory::Technical);
+                self.terminal_output(&format!("{:?}.", self.interface_view.as_ref().unwrap()), EntryCategory::Debug);
+                self.terminal_output("", EntryCategory::Standard);
 
-                let terminal = model::hardcoded::terminal::create_terminal();
-                let area = terminal.find_area(model::hardcoded::terminal::TERMINAL_AREA_KEY).unwrap();
-                let tmp_intro: Vec<&str> = area.description().unwrap()
+                //let terminal = model::hardcoded::terminal::create_terminal();
+                //let area = terminal.find_area(model::hardcoded::terminal::TERMINAL_AREA_KEY).unwrap();
+                let world_view = self.interface_view.as_ref().unwrap().world_view(); 
+                let area_view = world_view.area_view();
+                self.terminal_title = AttrValue::Rc(area_view.name().into());
+
+                let mut text: Vec<String> = area_view.description().unwrap()
                     .split('\n')
+                    .map(|s| s.to_string())
                     .collect();
 
-                self.terminal_output("", EntryCategory::Standard);
+                text.push("".to_string());
 
-                for text in tmp_intro {
-                    self.terminal_output(text, EntryCategory::Standard);
+                for route_uid in area_view.route_uids() {
+                    let route = world_view.route(*route_uid).unwrap();
+                    let end = match route.end_for_area(area_view.uid()) {
+                        Some(end) => end,
+                        None => continue
+                    };
+
+                    text.push(format!("{} : {}", end.direction(), end.name()));
                 }
 
-                self.terminal_output("", EntryCategory::Standard);
+                for entry in text {
+                    self.terminal_output(&entry, EntryCategory::Standard);
+                }
             },
             AppMsg::Disconnected => {
                 self.ready = false;

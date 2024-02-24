@@ -18,7 +18,7 @@ pub enum Status {
     Connected,
     Disconnected,
     Frame(model::Frame),
-    Synchronized
+    Synchronized(model::InterfaceView, model::Frame),
 }
 
 impl StreamTrait for Stream {
@@ -195,11 +195,16 @@ pub async fn zone_stream_loop(mut conn: Connection, status: &Callback<Status>, l
     loop {
         let msg: ZoneToClientMessage = conn.receive().await?;
         match msg {
+            ZoneToClientMessage::InitInterfaceView(timeframe, interface_view_bytes) => {
+                let interface_view: model::InterfaceView = bincode::serde::decode_from_slice(&interface_view_bytes, bincode::config::standard())
+                    .map_err(|_| NetworkError::StreamIO("Unable to decode interface view".to_string()))?
+                    .0;
+                status.emit(Status::Synchronized(interface_view, timeframe.frame()));
+            },
             ZoneToClientMessage::TimeFrame(newtimeframe) => {
                 let timeframe = newtimeframe.timeframe;
                 let frame = timeframe.frame();
                 status.emit(Status::Frame(frame));
-                status.emit(Status::Synchronized);
             },
             _ => {
                 log.emit((format!("Received message: {:?}", msg), EntryCategory::Technical))

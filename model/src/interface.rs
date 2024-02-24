@@ -1,5 +1,5 @@
 use serde;
-use crate::{codebase::*, error::*, identity::{self, *}, modeling::*, view::interface};
+use crate::{codebase::*, error::*, identity::*, modeling::*};
 
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
@@ -16,8 +16,8 @@ impl Identifiable for Interface {
 }
 
 impl Interface {
-    fn id_to_tty(&self) -> String {
-        Identity::from_uid(self.uid).id_to_string()
+    pub fn device_name(&self) -> String {
+        format!("/dev/tty/{:0>3}", Identity::from_uid(self.uid).id_to_string())
     }
 }
 
@@ -95,7 +95,7 @@ impl Builder for InterfaceBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
+        let fields_changed = Build::prepare_modify(&mut self, existing)?;
 
         Ok(Modification::new(self, fields_changed))
     }

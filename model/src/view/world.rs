@@ -1,4 +1,4 @@
-use crate::{error::*, modeling::*, codebase::*, identity::*, route::*, timeframe::*, view::area::*, view::thing::*, world::*};
+use crate::{error::*, modeling::*, codebase::*, identity::*, route::*, timeframe::*, view::area::*, view::thing::*, world::*, sync::*};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct WorldView {
@@ -34,8 +34,20 @@ impl WorldView {
         &self.routes
     }
 
+    pub fn route(&self, uid: UID) -> Result<&Route> {
+        self.routes.iter()
+            .find(|route| route.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound { model: RouteField::classname(), uid })
+    }
+
     pub fn thing_views(&self) -> &Vec<ThingView> {
         &self.thing_views
+    }
+
+    pub fn thing_view(&self, uid: UID) -> Result<&ThingView> {
+        self.thing_views.iter()
+            .find(|thing_view| thing_view.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound { model: ThingViewField::classname(), uid })
     }
 }
 

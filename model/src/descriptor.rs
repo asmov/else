@@ -263,3 +263,15 @@ impl Built for Descriptor {
     type BuilderType = DescriptorBuilder;
 }
 
+impl DescriptorBuilder {
+    pub fn clone(mut self, existing: &Descriptor) -> DescriptorBuilder {
+        self.key = existing.key.clone();
+        self.name = Some(existing.name.clone());
+        self.keywords = Some(existing.keywords.clone());
+        self.description = existing.description.clone();
+        self.short_description = existing.short_description.clone();
+        self.notes = existing.notes.clone();
+        self
+    }
+}
+

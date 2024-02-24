@@ -5,8 +5,8 @@ use serde;
 /// All fields are from the point-of-view of the Area, describing the Route that this connects to.
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct End {
-    /// The identity Area that this end provides an exit/entrance for.
-    area_identity: Identity,
+    /// The Area that this end provides an exit/entrance for.
+    area_uid: UID,
     /// The description of the Route that this end connects to, from the point-of-view of the Area.
     descriptor: Descriptor,
     /// The direction that this end is found at, from the point-of-view of the Area.
@@ -21,7 +21,7 @@ impl Keyed for End {
 
 impl Identifiable for End {
     fn uid(&self) -> UID {
-        self.area_identity.uid()
+        self.area_uid.uid()
     }
 }
 
@@ -34,6 +34,16 @@ impl Descriptive for End {
 
 impl Built for End {
     type BuilderType = EndBuilder;
+}
+
+impl End {
+    pub fn area_uid(&self) -> UID {
+        self.area_uid
+    } 
+
+    pub fn direction(&self) -> Direction {
+        self.direction
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -110,12 +120,12 @@ impl Builder for EndBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let area_identity = Build::create(&mut self.area_identity, &mut fields_changed, EndField::AreaIdentity)?;
+        let area_uid = Build::create(&mut self.area_identity, &mut fields_changed, EndField::AreaIdentity)?.uid();
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, EndField::Descriptor)?;
         let direction = Build::create_value(&mut self.direction, &mut fields_changed, EndField::Direction)?;
 
         let end = End {
-            area_identity,
+            area_uid,
             descriptor,
             direction
         };
@@ -138,20 +148,6 @@ impl Builder for EndBuilder {
 
     fn class_ident(&self) -> &'static ClassIdent {
         EndField::class_ident()
-    }
-}
-
-
-
-impl End {
-    /// The identity of the Area that this end provides an exit/entrance for.
-    pub fn area_identity(&self) -> &Identity {
-        &self.area_identity
-    } 
-
-    /// The general direction that this end is found within the Area.
-    pub fn direction(&self) -> Direction {
-        self.direction
     }
 }
 

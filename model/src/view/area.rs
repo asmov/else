@@ -190,14 +190,14 @@ impl BuildableDescriptor for AreaViewBuilder {
 }
 
 impl BuildableRouteUIDList for AreaViewBuilder {
-    fn add_route_uid(&mut self, uid: UID) -> Result<()> {
+    fn add_route_uid(&mut self, uid: UID) -> Result<&mut Self> {
         self.route_uids.push(ListOp::Add(IdentityBuilder::from_existing(self, &uid)));
-        Ok(())
+        Ok(self)
     }
 
-    fn remove_route_uid(&mut self, uid: UID) -> Result<()> {
+    fn remove_route_uid(&mut self, uid: UID) -> Result<&mut Self> {
         self.route_uids.push(ListOp::Remove(uid));
-        Ok(())
+        Ok(self)
     }
 }
 

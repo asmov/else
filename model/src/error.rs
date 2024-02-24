@@ -14,6 +14,9 @@ pub enum Error {
     #[error("{model} not found: {uid}")]
     ModelNotFound{ model: &'static str, uid: u128 },
 
+    #[error("{model} not found: {key}")]
+    ModelKeyNotFound{ model: &'static str, key: String },
+
     #[error("{model} not found for {op}: {uid}")]
     ModelNotFoundFor{ model: &'static str, uid: u128, op: &'static str },
 

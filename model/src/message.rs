@@ -119,6 +119,7 @@ pub enum ZoneToClientMessage {
     Connected,
     /// Response: Request to connect to the world through this server has been rejected.
     ConnectRejected,
+    InitInterfaceView(TimeFrame, Vec<u8>),
     Transfered,
     TransferRejected,
     Disconnect,
@@ -136,6 +137,7 @@ impl Messaging for ZoneToClientMessage {
             Self::TimeFrame(_) => "ZoneToClientMessage::TimeFrame",
             Self::Connected => "ZoneToClientMessage::Connected",
             Self::ConnectRejected => "ZoneToClientMessage::ConnectRejected",
+            Self::InitInterfaceView(_, _)=> "ZoneToClientMessage::InitInterfaceView",
             Self::Transfered => "ZoneToClientMessage::Transfered",
             Self::TransferRejected => "ZoneToClientMessage::TransferRejected",
             Self::Disconnect => "ZoneToClientMessage::Disconnect",
