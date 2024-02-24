@@ -60,7 +60,6 @@ pub struct JunctionBuilder {
 }
 
 impl Builder for JunctionBuilder {
-    type DomainType = World;
     type ModelType = Junction;
     type BuilderType = PointBuilder;
 

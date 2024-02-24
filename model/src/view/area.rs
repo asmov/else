@@ -1,5 +1,6 @@
 use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, route::*, world::*, thing::*};
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct AreaView {
     uid: UID,
     descriptor: Descriptor,
@@ -78,6 +79,7 @@ impl AreaViewField {
     }
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct AreaViewBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
@@ -87,7 +89,6 @@ pub struct AreaViewBuilder {
 }
 
 impl Builder for AreaViewBuilder {
-    type DomainType = World;
     type ModelType = AreaView;
     type BuilderType = Self;
 

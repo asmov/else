@@ -1,5 +1,6 @@
 use crate::{error::*, modeling::*, codebase::*, descriptor::*, identity::*, world::*};
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct ThingView {
     uid: UID,
     descriptor: Descriptor
@@ -60,6 +61,7 @@ impl ThingViewField {
     }
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct ThingViewBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
@@ -67,7 +69,6 @@ pub struct ThingViewBuilder {
 }
 
 impl Builder for ThingViewBuilder {
-    type DomainType = World;
     type ModelType = ThingView;
     type BuilderType = Self;
 

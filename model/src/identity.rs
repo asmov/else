@@ -279,7 +279,6 @@ pub struct IdentityBuilder {
 }
 
 impl Builder for IdentityBuilder {
-    type DomainType = World;
     type ModelType = Identity;
     type BuilderType = Self;
 

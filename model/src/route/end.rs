@@ -84,7 +84,6 @@ pub struct EndBuilder {
 }
 
 impl Builder for EndBuilder {
-    type DomainType = World;
     type ModelType = End;
     type BuilderType = Self;
 

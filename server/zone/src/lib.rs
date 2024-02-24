@@ -1,4 +1,5 @@
 use std::fs;
+use model::DomainSynchronizer;
 use native_tls as tls;
 use elsezone_model as model;
 use elsezone_server_common as server;

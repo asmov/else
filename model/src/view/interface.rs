@@ -1,6 +1,11 @@
-use serde;
-use crate::{error::*, identity::*, modeling::*, codebase::*, descriptor::*, interface::*, view::world::*};
+pub mod sync;
 
+use serde;
+use crate::{codebase::*, descriptor::*, error::*, identity::*, interface::{self, *}, modeling::*, view::world::*};
+
+pub use sync::*;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct InterfaceView {
     interface: Interface,
     world_view: WorldView
@@ -60,14 +65,14 @@ impl InterfaceViewField {
     } 
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct InterfaceViewBuilder {
     builder_mode: BuilderMode,
-    interface: Option<Interface>,
-    world_view: Option<WorldView>
+    interface: Option<InterfaceBuilder>,
+    world_view: Option<WorldViewBuilder>
 }
 
 impl Builder for InterfaceViewBuilder {
-    type DomainType = InterfaceView;
     type BuilderType = Self;
     type ModelType = InterfaceView;
 
@@ -94,7 +99,7 @@ impl Builder for InterfaceViewBuilder {
         InterfaceViewField::class_ident_const()
     }
 
-    fn create(self) -> Result<Creation<Self::BuilderType>> {
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
         let interface = Build::create(&mut self.interface, &mut fields_changed, InterfaceViewField::Interface)?;
@@ -108,7 +113,12 @@ impl Builder for InterfaceViewBuilder {
         Ok(Creation::new(self, interface_view))
     }
 
-    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        todo!()
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
+
+        Build::modify(&mut self.interface, &mut existing.interface, &mut fields_changed, InterfaceViewField::Interface)?;
+        Build::modify(&mut self.world_view, &mut existing.world_view, &mut fields_changed, InterfaceViewField::World)?;
+
+        Ok(Modification::new(self, fields_changed))
     }
 }

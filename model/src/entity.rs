@@ -99,7 +99,6 @@ pub struct EntityBuilder {
 }
 
 impl Builder for EntityBuilder {
-    type DomainType = World;
     type ModelType = Entity;
     type BuilderType = Self;
 

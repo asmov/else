@@ -138,7 +138,6 @@ pub struct DescriptorBuilder {
 }
 
 impl Builder for DescriptorBuilder {
-    type DomainType = World;
     type ModelType = Descriptor;
     type BuilderType = Self;
 

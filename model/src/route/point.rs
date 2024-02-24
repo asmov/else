@@ -14,7 +14,6 @@ pub enum PointBuilder {
 }
 
 impl Builder for PointBuilder {
-    type DomainType = World;
     type ModelType = Point;
     type BuilderType = Self;
 

@@ -1,5 +1,6 @@
 use crate::{error::*, modeling::*, codebase::*, identity::*, route::*, timeframe::*, view::area::*, view::thing::*, world::*};
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct WorldView {
     uid: UID,
     frame: Frame,
@@ -78,6 +79,7 @@ impl WorldViewField {
     }
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct WorldViewBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
@@ -88,7 +90,6 @@ pub struct WorldViewBuilder {
 }
 
 impl Builder for WorldViewBuilder {
-    type DomainType = World;
     type ModelType = WorldView;
     type BuilderType = Self;
 

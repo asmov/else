@@ -1,5 +1,9 @@
+pub mod sync;
+
 use crate::{area::*, modeling::*, character::*, entity::*, error::*, identity::*, location::*, route::*, timeframe::*};
 use serde;
+
+pub use sync::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct World {
@@ -172,7 +176,6 @@ pub struct WorldBuilder {
 }
 
 impl Builder for WorldBuilder {
-    type DomainType = World;
     type BuilderType = Self;
     type ModelType = World;
 
@@ -309,10 +312,6 @@ impl Builder for WorldBuilder {
         Build::modify_vec(&mut self.things, &mut existing.things, &mut fields_changed, WorldField::Things)?;
 
         Ok(Modification::new(self, fields_changed))
-    }
-
-    fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
-        self.modify(world)
     }
 
     fn class_ident(&self) -> &'static ClassIdent {

@@ -46,7 +46,6 @@ pub struct EndpointBuilder {
 }
 
 impl Builder for EndpointBuilder {
-    type DomainType = World;
     type ModelType = Endpoint;
     type BuilderType = PointBuilder;
 

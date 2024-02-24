@@ -88,7 +88,6 @@ pub enum ThingBuilderRef<'thing> {
 }
 
 impl Builder for ThingBuilder {
-    type DomainType = World;
     type ModelType = Thing;
     type BuilderType = Self;
 

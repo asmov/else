@@ -79,7 +79,6 @@ pub struct IntelligentCortexBuilder {
 }
 
 impl Builder for IntelligentCortexBuilder {
-    type DomainType = World;
     type ModelType = IntelligentCortex;
     type BuilderType = CortexBuilder;
 

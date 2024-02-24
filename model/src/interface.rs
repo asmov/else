@@ -1,5 +1,5 @@
 use serde;
-use crate::{error::*, modeling::*, identity::*, codebase::*};
+use crate::{codebase::*, error::*, identity::{self, *}, modeling::*, view::interface};
 
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
@@ -50,6 +50,7 @@ impl InterfaceField {
     }
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct InterfaceBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>
@@ -60,27 +61,69 @@ impl Builder for InterfaceBuilder {
     type ModelType = Interface;
 
     fn creator() -> Self {
-        todo!()
+        Self {
+            builder_mode: BuilderMode::Creator,
+            identity: None
+        }
     }
 
     fn editor() -> Self {
-        todo!()
+        Self {
+            builder_mode: BuilderMode::Editor,
+            ..Self::creator()
+        }
     }
 
     fn builder_mode(&self) -> BuilderMode {
-        todo!()
+        self.builder_mode
     }
 
     fn class_ident(&self) -> &'static ClassIdent {
-        todo!()
+        InterfaceField::class_ident_const()
     }
 
-    fn create(self) -> Result<Creation<Self::BuilderType>> {
-        todo!()
+    fn create(mut self) -> Result<Creation<Self::BuilderType>> {
+        let mut fields_changed = FieldsChanged::from_builder(&self);
+        
+        let uid = Build::create(&mut self.identity, &mut fields_changed, InterfaceField::UID)?.uid();
+
+        let interface = Interface {
+            uid
+        };
+
+        Ok(Creation::new(self, interface))
     }
 
-    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        todo!()
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
+
+        Ok(Modification::new(self, fields_changed))
+    }
+}
+
+impl MaybeIdentifiable for InterfaceBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        self.identity
+            .as_ref()
+            .ok_or_else(|| Error::BuildableUID {})
+            .and_then(|identity| identity.try_uid())
+    }
+}
+
+impl BuildableIdentity for InterfaceBuilder {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+        assert!(self.builder_mode == BuilderMode::Creator);
+        self.identity = Some(identity);
+        Ok(())
+    }
+    
+    fn identity_builder(&mut self) -> &mut IdentityBuilder {
+        assert!(self.builder_mode == BuilderMode::Creator);
+        self.identity.get_or_insert_with(IdentityBuilder::creator)
+    }
+    
+    fn get_identity(&self) -> Option<&IdentityBuilder> {
+        self.identity.as_ref()
     }
 }
 

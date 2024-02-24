@@ -14,8 +14,7 @@ where
     Self: Builder,
     D: Sized
 {
-    //todo: rename this to synchronize
-    fn synch(self, domain: &mut D) -> Result<Modification<Self::BuilderType>>;
+    fn synchronize(self, domain: &mut D) -> Result<Modification<Self::BuilderType>>;
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -32,39 +31,20 @@ where
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum Sync {
     Init,
+    World(Operation<WorldBuilder>),
+    InterfaceView(Operation<InterfaceViewBuilder>),
+    // for integration testing
     Area(Operation<AreaBuilder>),
-    Thing(Operation<ThingBuilder>),
-    World(Operation<WorldBuilder>)
-}
-
-impl SynchronizedDomainBuilder<InterfaceView> for AreaBuilder {
-    fn synch(self, domain: &mut InterfaceView) -> Result<Modification<Self::BuilderType>> {
-        todo!()
-    }
 }
 
 impl DomainSynchronizer<InterfaceView> for Sync {
     fn sync(self, interface_view: &mut InterfaceView) -> Result<Self> {
         Ok(match self {
-            Sync::Area(Operation::Modification(modification)) => {
-                Sync::Area(Operation::Modification(
+            Sync::InterfaceView(Operation::Modification(modification)) => {
+                Sync::InterfaceView(Operation::Modification(
                     modification
                         .take_builder()
-                        .synch(interface_view)?
-                ))
-            },
-            Sync::Thing(Operation::Modification(modification)) => {
-                Sync::Thing(Operation::Modification(
-                    modification
-                        .take_builder()
-                        .synch(interface_view)?
-                ))
-            },
-            Sync::World(Operation::Modification(modification)) => {
-                Sync::World(Operation::Modification(
-                    modification
-                        .take_builder()
-                        .synch(interface_view)?
+                        .synchronize(interface_view)?
                 ))
             },
             _ => todo!("todo: Missing synchronizer implementation for {:?}", self)
@@ -79,14 +59,15 @@ impl DomainSynchronizer<World> for Sync {
                 Sync::World(Operation::Modification(
                     modification
                         .take_builder()
-                        .synch(world)?
+                        .synchronize(world)?
                 ))
             },
+            // for integration testing
             Sync::Area(Operation::Modification(modification)) => {
                 Sync::Area(Operation::Modification(
                     modification
                         .take_builder()
-                        .synch(world)?
+                        .synchronize(world)?
                 ))
             },
             _ => todo!("todo: Missing synchronizer implementation for {:?}", self)

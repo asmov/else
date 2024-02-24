@@ -94,7 +94,6 @@ pub struct CharacterBuilder {
 }
 
 impl Builder for CharacterBuilder {
-    type DomainType = World;
     type ModelType = Character;
     type BuilderType = ThingBuilder;
 

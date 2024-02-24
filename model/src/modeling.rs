@@ -38,10 +38,6 @@ pub use build::*;
 ///
 /// Refer to the module documentation for more information.
 pub trait Builder: Sized {
-    /// The model that stores all state for the rest of its suite. This is expected to be some form of state container
-    /// for the rest of the models, all of which share the same DomainType.
-    type DomainType: Sized;
-
     /// The builder struct that is returned on creation and modification. Typically, Self, unless we're a variant of
     /// of a Builder enum (like ThingBuilder). In which case, typically, the BuilderType is that enum instead.
     type BuilderType: Builder;
@@ -64,11 +60,6 @@ pub trait Builder: Sized {
 
     fn set(&mut self, _raw_field: &str, _raw_value: String) -> Result<()> {
         unimplemented!("Builder::set()")
-    }
-
-    /// Typically called by [Sync] to systematically synchronize state changes with an upstream provider.
-    fn synchronize(self, _domain: &mut Self::DomainType) -> Result<Modification<Self::BuilderType>> {
-        unimplemented!("Builder::modify_domain()")
     }
 
     fn builder(mode: BuilderMode) -> Self {

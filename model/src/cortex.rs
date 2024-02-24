@@ -132,7 +132,6 @@ pub enum CortexBuilder {
 }
 
 impl Builder for CortexBuilder {
-    type DomainType = World;
     type ModelType = Cortex;
     type BuilderType = Self;
 

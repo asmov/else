@@ -72,7 +72,6 @@ pub struct RoutineCortexBuilder {
 }
 
 impl Builder for RoutineCortexBuilder {
-    type DomainType = World;
     type ModelType = RoutineCortex;
     type BuilderType = CortexBuilder;
 

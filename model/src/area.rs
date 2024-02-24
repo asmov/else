@@ -1,4 +1,4 @@
-use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, thing::*, world::World, RouteField};
+use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, thing::*, world::*, route::*, sync::*};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -89,7 +89,6 @@ pub struct AreaBuilder {
 }
 
 impl Builder for AreaBuilder {
-    type DomainType = World;
     type ModelType = Area;
     type BuilderType = Self;
 
@@ -141,12 +140,6 @@ impl Builder for AreaBuilder {
         }
 
         Ok(Modification::new(self, fields_changed))
-    }
-
-    fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
-        let area_uid = self.try_uid()?;
-        let area_mut = world.area_mut(area_uid).unwrap(); //todo: don't unwrap
-        self.modify(area_mut)
     }
 
     fn class_ident(&self) -> &'static ClassIdent {

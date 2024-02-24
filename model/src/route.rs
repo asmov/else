@@ -106,7 +106,6 @@ pub struct RouteBuilder {
 }
 
 impl Builder for RouteBuilder {
-    type DomainType = World;
     type ModelType = Route;
     type BuilderType = Self;
 

@@ -2,7 +2,7 @@
 mod tests {
     use elsezone_model::{self as model, Descriptive};
     use bincode;
-    use model::{testing, BuildableDescriptor, Builder, Built, Identifiable};
+    use model::{testing, BuildableDescriptor, Builder, Built, DomainSynchronizer, Identifiable};
     use std::fs::File;
     use std::io::{Write, Read, Seek, SeekFrom};
     use tempfile;
