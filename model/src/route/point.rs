@@ -8,6 +8,13 @@ pub enum Point {
 }
 
 impl Point {
+    pub fn area_uids(&self) -> Vec<UID> {
+        match self {
+            Point::Endpoint(endpoint) => vec![endpoint.end().area_uid()],
+            Point::Junction(junction) => junction.entrances().iter().map(|end| end.area_uid()).collect()
+        }
+    }
+
     pub fn end_for_area(&self, area_uid: UID) -> Option<&End> {
         match self {
             Point::Endpoint(endpoint) => {
@@ -80,6 +87,36 @@ impl Builder for PointBuilder {
         match self {
             Self::Endpoint(modeler) => modeler.class_ident(),
             Self::Junction(modeler) => modeler.class_ident(),
+        }
+    }
+}
+
+impl PointBuilder {
+    /// Retrieves all upcoming UIDs for the areas associated with this point
+    /// Expects all UIDs to have been set by now.
+    pub fn area_uids(&self) -> Result<Vec<UID>> {
+        match self {
+            PointBuilder::Endpoint(b) => {
+                Ok(vec![
+                    b.get_end_builder()
+                        .expect("EndBuilder should exist")
+                        .get_area_identity()
+                        .expect("AreaIdentity should exist")
+                        .try_uid()?
+                ])
+            },
+            PointBuilder::Junction(b) => {
+                b.entrances().iter()
+                    .filter_map(|entrance_op| match entrance_op {
+                        ListOp::Add(end) | ListOp::Edit(end) => {
+                            Some(end.get_area_identity()
+                                .expect("AreaIdentity should exist")
+                                .try_uid())
+                        },
+                        ListOp::Remove(_) => None
+                    })
+                    .collect::<Result<Vec<_>>>()
+            },
         }
     }
 }

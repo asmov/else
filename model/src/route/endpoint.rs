@@ -117,6 +117,10 @@ impl EndpointBuilder {
 
         self.end.as_mut().unwrap()
     }
+
+    pub fn get_end_builder(&self) -> Option<&EndBuilder> {
+        self.end.as_ref()
+    }
 }
 
 impl point::PointBuilderVariant for EndpointBuilder {

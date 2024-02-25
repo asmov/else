@@ -48,6 +48,12 @@ impl Route {
         &self.point_b
     }
 
+    pub fn area_uids(&self) -> Vec<UID> {
+        let mut uids = self.point_a.area_uids();
+        uids.extend(self.point_b.area_uids());
+        uids
+    }
+
     pub fn end_for_area(&self, area_uid: UID) -> Option<&End> {
         match self.point_a.end_for_area(area_uid) {
             Some(end) => Some(end),
@@ -239,6 +245,19 @@ impl RouteBuilder {
 
     pub fn point_b_builder(&mut self) -> &mut PointBuilder {
         todo!()
+    }
+
+    pub fn area_uids(&self) -> Result<Vec<UID>> {
+        let mut uids = Vec::new();
+        
+        if let Some(point_a) = &self.point_a {
+            uids.extend(point_a.area_uids()?);
+        }
+        if let Some(point_b) = &self.point_b {
+            uids.extend(point_b.area_uids()?);
+        }
+
+        Ok(uids)
     }
 }
 

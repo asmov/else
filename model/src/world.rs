@@ -313,6 +313,10 @@ impl Builder for WorldBuilder {
             })
             .collect::<Result<Vec<_>>>()?;
 
+
+        let existing_area_uids = existing.areas.iter().map(|area| area.uid()).collect::<Vec<_>>();
+        Self::link_routes_to_areas(&mut routes, &mut areas, existing_area_uids)?;
+
         self.areas = areas;
         self.routes = routes;
         self.things = things;
@@ -423,6 +427,24 @@ impl WorldBuilder {
         self.next_id += 1;
         id
     }
+    
+    fn link_routes_to_areas(
+        route_ops: &mut Vec<ListOp<RouteBuilder, UID>>,
+        area_ops: &mut Vec<ListOp<AreaBuilder, UID>>,
+        existing_area_uids: Vec<UID>
+    ) -> Result<()> {
+        for route_op in route_ops {
+            match route_op {
+                ListOp::Add(route_builder) | ListOp::Edit(route_builder) => {
+                    let route_area_uids = route_builder.area_uids();
+                },
+                ListOp::Remove(route_uid) => {
+                },
+            }
+        }
+
+        Ok(())
+    }
 
     fn build_local_identities(
         existing: &mut World,
@@ -438,10 +460,11 @@ impl WorldBuilder {
 
                     let class_id = builder.class_ident().class_id();
                     let identity_builder = builder.identity_builder();
-                    identity_builder.universe_id(universe_id)?;
-                    identity_builder.world_id(world_id)?;
-                    identity_builder.class_id(class_id)?;
-                    identity_builder.id(existing.generate_id())?;
+                    identity_builder
+                        .universe_id(universe_id)?
+                        .world_id(world_id)?
+                        .class_id(class_id)?
+                        .id(existing.generate_id())?;
                 },
                 _ => {},
             }
