@@ -270,3 +270,15 @@ pub trait BuildableRouteUIDList {
     fn remove_route_uid(&mut self, uid: UID) -> Result<&mut Self>; 
 }
 
+impl CloneBuilding for RouteBuilder {
+    fn clone_model(builder_mode: BuilderMode, existing: &Route) -> Self {
+        Self {
+            builder_mode,
+            identity: Some(IdentityBuilder::clone_uid(builder_mode, existing.uid)),
+            descriptor: Some(DescriptorBuilder::clone_model(builder_mode, &existing.descriptor)),
+            point_a: Some(PointBuilder::clone_model(builder_mode, &existing.point_a)),
+            point_b: Some(PointBuilder::clone_model(builder_mode, &existing.point_b))
+        }
+    }
+}
+

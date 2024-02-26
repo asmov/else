@@ -435,10 +435,24 @@ impl WorldBuilder {
     ) -> Result<()> {
         for route_op in route_ops {
             match route_op {
-                ListOp::Add(route_builder) | ListOp::Edit(route_builder) => {
-                    let route_area_uids = route_builder.area_uids();
+                ListOp::Add(route_builder) => {
+                    for area_uid in route_builder.area_uids()? {
+                        let area_builder = match Self::find_area_builder_by_uid(area_ops, area_uid) {
+                            Some(ListOp::Add(area_builder)) | Some(ListOp::Edit(area_builder)) => area_builder,
+                            Some(ListOp::Remove(uid)) => return Err(Error::IllegalRemoveOp{
+                                model: AreaField::classname(), uid: *uid, context: "WorldBuilder::link_routes_to_areas"
+                            }),
+                            None => Self::area_builder_from_existing(area_ops, area_uid)? 
+                        };
+
+                        area_builder.add_route_uid(route_builder.try_uid()?)?;
+                    }
+                },
+                ListOp::Edit(route_builder) => {
+                    todo!()
                 },
                 ListOp::Remove(route_uid) => {
+                    todo!()
                 },
             }
         }
@@ -490,7 +504,7 @@ impl WorldBuilder {
             })
     }
 
-    pub fn area_build_existing(areas: &mut Vec<ListOp<AreaBuilder, UID>>, existing_area_uid: UID) -> Result<&mut ListOp<AreaBuilder, UID>> {
+    pub fn area_builder_from_existing(areas: &mut Vec<ListOp<AreaBuilder, UID>>, existing_area_uid: UID) -> Result<&mut AreaBuilder> {
         // otherwise create it
         let mut area_editor = Area::editor();
         area_editor.identity(IdentityBuilder::editor_from_uid(existing_area_uid))?;
@@ -507,7 +521,10 @@ impl WorldBuilder {
             })
             .expect("Failed to find newly created AreaBuilder"); 
 
-        Ok(current_builder)
+        match current_builder {
+            ListOp::Edit(builder) => Ok(builder),
+            _ => unreachable!()
+        }
     }
 
     fn process_thing_location(thing_builder: &ThingBuilder, areas: &mut Vec<ListOp<AreaBuilder, UID>>, existing_world: &mut World) -> Result<()> {
@@ -528,20 +545,13 @@ impl WorldBuilder {
 
         match location {
             Location::Area(area_uid) => {
-                let existing_area_list_op = if let Some(existing) = Self::find_area_builder_by_uid(areas, area_uid) {
-                    existing
-                } else {
-                    Self::area_build_existing(areas, area_uid)?
+                let area_builder = match Self::find_area_builder_by_uid(areas, area_uid) {
+                    Some(ListOp::Add(area_builder)) | Some(ListOp::Edit(area_builder)) => area_builder,
+                    Some(ListOp::Remove(_)) => return Err(Error::ModelNotFound{model: "Area", uid: area_uid }),
+                    None => Self::area_builder_from_existing(areas, area_uid)?,
                 };
-
-                match existing_area_list_op {
-                    ListOp::Add(area_builder) | ListOp::Edit(area_builder) => {
-                        area_builder.add_occupant_uid(thing_uid)?;
-                    },
-                    ListOp::Remove(_) => {
-                        return Err(Error::ModelNotFound{model: "Area", uid: area_uid })
-                    } 
-                }
+                
+                area_builder.add_occupant_uid(thing_uid)?;
             },
             Location::Route(route_uid) => {
                 todo!()
@@ -556,18 +566,14 @@ impl WorldBuilder {
         let existing_thing = existing_world.thing(thing_uid)?;
         match existing_thing.location() {
             Location::Area(area_uid) => {
-                let existing_area_list_op = if let Some(existing) = Self::find_area_builder_by_uid(areas, area_uid) {
-                    existing
-                } else {
-                    Self::area_build_existing(areas, area_uid)?
+                let area_builder = match Self::find_area_builder_by_uid(areas, area_uid) {
+                    Some(ListOp::Add(area_builder)) | Some(ListOp::Edit(area_builder)) => area_builder,
+                    Some(ListOp::Remove(_)) => return Err(Error::ModelNotFound{model: "Area", uid: area_uid }),
+                    None => Self::area_builder_from_existing(areas, area_uid)?,
                 };
+                
+                area_builder.remove_occupant_uid(thing_uid)?;
 
-                match existing_area_list_op {
-                    ListOp::Add(area_builder) | ListOp::Edit(area_builder) => {
-                        area_builder.remove_occupant_uid(thing_uid)?;
-                    },
-                    ListOp::Remove(_) => {/* nothing to do */} 
-                }
             },
             Location::Route(route_uid) => {
                 todo!()

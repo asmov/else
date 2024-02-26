@@ -91,6 +91,15 @@ impl Builder for PointBuilder {
     }
 }
 
+impl CloneBuilding for PointBuilder {
+    fn clone_model(builder_mode: BuilderMode, existing: &Self::ModelType) -> Self {
+        match existing {
+            Point::Endpoint(m) => PointBuilder::Endpoint(EndpointBuilder::clone_model(builder_mode, m)), 
+            Point::Junction(m) => PointBuilder::Junction(JunctionBuilder::clone_model(builder_mode, m)),
+        }
+    }
+}
+
 impl PointBuilder {
     /// Retrieves all upcoming UIDs for the areas associated with this point
     /// Expects all UIDs to have been set by now.

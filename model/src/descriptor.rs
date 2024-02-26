@@ -263,15 +263,17 @@ impl Built for Descriptor {
     type BuilderType = DescriptorBuilder;
 }
 
-impl DescriptorBuilder {
-    pub fn clone(mut self, existing: &Descriptor) -> DescriptorBuilder {
-        self.key = existing.key.clone();
-        self.name = Some(existing.name.clone());
-        self.keywords = Some(existing.keywords.clone());
-        self.description = existing.description.clone();
-        self.short_description = existing.short_description.clone();
-        self.notes = existing.notes.clone();
-        self
+impl CloneBuilding for DescriptorBuilder {
+    fn clone_model(builder_mode: BuilderMode, existing: &Self::ModelType) -> Self {
+        Self {
+            builder_mode,
+            key: existing.key.clone(),
+            name: Some(existing.name.clone()),
+            keywords: Some(existing.keywords.clone()),
+            description: existing.description.clone(),
+            short_description: existing.short_description.clone(),
+            notes: existing.notes.clone()
+        }
     }
 }
 

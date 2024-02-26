@@ -169,8 +169,19 @@ impl BuildableDescriptor for EndBuilder {
 impl MaybeIdentifiable for EndBuilder {
     fn try_uid(&self) -> Result<UID> {
         self.area_identity.as_ref()
-            .ok_or_else(|| Error::BuildableUID{})
+            .ok_or_else(|| Error::IdentityNotGenerated)
             .and_then(|uid| uid.try_uid())
+    }
+}
+
+impl CloneBuilding for EndBuilder {
+    fn clone_model(builder_mode: BuilderMode, existing: &Self::ModelType) -> Self {
+        Self {
+            builder_mode,
+            area_identity: Some(IdentityBuilder::clone_uid(builder_mode, existing.area_uid)),
+            descriptor: Some(DescriptorBuilder::clone_model(builder_mode, &existing.descriptor)),
+            direction: Some(existing.direction)
+        }
     }
 }
 

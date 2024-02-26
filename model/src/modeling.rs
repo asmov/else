@@ -314,6 +314,19 @@ impl Field {
     pub const fn value_type(&self) -> FieldValueType {
         self.value_type
     }
+
+    pub const fn subject_class_ident(&self) -> &'static ClassIdent {
+        match self.value_type {
+            FieldValueType::UID(class_ident) => class_ident,
+            FieldValueType::Model(class_ident) => class_ident,
+            FieldValueType::ModelList(class_ident) => class_ident,
+            _ => self.class_ident
+        }
+    }
+
+    pub const fn subject_classname(&self) -> &str {
+        self.subject_class_ident().classname()
+    }
 }
 
 /// Provides the gateway method for synchronization of model change between systems.
@@ -352,5 +365,9 @@ where
     Creation(Creation<B>),
     Modification(Modification<B>),
     //todo: Deletion(Deletion<B>)
+}
+
+pub trait CloneBuilding: Builder {
+    fn clone_model(builder_mode: BuilderMode, existing: &Self::ModelType) -> Self;
 }
 

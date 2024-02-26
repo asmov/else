@@ -105,7 +105,7 @@ impl MaybeIdentifiable for InterfaceBuilder {
     fn try_uid(&self) -> Result<UID> {
         self.identity
             .as_ref()
-            .ok_or_else(|| Error::BuildableUID {})
+            .ok_or_else(|| Error::IdentityNotGenerated)
             .and_then(|identity| identity.try_uid())
     }
 }

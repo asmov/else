@@ -1,4 +1,4 @@
-use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, thing::*, world::*, route::*, sync::*};
+use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, route::{self, *}, sync::*, thing::*, world::*};
 use serde;
 
 /// Represents an area that things are located in, generally. There is no exact position.
@@ -89,8 +89,8 @@ pub struct AreaBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
-    occupant_uids: Vec<ListOp<IdentityBuilder, UID>>,
-    route_uids: Vec<ListOp<IdentityBuilder, UID>>
+    occupant_uids: Vec<ListOp<UID, UID>>,
+    route_uids: Vec<ListOp<UID, UID>>
 }
 
 impl Builder for AreaBuilder {
@@ -209,25 +209,24 @@ pub trait BuildableAreaVector {
 
 impl AreaBuilder {
     pub fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self> {
-        self.occupant_uids.push(ListOp::Add(IdentityBuilder::editor_from_uid(thing_uid)));
+        Build::add_uid_to_listops(thing_uid, &mut self.occupant_uids, AreaField::Occupants)?;
         Ok(self)
     }
 
     pub fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self> {
-        assert!(self.builder_mode() == BuilderMode::Editor, "AreaBuilder::remove_occupant only allowed in Editor mode");
-        self.occupant_uids.push(ListOp::Remove(thing_uid));
+        Build::remove_uid_from_listops(thing_uid, &mut self.occupant_uids, AreaField::Occupants)?;
         Ok(self)
     }
  }
 
  impl BuildableRouteUIDList for AreaBuilder {
     fn add_route_uid(&mut self, route_uid: UID) -> Result<&mut Self> {
-        self.route_uids.push(ListOp::Add(IdentityBuilder::editor_from_uid(route_uid)));
+        Build::add_uid_to_listops(route_uid, &mut self.route_uids, AreaField::Occupants)?;
         Ok(self)
     }
 
     fn remove_route_uid(&mut self, route_uid: UID) -> Result<&mut Self> {
-        self.route_uids.push(ListOp::Remove(route_uid));
+        Build::remove_uid_from_listops(route_uid, &mut self.route_uids, AreaField::Occupants)?;
         Ok(self)
     }
 }

@@ -2,7 +2,7 @@ use std::fs;
 use native_tls as tls;
 use elsezone_model as model;
 use elsezone_server_common as server;
-use model::{area, identity, route, BuildableDescriptor, BuildableIdentity, BuildableOccupantList, BuildableRouteUIDList, Builder, Built, Descriptive, DomainSynchronizer, Exists, Identifiable};
+use model::{area, identity, route, BuildableDescriptor, BuildableIdentity, BuildableOccupantList, BuildableRouteUIDList, Builder, Built, CloneBuilding, Descriptive, DomainSynchronizer, Exists, Identifiable, RouteBuilder};
 
 pub struct ClientSession {
     interface_view: model::InterfaceView,
@@ -14,7 +14,6 @@ impl ClientSession {
     }
 
     pub fn todo_from_universe_server(world: &model::World) -> model::Result<Self> {
-        dbg!(world);
         let mut interface_view_creator = model::InterfaceViewBuilder::creator();
 
         interface_view_creator.interface({
@@ -39,7 +38,7 @@ impl ClientSession {
             world_view_creator.area_view({
                 let mut area_view_creator = model::AreaViewBuilder::creator();
                 area_view_creator.identity(model::IdentityBuilder::from_existing(&area_view_creator, backyard_area))?;
-                area_view_creator.descriptor(model::DescriptorBuilder::creator().clone(backyard_area.descriptor()))?;
+                area_view_creator.descriptor(model::DescriptorBuilder::clone_model(model::BuilderMode::Creator, backyard_area.descriptor()))?;
                 
                 for occupant_uid in backyard_area.occupant_uids() {
                     area_view_creator.add_occupant_uid(*occupant_uid)?;
@@ -54,14 +53,15 @@ impl ClientSession {
 
             for route_uid in backyard_area.route_uids() {
                 let route = world.route(*route_uid)?;
-                world_view_creator.add_route(route.edit_self())?;
+                let route_builder = RouteBuilder::clone_model(model::BuilderMode::Creator, &route);
+                world_view_creator.add_route(route_builder)?;
             } 
 
             for thing_uid in backyard_area.occupant_uids() {
                 let thing = world.thing(*thing_uid)?;
                 let mut thing_view_creator = model::ThingViewBuilder::creator();
                 thing_view_creator.identity(model::IdentityBuilder::from_existing(&thing_view_creator, thing))?;
-                thing_view_creator.descriptor(model::DescriptorBuilder::creator().clone(thing.entity().descriptor()))?;
+                thing_view_creator.descriptor(model::DescriptorBuilder::clone_model(model::BuilderMode::Creator, thing.entity().descriptor()))?;
                 world_view_creator.add_thing_view(thing_view_creator)?;
             } 
 

@@ -104,6 +104,15 @@ impl Built for Endpoint {
     type BuilderType = EndpointBuilder;
 }
 
+impl CloneBuilding for EndpointBuilder {
+    fn clone_model(builder_mode: BuilderMode, existing: &Self::ModelType) -> Self {
+        Self {
+            builder_mode,
+            end: Some(EndBuilder::clone_model(builder_mode, &existing.end))
+        }
+    }
+}
+
 impl EndpointBuilder {
     pub fn end(&mut self, end: EndBuilder) -> Result<()> {
         self.end = Some(end);

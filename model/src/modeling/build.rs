@@ -74,17 +74,9 @@ impl Build {
         Ok(existing_vec)
     }
 
-    pub fn create_uid_vec<B,M,R>(builder_vec: &mut Vec<ListOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<UID>>
-    where
-        B: Builder<BuilderType = B, ModelType = M> + MaybeIdentifiable,
-        M: Identifiable,
-        R: MaybeIdentifiable
-    {
+    pub fn create_uid_vec(builder_vec: &mut Vec<ListOp<UID,UID>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<UID>> {
         let mut existing_vec = Vec::new();
-        Self::modify_vec(builder_vec, &mut existing_vec, fields_changed, field)?;
-        let existing_vec = existing_vec.iter()
-            .map(|existing| existing.uid())
-            .collect();
+        Self::modify_uid_vec(builder_vec, &mut existing_vec, fields_changed, field)?;
         Ok(existing_vec)
     }
 
@@ -115,7 +107,7 @@ impl Build {
                             let existing = existing_vec
                                 .iter_mut()
                                 .find(|existing| existing.uid() == builder_uid)
-                                .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
+                                .ok_or_else(|| Error::ModelNotFound { model: field.field().subject_classname(), uid: builder_uid })?;
                             let modification = builder.modify(existing)?;
                             let builder = modification.take_builder();
                             
@@ -130,7 +122,7 @@ impl Build {
                             let existing = existing_vec
                                 .iter_mut()
                                 .find(|existing| existing.uid() == builder_uid)
-                                .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
+                                .ok_or_else(|| Error::ModelNotFound { model: field.field().subject_classname(), uid: builder_uid })?;
                             let modification = builder.modify(existing)?;
                             let builder = modification.take_builder();
                             Ok(ListOp::Add(builder))
@@ -143,7 +135,7 @@ impl Build {
                     let index = existing_vec
                         .iter()
                         .position(|existing| existing.uid() == builder_uid)
-                        .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: builder_uid })?;
+                        .ok_or_else(|| Error::ModelNotFound { model: field.field().subject_classname(), uid: builder_uid })?;
                     existing_vec.remove(index);
                     Ok(ListOp::Remove(maybe_identifiable))
                 }
@@ -159,30 +151,33 @@ impl Build {
     }
 
     pub fn modify_uid_vec(
-        builder_vec: &mut Vec<ListOp<IdentityBuilder,UID>>,
+        builder_vec: &mut Vec<ListOp<UID,UID>>,
         existing_vec: &mut Vec<UID>,
         fields_changed: &mut FieldsChanged,
         field: impl Fields
     ) -> Result<()> {
         builder_vec
             .drain(0..)
-            .map(|list_op| { match list_op {
-                ListOp::Add(identity_builder) => {
-                    let creation = identity_builder.create()?;
-                    let (builder, identity) = creation.split();
-                    existing_vec.push(identity.to_uid());
-                    Ok(ListOp::Add(builder))
+            .filter_map(|list_op| { match list_op {
+                ListOp::Add(uid) => {
+                    if !existing_vec.contains(&uid) {
+                        existing_vec.push(uid);
+                        Some(Ok(ListOp::Add(uid)))
+                    } else {
+                        None
+                    }
                 },
-                ListOp::Edit(_) => {
-                    panic!("Edit not allowed in Build::modify_uid_vec()");
-                },
+                ListOp::Edit(_) => panic!("Edit not allowed in Build::modify_uid_vec()"),
                 ListOp::Remove(uid) => {
-                    let index = existing_vec
+                    let index_found = existing_vec
                         .iter()
-                        .position(|existing| existing.uid() == uid)
-                        .ok_or_else(|| Error::ModelNotFound { model: field.field().classname(), uid: uid })?;
-                    existing_vec.remove(index);
-                    Ok(ListOp::Remove(uid))
+                        .position(|existing_uid| existing_uid == &uid);
+                    if let Some(index) = index_found {
+                        existing_vec.remove(index);
+                        Some(Ok(ListOp::Remove(uid)))
+                    } else {
+                        None
+                    }
                 }
             }
         })
@@ -216,5 +211,47 @@ impl Build {
         
         let mut fields_changed = FieldsChanged::from_builder(builder);
         Ok(fields_changed)
+    }
+
+    pub fn add_uid_to_listops(uid: UID, listops: &mut Vec<ListOp<UID,UID>>, field: impl Fields) -> Result<()> {
+        let ruid = &uid;
+        for listop in &*listops {
+            match listop {
+                ListOp::Add(op_uid) if op_uid == ruid  => {
+                    return Ok(())
+                },
+                ListOp::Edit(op_uid) if op_uid == ruid => {
+                    panic!("Edit not allowed in UID ListOp")
+                },
+                ListOp::Remove(op_uid) if op_uid == ruid => return Err(Error::ListOpRace {
+                    op: "add", model: field.field().subject_classname(), uid, whiled: "removed" 
+                }),
+                _ => {}
+            }
+        }
+
+        listops.push(ListOp::Add(uid));
+        Ok(())
+    }
+
+    pub fn remove_uid_from_listops(uid: UID, listops: &mut Vec<ListOp<UID,UID>>, field: impl Fields) -> Result<()> {
+        let ruid = &uid;
+        for listop in &*listops {
+            match listop {
+                ListOp::Add(op_uid) if op_uid == ruid  => return Err(Error::ListOpRace {
+                    op: "remove", model: field.field().subject_classname(), uid, whiled: "added" 
+                }),
+                ListOp::Edit(op_uid) if op_uid == ruid => {
+                    panic!("Edit not allowed in UID ListOp")
+                },
+                ListOp::Remove(op_uid) if op_uid == ruid => {
+                    return Ok(())
+                }
+                _ => {}
+            }
+        }
+
+        listops.push(ListOp::Remove(uid));
+        Ok(())
     }
 }

@@ -84,8 +84,8 @@ pub struct AreaViewBuilder {
     builder_mode: BuilderMode,
     identity: Option<IdentityBuilder>,
     descriptor: Option<DescriptorBuilder>,
-    occupant_uids: Vec<ListOp<IdentityBuilder, UID>>,
-    route_uids: Vec<ListOp<IdentityBuilder, UID>>
+    occupant_uids: Vec<ListOp<UID, UID>>,
+    route_uids: Vec<ListOp<UID, UID>>
 }
 
 impl Builder for AreaViewBuilder {
@@ -190,25 +190,25 @@ impl BuildableDescriptor for AreaViewBuilder {
 }
 
 impl BuildableRouteUIDList for AreaViewBuilder {
-    fn add_route_uid(&mut self, uid: UID) -> Result<&mut Self> {
-        self.route_uids.push(ListOp::Add(IdentityBuilder::from_existing(self, &uid)));
+    fn add_route_uid(&mut self, route_uid: UID) -> Result<&mut Self> {
+        Build::add_uid_to_listops(route_uid, &mut self.route_uids, AreaViewField::Routes)?;
         Ok(self)
     }
 
-    fn remove_route_uid(&mut self, uid: UID) -> Result<&mut Self> {
-        self.route_uids.push(ListOp::Remove(uid));
+    fn remove_route_uid(&mut self, route_uid: UID) -> Result<&mut Self> {
+        Build::remove_uid_from_listops(route_uid, &mut self.route_uids, AreaViewField::Routes)?;
         Ok(self)
     }
 }
 
 impl BuildableOccupantList for AreaViewBuilder {
-    fn add_occupant_uid(&mut self, uid: UID) -> Result<()> {
-        self.occupant_uids.push(ListOp::Add(IdentityBuilder::from_existing(self, &uid)));
+    fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<()> {
+        Build::add_uid_to_listops(thing_uid, &mut self.occupant_uids, AreaViewField::Things)?;
         Ok(())
     }
 
-    fn remove_occupant_uid(&mut self, uid: UID) -> Result<()> {
-        self.occupant_uids.push(ListOp::Remove(uid));
+    fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<()> {
+        Build::remove_uid_from_listops(thing_uid, &mut self.occupant_uids, AreaViewField::Things)?;
         Ok(())
     }
 }

@@ -342,6 +342,21 @@ impl Builder for IdentityBuilder {
     }
 }
 
+impl CloneBuilding for IdentityBuilder {
+    fn clone_model(builder_mode: BuilderMode, existing: &Self::ModelType) -> Self {
+        Self {
+            builder_mode,
+            universe_id: Some(existing.universe_id),
+            world_id: Some(existing.world_id),
+            class_id: Some(existing.class_id),
+            id: Some(existing.id)
+        }
+    }
+}
+
+impl IdentityBuilder {
+}
+
 impl IdentityBuilder {
     pub fn universe_id(&mut self, universe_id: UniverseID) -> Result<&mut Self> {
         self.universe_id = Some(universe_id);
@@ -419,6 +434,17 @@ impl IdentityBuilder {
         me.uid(identifiable.uid()).unwrap();
         me
     }
+
+    pub fn clone_uid(builder_mode: BuilderMode, uid: UID) -> Self {
+        let identity = Identity::from_uid(uid); 
+        Self {
+            builder_mode,
+            universe_id: Some(identity.universe_id),
+            world_id: Some(identity.world_id),
+            class_id: Some(identity.class_id),
+            id: Some(identity.id)
+        }
+    }
 }
 
 pub trait MaybeIdentifiable {
@@ -442,7 +468,7 @@ pub trait BuildableIdentity: Builder + MaybeIdentifiable {
 
     fn _try_uid(&self) -> Result<UID> {
         self.get_identity()
-            .ok_or_else(|| Error::BuildableUID{})
+            .ok_or_else(|| Error::IdentityNotGenerated)
             .and_then(|identity| identity.get_uid())
     }
 }

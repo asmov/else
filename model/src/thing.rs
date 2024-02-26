@@ -153,7 +153,7 @@ impl BuildableEntity for ThingBuilder {
 impl MaybeIdentifiable for ThingBuilder {
     fn try_uid(&self) -> Result<UID> {
         self.get_identity()
-            .ok_or_else(|| Error::BuildableUID{})?
+            .ok_or_else(|| Error::IdentityNotGenerated)?
             .get_uid()
             
     }

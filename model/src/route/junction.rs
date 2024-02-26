@@ -103,6 +103,17 @@ impl Builder for JunctionBuilder {
     }
 }
 
+impl CloneBuilding for JunctionBuilder {
+    fn clone_model(builder_mode: BuilderMode, existing: &Junction) -> Self {
+        Self {
+            builder_mode,
+            entrances: existing.entrances.iter()
+                .map(|e| ListOp::Add(EndBuilder::clone_model(builder_mode, e)))
+                .collect(),
+        }
+    }
+}
+
 impl JunctionBuilder {
     pub fn add_entrance(&mut self, end: EndBuilder) -> Result<()> {
         self.entrances.push(ListOp::Add(end));

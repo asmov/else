@@ -44,10 +44,10 @@ impl FromStr for Direction {
     fn from_str(s: &str) -> Result<Self> {
         let parts: Vec<&str> = s.split('&').collect();
         let horizontal: HorizontalDirection = parts[0].trim().parse()
-            .map_err(|_| Error::ParseError{ what: "HorizontalDirection",  src: s.to_string() } )?;
+            .map_err(|_| Error::Parsing{ what: "HorizontalDirection",  src: s.to_string() } )?;
         let vertical = if parts.len() > 1 {
             parts[1].trim().parse()
-                .map_err(|_| Error::ParseError{ what: "VerticalDirection",  src: s.to_string() } )?
+                .map_err(|_| Error::Parsing{ what: "VerticalDirection",  src: s.to_string() } )?
         } else {
             VerticalDirection::Level
         };
