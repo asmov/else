@@ -83,6 +83,11 @@ impl World {
             .ok_or_else(|| Error::ModelNotFound{model: RouteField::classname(), uid})
     }
 
+    pub fn find_route(&self, key: &str) -> Result<&Route> {
+        self.routes.iter().find(|route| route.key().is_some_and(|k| k == key))
+            .ok_or_else(|| Error::ModelKeyNotFound { model: RouteField::classname(), key: key.to_string() })
+    }
+
     pub fn things(&self) -> &Vec<Thing> {
         &self.things
     }
@@ -391,9 +396,19 @@ impl BuildableAreaVector for WorldBuilder {
 }
 
 impl BuildableRouteVector for WorldBuilder {
-    fn add_route(&mut self, route: RouteBuilder) -> Result<()> {
+    fn add_route(&mut self, route: RouteBuilder) -> Result<&mut Self> {
         self.routes.push(ListOp::Add(route));
-        Ok(())
+        Ok(self)
+    }
+    
+    fn edit_route(&mut self, route: RouteBuilder) -> Result<&mut Self> {
+        self.routes.push(ListOp::Edit(route));
+        Ok(self)
+    }
+    
+    fn remove_route(&mut self, route_uid: UID) -> Result<&mut Self> {
+        self.routes.push(ListOp::Remove(route_uid));
+        Ok(self)
     }
 }
 

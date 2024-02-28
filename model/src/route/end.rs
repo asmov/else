@@ -186,9 +186,9 @@ impl CloneBuilding for EndBuilder {
 }
 
 impl EndBuilder {
-    pub fn area_identity(&mut self, id: IdentityBuilder) -> Result<()> {
+    pub fn area_identity(&mut self, id: IdentityBuilder) -> Result<&mut Self> {
         self.area_identity = Some(id);
-        Ok(())
+        Ok(self)
     }
 
     pub fn area_identity_builder(&mut self) -> &mut IdentityBuilder {
@@ -203,8 +203,8 @@ impl EndBuilder {
         self.area_identity.as_ref()
     }
 
-    pub fn direction(&mut self, direction: Direction) -> Result<()> {
+    pub fn direction(&mut self, direction: Direction) -> Result<&mut Self> {
         self.direction = Some(direction);
-        Ok(())
+        Ok(self)
     }
 }

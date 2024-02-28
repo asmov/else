@@ -5,6 +5,7 @@ use crate::{error::*, modeling::*, codebase::*, identity::*};
 
 #[derive(PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize, Debug, strum::Display, strum::EnumString)]
 pub enum HorizontalDirection {
+    Vertical  = -1,
     North     = 0,
     NorthEast = 45,
     East      = 90,
@@ -80,6 +81,20 @@ impl Direction {
         Self {
             horizontal,
             vertical: VerticalDirection::Level
+        }
+    }
+
+    pub fn up() -> Self {
+        Self {
+            horizontal: HorizontalDirection::Vertical,
+            vertical: VerticalDirection::Up
+        }
+    }
+
+    pub fn down() -> Self {
+        Self {
+            horizontal: HorizontalDirection::Vertical,
+            vertical: VerticalDirection::Down
         }
     }
 

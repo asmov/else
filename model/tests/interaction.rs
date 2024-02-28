@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
+    use bincode::de;
     use elsezone_model::{self as model, testing, *};
+    use model::testing::DOG_HOUSE;
 
     #[test]
     fn test_create_world() {
@@ -131,5 +133,127 @@ mod tests {
             .find_area(testing::CAT_HOUSE).unwrap()
             .occupant_uids()
             .contains(&black_cat_uid) == false);
+    }
+
+    const CAT_TO_DOG_HOUSE: &str = "cat_house_to_dog_house";
+
+    fn create_route(mut world: World) -> World {
+        let cat_house = world.find_area(testing::CAT_HOUSE).unwrap(); // Point A
+        let dog_house = world.find_area(testing::DOG_HOUSE).unwrap(); // Point B
+        
+        // route 'cat_house' to 'dog_house'
+        let mut world_editor = World::editor();
+        let mut route_cat_to_dog_house = Route::creator();
+        route_cat_to_dog_house
+            .point_a({
+                let mut point_a = Endpoint::creator();
+                point_a.end({ 
+                    let mut end = End::creator();
+                    end
+                        .area_identity(IdentityBuilder::from_existing(&point_a, cat_house)).unwrap()
+                        .direction(Direction::up()).unwrap()
+                        .descriptor({
+                            let mut descriptor = Descriptor::creator();
+                            descriptor
+                                .name(s!("portal_to_cat_house")).unwrap()
+                                .description(s!("A portal swirling above")).unwrap();
+                            descriptor
+                        }).unwrap();
+                    end
+                }).unwrap();
+                point_a.point_builder()
+            }).unwrap()
+            .point_b({
+                let mut point_b = Endpoint::creator();
+                point_b.end({ 
+                    let mut end = End::creator();
+                    end
+                        .area_identity(IdentityBuilder::from_existing(&point_b, dog_house)).unwrap()
+                        .direction(Direction::up()).unwrap()
+                        .descriptor({
+                            let mut descriptor = Descriptor::creator();
+                            descriptor
+                                .name(s!("portal_to_dog_house")).unwrap()
+                                .description(s!("A portal swirling above")).unwrap();
+                            descriptor
+                        }).unwrap();
+                    end
+                }).unwrap();
+                point_b.point_builder()
+            }).unwrap()
+            .descriptor({
+                let mut descriptor = Descriptor::creator();
+                descriptor
+                    .key(CAT_TO_DOG_HOUSE.to_string()).unwrap()
+                    .name(s!("Portal between Cat House and Dog House")).unwrap()
+                    .description(s!("A route from the cat house to the dog house")).unwrap();
+                descriptor
+            }).unwrap();
+        world_editor.add_route(route_cat_to_dog_house).unwrap();
+        world_editor.modify(&mut world).unwrap();
+
+        world
+    }
+
+    #[test]
+    pub fn test_create_route() {
+        let mut world = testing::create_world();
+        world = create_route(world);
+
+        // assertions
+        let route_cat_to_dog_house = world.find_route(CAT_TO_DOG_HOUSE).unwrap();
+        let cat_house = world.find_area(testing::CAT_HOUSE).unwrap(); // Point A
+        let dog_house = world.find_area(testing::DOG_HOUSE).unwrap(); // Point B
+
+        assert!(cat_house.route_uids().contains(&route_cat_to_dog_house.uid()));
+        assert!(dog_house.route_uids().contains(&route_cat_to_dog_house.uid()));
+
+        if let Point::Endpoint(endpoint) = route_cat_to_dog_house.point_a() {
+            assert_eq!(endpoint.end().area_uid(), cat_house.uid());
+        } else {
+            panic!("Route Point A should be an Endpoint");
+        }
+
+        if let Point::Endpoint(endpoint) = route_cat_to_dog_house.point_b() {
+            assert_eq!(endpoint.end().area_uid(), dog_house.uid());
+        } else {
+            panic!("Route Point B should be an Endpoint");
+        }
+    }
+
+    #[test]
+    pub fn test_edit_route() {
+        let mut world = testing::create_world();
+        world = create_route(world);
+
+        let route_cat_to_dog_house = world.find_route(CAT_TO_DOG_HOUSE).unwrap();
+        let cat_house = world.find_area(testing::CAT_HOUSE).unwrap(); // Point A
+        let backyard = world.find_area(testing::BACKYARD).unwrap(); // new Point B
+        let dog_house = world.find_area(testing::DOG_HOUSE).unwrap(); // old Point B
+
+        // edit route to change Point B from 'dog_house' to 'backyard'
+        let mut world_editor = World::editor();
+        let mut route_editor = route_cat_to_dog_house.edit_self();
+        route_editor.point_b({
+            let mut point_creator = Endpoint::creator();
+            point_creator
+                .end({
+                    let mut end_creator = End::creator();
+                    end_creator
+                        .area_identity(IdentityBuilder::from_existing(&end_creator, backyard)).unwrap()
+                        .direction(Direction::down()).unwrap()
+                        .descriptor({
+                            let mut descriptor_creator = Descriptor::creator();
+                            descriptor_creator
+                                .name(s!("portal_to_cat_house")).unwrap()
+                                .description(s!("A portal swirling below")).unwrap();
+                            descriptor_creator
+                        }).unwrap();
+                    end_creator
+                }).unwrap();
+            point_creator.point_builder()
+        }).unwrap();
+        world_editor.edit_route(route_editor).unwrap();
+        world_editor.modify(&mut world).unwrap();
     }
 }

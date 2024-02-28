@@ -228,19 +228,19 @@ impl BuildableDescriptor for RouteBuilder {
 }
 
 impl RouteBuilder {
-    pub fn point_a(&mut self, point_a: PointBuilder) -> Result<()> {
+    pub fn point_a(&mut self, point_a: PointBuilder) -> Result<&mut Self> {
         self.point_a = Some(point_a);
-        Ok(())
+        Ok(self)
     }
 
     pub fn point_a_builder(&mut self) -> &mut PointBuilder {
         todo!()
     }
 
-    pub fn point_b(&mut self, point_b: PointBuilder) -> Result<()> {
+    pub fn point_b(&mut self, point_b: PointBuilder) -> Result<&mut Self> {
         assert!(matches!(point_b, PointBuilder::Endpoint(_)));
         self.point_b = Some(point_b);
-        Ok(())
+        Ok(self)
     }
 
     pub fn point_b_builder(&mut self) -> &mut PointBuilder {
@@ -262,7 +262,9 @@ impl RouteBuilder {
 }
 
 pub trait BuildableRouteVector {
-    fn add_route(&mut self, route: RouteBuilder) -> Result<()>; 
+    fn add_route(&mut self, route: RouteBuilder) -> Result<&mut Self>; 
+    fn edit_route(&mut self, route: RouteBuilder) -> Result<&mut Self>; 
+    fn remove_route(&mut self, route_uid: UID) -> Result<&mut Self>; 
 }
 
 pub trait BuildableRouteUIDList {
