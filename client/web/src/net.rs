@@ -1,12 +1,12 @@
 use std::time::Duration;
 
-use model::ZoneToClientMessage;
 use reqwasm::websocket;
 use futures::{SinkExt, StreamExt};
 use reqwasm::websocket::futures::WebSocket;
-use elsezone_model as model;
 use yew::Callback;
-use elsezone_network_common::*;
+use model::ZoneToClientMessage;
+use asmov_else_network_common::*;
+use asmov_else_model as model;
 
 use crate::ui::terminal::EntryCategory;
 

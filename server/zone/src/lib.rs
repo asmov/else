@@ -1,7 +1,7 @@
 use std::fs;
 use native_tls as tls;
-use elsezone_model as model;
-use elsezone_server_common as server;
+use asmov_else_model as model;
+use asmov_else_server_common as server;
 use model::{area, identity, route, BuildableDescriptor, BuildableIdentity, BuildableOccupantList, BuildableRouteUIDList, Builder, Built, CloneBuilding, Descriptive, DomainSynchronizer, Exists, Identifiable, RouteBuilder};
 
 pub struct ClientSession {

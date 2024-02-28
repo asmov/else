@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use elsezone_model::{self as model, Descriptive};
+    use asmov_else_model::{self as model, Descriptive};
     use bincode;
     use model::{testing, BuildableAreaVector, BuildableDescriptor, Builder, Built, DomainSynchronizer, Identifiable};
     use std::fs::File;

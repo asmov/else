@@ -1,7 +1,7 @@
 } else {
 ================================================================================
 
-A world engine.
+This is not your world.
 
 Packages
 --------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ Structure
 
 License (GPL 3)
 --------------------------------------------------------------------------------
-elseZone: A world engine.  
+Asmov Else: An alternate world simulator
 Copyright (C) 2024 Asmov LLC 
 
 This program is free software: you can redistribute it and/or modify

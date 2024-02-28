@@ -6,7 +6,7 @@ use tokio_native_tls::TlsStream;
 use tokio_tungstenite::{self, tungstenite::{protocol::{frame::coding::CloseCode, CloseFrame}, Message}, MaybeTlsStream, WebSocketStream};
 use futures_util::{SinkExt, StreamExt};
 
-pub use elsezone_network_common::*;
+pub use asmov_else_network_common::*;
 
 pub type ConnectionResult = Result<Connection, NetworkError>;
 pub enum Log {

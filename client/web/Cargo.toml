@@ -1,11 +1,11 @@
 [package]
-name = "elsezone-web-client"
+name = "asmov-else-web-client"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-elsezone-model = { version = "0.1.0", path = "../../model" }
-elsezone-network-common = { version = "0.1.0", path = "../../common/network" }
+asmov-else-model = { version = "0.1.0", path = "../../model" }
+asmov-else-network-common = { version = "0.1.0", path = "../../common/network" }
 yew = { version = "0.21.0", features = ["csr"] }
 futures = "0.3.30"
 reqwasm = "0.5.0"

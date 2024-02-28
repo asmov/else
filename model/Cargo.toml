@@ -1,5 +1,5 @@
 [package]
-name = "elsezone-model"
+name = "asmov-else-model"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,7 +8,7 @@ anyhow = "1.0.79"
 #bincode = "1.3.3"
 bincode = { version = "2.0.0-rc.3", features = ["serde"] }
 bytes = { version = "1.5.0", features = ["serde"] }
-elsezone-rust-common = { version = "0.1.0", path = "../common/rust" }
+asmov-else-rust-common = { version = "0.1.0", path = "../common/rust" }
 serde = { version = "1.0.195", features = ["derive"] }
 strum = { version = "0.25.0", features = ["derive"] }
 thiserror = "1.0.56"

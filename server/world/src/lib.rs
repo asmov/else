@@ -1,9 +1,9 @@
 use behavior::{Actor, Stimulation};
 use model::{Builder, Built};
 use tokio;
-use elsezone_model as model;
-use elsezone_behavior as behavior;
-use elsezone_server_common as server;
+use asmov_else_model as model;
+use asmov_else_behavior as behavior;
+use asmov_else_server_common as server;
 
 pub struct WorldRuntime {
     timeframe: model::TimeFrame,

@@ -1,4 +1,4 @@
-use elsezone_rust_common::*;
+use asmov_else_rust_common::*;
 use crate::*;
 
 pub const TERMINAL_AREA_KEY: &'static str ="terminal";

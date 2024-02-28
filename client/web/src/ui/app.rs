@@ -1,7 +1,7 @@
-use model::{Descriptive, Identifiable, Routing};
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VChild};
+use asmov_else_model as model;
+use model::{Descriptive, Identifiable, Routing};
 use crate::{net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
-use elsezone_model as model;
 
 use super::terminal;
 

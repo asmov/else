@@ -1,6 +1,6 @@
 pub mod stimulus;
 
-use elsezone_model::*;
+use asmov_else_model::*;
 
 pub use stimulus::*;
 

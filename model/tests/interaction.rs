@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use bincode::de;
-    use elsezone_model::{self as model, testing, *};
+    use asmov_else_model::{self as model, testing, *};
     use model::testing::DOG_HOUSE;
 
     #[test]

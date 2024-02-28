@@ -1,6 +1,6 @@
 use thiserror;
 use bincode;
-use elsezone_model as model;
+use asmov_else_model as model;
 
 pub const LOCALHOST_IP: &'static str = "127.0.0.1";
 pub const ELSE_WORLD_PORT: u16 = 3153;

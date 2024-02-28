@@ -1,4 +1,4 @@
-pub use elsezone_rust_common::{self as elserust, s};
+pub use asmov_else_rust_common::{self as elserust, s};
 
 pub mod codebase;
 pub mod error;

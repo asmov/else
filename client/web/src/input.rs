@@ -212,7 +212,7 @@ fn split_arguments(text: &str) -> Result<Vec<String>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elsezone_model::s;
+    use asmov_else_model::s;
 
     #[test] 
     fn test_talk() {
