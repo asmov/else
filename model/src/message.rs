@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use strum;
 
-use crate::{identity::*, timeframe::*, sync::Sync};
+use crate::{timeframe::*, action::*, sync::Sync};
 
 pub type MessageID = u16;
 pub type ErrorCode = u8;
@@ -83,11 +83,7 @@ pub enum ClientToZoneMessage {
     /// Client is about to disconnect.
     /// Expects response: ZoneToClientMessage::Disconnect
     Disconnect,
-    /// Request to move through a Route to a different Area.  
-    /// Expected responses:
-    /// - ZoneToClientMessage::GoApproved
-    /// - ZoneToClientMessage::GoRejected
-    Go,
+    Action(Action)
 }
 
 impl Messaging for ClientToZoneMessage {
@@ -105,7 +101,7 @@ impl Messaging for ClientToZoneMessage {
             ClientToZoneMessage::TransferDenied => "ClientToZoneMessage::TransferDenied",
             ClientToZoneMessage::Transfered => "ClientToZoneMessage::Transfered",
             ClientToZoneMessage::Disconnect => "ClientToZoneMessage::Disconnect",
-            ClientToZoneMessage::Go => "ClientToZoneMessage::Go",
+            ClientToZoneMessage::Action(_) => "ClientToZoneMessage::Action",
         }
     }
 }
@@ -123,10 +119,10 @@ pub enum ZoneToClientMessage {
     Transfered,
     TransferRejected,
     Disconnect,
-    /// Response: Request to move through a Route has been approved. It will occur in the specified timeframe.
-    GoApproved,
-    /// Response: Request to move through a Route has been rejected.
-    GoRejected,
+    ActionApproved(Frame),
+    /// The action was approved, but the frame was changed.
+    ActionApprovedAt(Frame, Frame),
+    ActionRejected(Frame)
 }
 
 impl Messaging for ZoneToClientMessage {
@@ -141,8 +137,9 @@ impl Messaging for ZoneToClientMessage {
             Self::Transfered => "ZoneToClientMessage::Transfered",
             Self::TransferRejected => "ZoneToClientMessage::TransferRejected",
             Self::Disconnect => "ZoneToClientMessage::Disconnect",
-            Self::GoApproved => "ZoneToClientMessage::GoApproved",
-            Self::GoRejected => "ZoneToClientMessage::GoRejected",
+            Self::ActionApproved(_) => "ZoneToClientMessage::ActionApproved",
+            Self::ActionApprovedAt(_,_) => "ZoneToClientMessage::ActionApprovedWithChange",
+            Self::ActionRejected(_) => "ZoneToClientMessage::ActionRejected",
         }
     }
 
@@ -239,21 +236,4 @@ pub struct ErrorMsg {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct NewTimeFrameMsg {
     pub timeframe: TimeFrame
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct GoRequest {
-    pub route_id: Identity,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct GoApproved {
-    pub message_id: MessageID,
-    pub timeframe: TimeFrame,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct GoRejected {
-    pub message_id: MessageID,
-    pub error_code: ErrorCode
 }
