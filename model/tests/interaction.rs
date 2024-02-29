@@ -78,19 +78,23 @@ mod tests {
 
         assert_eq!("Cat", gray_cat.name());
 
-        let result = world.find_things("Cat");
+        let result: Vec<_> = world.things().iter()
+            .filter(|thing| thing.name() == "Cat")
+            .collect();
+ 
         let gray_cat = result.first().unwrap();
 
         assert_eq!("A gray cat", gray_cat.description().unwrap());
 
         // test simple mutation
-
-        let mut gray_cat = world.find_thing_mut("gray_cat").unwrap();
-
-        let mut character_editor = Character::editor();
-        character_editor.entity_builder().descriptor_builder()
+        let mut world_editor = model::World::editor();
+        let mut gray_cat_editor = world.find_thing("gray_cat")
+            .unwrap()
+            .edit_self();
+        gray_cat_editor.entity_builder().descriptor_builder()
             .description(s!("A slightly gray cat")).unwrap();
-        character_editor.thing_builder().modify(&mut gray_cat).unwrap();
+        world_editor.edit_thing(gray_cat_editor).unwrap();
+        world_editor.modify(&mut world).unwrap();
 
         let gray_cat = world.find_thing("gray_cat").unwrap();
         assert_eq!("A slightly gray cat", gray_cat.description().unwrap());

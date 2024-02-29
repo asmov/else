@@ -4,7 +4,7 @@ use serde;
 /// Represents an area that things are located in, generally. There is no exact position.
 /// Each area has a fixed set of `Route` objects that link it to other areas. 
 /// There is a dynamic list of `Thing` objects thare are current occupants.
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
 pub struct Area {
     uid: UID,
     descriptor: Descriptor,

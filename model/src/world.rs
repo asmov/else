@@ -1,4 +1,5 @@
 use serde;
+use ahash::AHashMap;
 use crate::{area::*, modeling::*, character::*, route::*, timeframe::*, sync::*};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -7,6 +8,7 @@ pub struct World {
     frame: Frame,
     descriptor: Descriptor,
     areas: Vec<Area>,
+    areas_fast: AHashMap<UID, Area>,
     routes: Vec<Route>,
     things: Vec<Thing>,
     next_id: ID,
@@ -45,15 +47,16 @@ impl World {
         id
     }
 
-    pub fn thing(&self, uid: UID) -> Result<&Thing> {
-        self.things.iter().find(|thing| thing.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
+    pub fn areas(&self) -> &Vec<Area> {
+        &self.areas
     }
 
-    //todo: remove
-    pub fn thing_mut(&mut self, uid: UID) -> Result<&mut Thing> {
-        self.things.iter_mut().find(|thing| thing.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
+    pub fn routes(&self) -> &Vec<Route> {
+        &self.routes
+    }
+
+    pub fn things(&self) -> &Vec<Thing> {
+        &self.things
     }
 
     pub fn area(&self, uid: UID) -> Result<&Area> {
@@ -61,16 +64,14 @@ impl World {
             .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
     }
 
-    //todo: remove
-    pub fn area_mut(&mut self, uid: UID) -> Result<&mut Area> {
-        self.areas.iter_mut().find(|area| area.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
+    pub fn route(&self, uid: UID) -> Result<&Route> {
+        self.routes.iter().find(|route| route.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: RouteField::classname(), uid})
     }
 
-    pub fn find_areas(&self, query: &str) -> Vec<&Area> {
-        self.areas.iter()
-            .filter(|area| area.name() == query)
-            .collect()
+    pub fn thing(&self, uid: UID) -> Result<&Thing> {
+        self.things.iter().find(|thing| thing.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
     }
 
     pub fn find_area(&self, key: &str) -> Result<&Area> {
@@ -78,38 +79,13 @@ impl World {
             .ok_or_else(|| Error::ModelKeyNotFound { model: AreaField::classname(), key: key.to_string() })
     }
 
-    pub fn route(&self, uid: UID) -> Result<&Route> {
-        self.routes.iter().find(|route| route.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: RouteField::classname(), uid})
-    }
-
     pub fn find_route(&self, key: &str) -> Result<&Route> {
         self.routes.iter().find(|route| route.key().is_some_and(|k| k == key))
             .ok_or_else(|| Error::ModelKeyNotFound { model: RouteField::classname(), key: key.to_string() })
     }
 
-    pub fn things(&self) -> &Vec<Thing> {
-        &self.things
-    }
-
-    //todo: remove
-    pub fn things_mut(&mut self) -> &mut Vec<Thing> {
-        &mut self.things
-    }
-
-    pub fn find_things(&self, query: &str) -> Vec<&Thing> {
-        self.things.iter()
-            .filter(|thing| thing.name() == query)
-            .collect()
-    }
-
     pub fn find_thing(&self, key: &str) -> Option<&Thing> {
         self.things.iter().find(|thing| thing.key().is_some_and(|k| k == key))
-    }
-
-    //todo: remove
-    pub fn find_thing_mut(&mut self, key: &str) -> Option<&mut Thing> {
-        self.things.iter_mut().find(|thing| thing.key().is_some_and(|k| k == key))
     }
 
     pub fn spawn_thing(&mut self, mut thing: ThingBuilder) -> Result<(UID, Modification<WorldBuilder>)> {
@@ -134,7 +110,7 @@ impl World {
 
 #[derive(Clone, Copy, Debug)]
 pub enum WorldField {
-    Identity,
+    UID,
     Frame,
     Descriptor,
     Areas,
@@ -145,7 +121,7 @@ pub enum WorldField {
 impl Fields for WorldField {
     fn field(&self) -> &'static Field {
         match self {
-            Self::Identity => &Self::FIELD_UID,
+            Self::UID => &Self::FIELD_UID,
             Self::Frame => &Self::FIELD_FRAME,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::Areas => &Self::FIELD_AREAS,
@@ -221,7 +197,7 @@ impl Builder for WorldBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::new(WorldField::class_ident(), ChangeOp::Create);
 
-        let identity = Build::create(&mut self.identity, &mut fields_changed, WorldField::Identity)?;
+        let identity = Build::create(&mut self.identity, &mut fields_changed, WorldField::UID)?;
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, WorldField::Descriptor)?;
         let frame = Build::create_value(&mut self.frame, &mut fields_changed, WorldField::Frame)?;
 
@@ -274,6 +250,7 @@ impl Builder for WorldBuilder {
             frame,
             descriptor,
             areas,
+            areas_fast,
             routes,
             things,
             next_id,
