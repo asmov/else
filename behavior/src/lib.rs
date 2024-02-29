@@ -14,23 +14,13 @@ pub trait Actor {
     fn act(self, world: &mut World) -> Result<Vec<Sync>>;
 }
 
-pub enum Action {
-    Multiply(MultiplyAction),
-}
-
 impl Actor for Action {
     fn act(self, world: &mut World) -> Result<Vec<Sync>> {
         match self {
             Action::Multiply(action) => action.act(world),
+            Action::Go(action) => action.act(world),
         }
     }
-}
-
-pub struct GoAction {
-    thing_id: ID,
-    frame_started: Frame,
-    from_area_id: ID,
-    thru_route_id: ID
 }
 
 impl Actor for GoAction {
@@ -39,42 +29,15 @@ impl Actor for GoAction {
     }
 }
 
-impl GoAction {
-    pub fn new(thing_id: ID, frame_started: Frame, from_area_id: ID, thru_route_id: ID) -> Self {
-        Self {
-            thing_id,
-            frame_started,
-            from_area_id,
-            thru_route_id,
-        }
-    }
-}
-
-
-
-pub struct MultiplyAction {
-    frame: Frame,
-    clone_uid: UID
-}
-
-impl MultiplyAction {
-    fn new(frame: Frame, clone_uid: UID) -> Self {
-        Self {
-            frame,
-            clone_uid,
-        }
-    }
-}
-
 impl Actor for MultiplyAction {
     fn act(self, world: &mut World) -> Result<Vec<Sync>> {
-        let thing = world.thing(self.clone_uid).unwrap();
+        let thing = world.thing(self.base.thing_uid).unwrap();
         let mut character = CharacterBuilder::creator(); 
         character.entity({
             let mut entity = EntityBuilder::creator();
             entity.descriptor({
                 let mut descriptor = DescriptorBuilder::creator();
-                descriptor.key(format!("{}_{}", thing.name(), self.frame))?;
+                descriptor.key(format!("{}_{}", thing.name(), self.base.frame))?;
                 descriptor
             })?;
             entity.location(thing.location()).unwrap();
@@ -101,7 +64,7 @@ impl Stimulation for MultiplierCharacterRoutine {
     fn stimulate(&self, stimulus: Stimulus, _world: &World) -> Result<Option<Vec<Action>>> {
         match stimulus {
             Stimulus::Time(timeframe) => {
-                Ok(Some(vec![Action::Multiply(MultiplyAction::new(timeframe.frame(), self.0))]))
+                Ok(Some(vec![Action::Multiply(MultiplyAction { base: BaseAction { frame: timeframe.frame(), thing_uid: self.0} })]))
             },
             _ => { Ok(None) }
         }
