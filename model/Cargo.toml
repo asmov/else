@@ -12,7 +12,6 @@ asmov-else-rust-common = { version = "0.1.0", path = "../common/rust" }
 serde = { version = "1.0.195", features = ["derive"] }
 strum = { version = "0.25.0", features = ["derive"] }
 thiserror = "1.0.56"
-ahash = { version = "0.8.10", features = ["serde"] }
 
 [dev-dependencies]
 #bincode = "1.3.3"
