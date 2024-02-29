@@ -164,9 +164,9 @@ impl MaybeIdentifiable for AreaBuilder {
 }
 
 impl BuildableIdentity for AreaBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
         self.identity = Some(identity);
-        Ok(())
+        Ok(self)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
@@ -183,9 +183,9 @@ impl BuildableIdentity for AreaBuilder {
 }
 
 impl BuildableDescriptor for AreaBuilder {
-    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self> {
         self.descriptor = Some(descriptor);
-        Ok(())
+        Ok(self)
     }
 
     fn descriptor_builder(&mut self) -> &mut DescriptorBuilder {
@@ -202,9 +202,9 @@ impl Built for Area {
 }
 
 pub trait BuildableAreaVector {
-    fn add_area(&mut self, area: AreaBuilder) -> Result<()>; 
-    fn edit_area(&mut self, area: AreaBuilder) -> Result<()>; 
-    fn remove_area(&mut self, area_uid: UID) -> Result<()>; 
+    fn add_area(&mut self, area: AreaBuilder) -> Result<&mut Self>; 
+    fn edit_area(&mut self, area: AreaBuilder) -> Result<&mut Self>; 
+    fn remove_area(&mut self, area_uid: UID) -> Result<&mut Self>; 
 }
 
 impl AreaBuilder {

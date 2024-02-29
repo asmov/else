@@ -152,9 +152,9 @@ impl Builder for EndBuilder {
 }
 
 impl BuildableDescriptor for EndBuilder {
-    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self> {
         self.descriptor = Some(descriptor);
-        Ok(())
+        Ok(self)
     }
 
     fn descriptor_builder(&mut self) -> &mut DescriptorBuilder {

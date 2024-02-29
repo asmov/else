@@ -255,7 +255,7 @@ impl DescriptorBuilder {
 }
 
 pub trait BuildableDescriptor: Builder {
-    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()>; 
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self>; 
     fn descriptor_builder(&mut self) -> &mut DescriptorBuilder;
 }
 

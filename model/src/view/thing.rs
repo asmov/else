@@ -128,7 +128,7 @@ impl MaybeIdentifiable for ThingViewBuilder {
 
 
 impl BuildableIdentity for ThingViewBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
         todo!()
     }
 
@@ -142,7 +142,7 @@ impl BuildableIdentity for ThingViewBuilder {
 }
 
 impl BuildableDescriptor for ThingViewBuilder {
-    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self> {
         todo!()
     }
 

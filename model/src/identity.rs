@@ -458,7 +458,7 @@ impl MaybeIdentifiable for IdentityBuilder {
 }
 
 pub trait BuildableIdentity: Builder + MaybeIdentifiable {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()>; 
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self>; 
     fn identity_builder(&mut self) -> &mut IdentityBuilder;
     fn get_identity(&self) -> Option<&IdentityBuilder>;
 
@@ -474,9 +474,9 @@ pub trait BuildableIdentity: Builder + MaybeIdentifiable {
 }
 
 impl BuildableIdentity for IdentityBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
         *self = identity;
-        Ok(())
+        Ok(self)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {

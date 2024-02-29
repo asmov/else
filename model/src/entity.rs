@@ -169,9 +169,9 @@ impl MaybeIdentifiable for EntityBuilder {
 }
 
 impl BuildableIdentity for EntityBuilder {
-    fn identity(&mut self, id: IdentityBuilder) -> Result<()> {
+    fn identity(&mut self, id: IdentityBuilder) -> Result<&mut Self> {
         self.identity = Some(id);
-        Ok(())
+        Ok(self)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
@@ -188,9 +188,9 @@ impl BuildableIdentity for EntityBuilder {
 }
 
 impl BuildableDescriptor for EntityBuilder {
-    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self> {
         self.descriptor = Some(descriptor);
-        Ok(())
+        Ok(self)
     }
 
     fn descriptor_builder(&mut self) -> &mut DescriptorBuilder {

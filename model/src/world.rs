@@ -319,8 +319,7 @@ impl Builder for WorldBuilder {
             .collect::<Result<Vec<_>>>()?;
 
 
-        let existing_area_uids = existing.areas.iter().map(|area| area.uid()).collect::<Vec<_>>();
-        Self::link_routes_to_areas(&mut routes, &mut areas, existing_area_uids)?;
+        Self::link_routes_to_areas(&mut routes, &mut areas, existing)?;
 
         self.areas = areas;
         self.routes = routes;
@@ -345,9 +344,9 @@ impl MaybeIdentifiable for WorldBuilder {
 }
 
 impl BuildableIdentity for WorldBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
         self.identity = Some(identity);
-        Ok(())
+        Ok(self)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
@@ -364,9 +363,9 @@ impl BuildableIdentity for WorldBuilder {
 }
 
 impl BuildableDescriptor for WorldBuilder {
-    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self> {
         self.descriptor = Some(descriptor);
-        Ok(())
+        Ok(self)
     }
 
     fn descriptor_builder(&mut self) -> &mut DescriptorBuilder {
@@ -379,19 +378,19 @@ impl BuildableDescriptor for WorldBuilder {
 }
 
 impl BuildableAreaVector for WorldBuilder {
-    fn add_area(&mut self, area: AreaBuilder) -> Result<()> {
+    fn add_area(&mut self, area: AreaBuilder) -> Result<&mut Self> {
         self.areas.push(ListOp::Add(area));
-        Ok(())
+        Ok(self)
     }
 
-    fn edit_area(&mut self, area: AreaBuilder) -> Result<()> {
+    fn edit_area(&mut self, area: AreaBuilder) -> Result<&mut Self> {
         self.areas.push(ListOp::Edit(area));
-        Ok(())
+        Ok(self)
     }
 
-    fn remove_area(&mut self, area_uid: UID) -> Result<()> {
+    fn remove_area(&mut self, area_uid: UID) -> Result<&mut Self> {
         self.areas.push(ListOp::Remove(area_uid));
-        Ok(())
+        Ok(self)
     }
 }
 
@@ -413,19 +412,19 @@ impl BuildableRouteVector for WorldBuilder {
 }
 
 impl BuildableThingList for WorldBuilder {
-    fn add_thing(&mut self, thing: ThingBuilder) -> Result<()> {
+    fn add_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self> {
        self.things.push(ListOp::Add(thing)); 
-       Ok(())
+       Ok(self)
     }
 
-    fn edit_thing(&mut self, thing: ThingBuilder) -> Result<()> {
+    fn edit_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self> {
         self.things.push(ListOp::Edit(thing));
-        Ok(())
+        Ok(self)
     }
 
-    fn remove_thing(&mut self, thing_uid: UID) -> Result<()> {
+    fn remove_thing(&mut self, thing_uid: UID) -> Result<&mut Self> {
         self.things.push(ListOp::Remove(thing_uid));
-        Ok(())
+        Ok(self)
     }
 }
 
@@ -446,12 +445,12 @@ impl WorldBuilder {
     fn link_routes_to_areas(
         route_ops: &mut Vec<ListOp<RouteBuilder, UID>>,
         area_ops: &mut Vec<ListOp<AreaBuilder, UID>>,
-        existing_area_uids: Vec<UID>
+        world: &World 
     ) -> Result<()> {
         for route_op in route_ops {
             match route_op {
                 ListOp::Add(route_builder) => {
-                    for area_uid in route_builder.area_uids()? {
+                    for area_uid in route_builder.creation_area_uids()? {
                         let area_builder = match Self::find_area_builder_by_uid(area_ops, area_uid) {
                             Some(ListOp::Add(area_builder)) | Some(ListOp::Edit(area_builder)) => area_builder,
                             Some(ListOp::Remove(uid)) => return Err(Error::IllegalRemoveOp{
@@ -464,10 +463,58 @@ impl WorldBuilder {
                     }
                 },
                 ListOp::Edit(route_builder) => {
-                    todo!()
+                    // diff between the area uids of the existing route and the edited route
+                    let route_uid = route_builder.try_uid()?;
+                    let existing_route = world.route(route_builder.try_uid()?)?;
+                    let existing_area_uids = existing_route.area_uids();
+                    let edited_area_uids = route_builder.modification_area_uids(&existing_route)?;
+
+                    let removed_area_uids = existing_area_uids.iter()
+                        .filter(|uid| !edited_area_uids.contains(uid))
+                        .collect::<Vec<_>>();
+
+                    for area_uid in removed_area_uids {
+                        let area_builder = match Self::find_area_builder_by_uid(area_ops, *area_uid) {
+                            Some(ListOp::Add(area_builder)) | Some(ListOp::Edit(area_builder)) => area_builder,
+                            Some(ListOp::Remove(uid)) => return Err(Error::ListOpRace{
+                                op: "Edit", model: AreaField::classname(), uid: *uid, whiled: "removed"
+                            }),
+                            None => Self::area_builder_from_existing(area_ops, *area_uid)? 
+                        };
+
+                        area_builder.remove_route_uid(route_uid)?;
+                    }
+
+                    let added_area_uids = edited_area_uids.iter()
+                        .filter(|uid| !existing_area_uids.contains(uid))
+                        .collect::<Vec<_>>();
+
+                    for area_uid in added_area_uids {
+                        let area_builder = match Self::find_area_builder_by_uid(area_ops, *area_uid) {
+                            Some(ListOp::Add(area_builder)) | Some(ListOp::Edit(area_builder)) => area_builder,
+                            Some(ListOp::Remove(uid)) => return Err(Error::ListOpRace{
+                                op: "Edit", model: AreaField::classname(), uid: *uid, whiled: "removed"
+                            }),
+                            None => Self::area_builder_from_existing(area_ops, *area_uid)? 
+                        };
+
+                        area_builder.add_route_uid(route_uid)?;
+                    }
                 },
                 ListOp::Remove(route_uid) => {
-                    todo!()
+                    let existing_route = world.route(*route_uid)?;
+
+                    for area_uid in existing_route.area_uids() {
+                        let area_builder = match Self::find_area_builder_by_uid(area_ops, area_uid) {
+                            Some(ListOp::Add(area_builder)) | Some(ListOp::Edit(area_builder)) => area_builder,
+                            Some(ListOp::Remove(uid)) => return Err(Error::ListOpRace{
+                                op: "Edit", model: AreaField::classname(), uid: *uid, whiled: "removed"
+                            }),
+                            None => Self::area_builder_from_existing(area_ops, area_uid)? 
+                        };
+
+                        area_builder.remove_route_uid(*route_uid)?;
+                    }
                 },
             }
         }

@@ -156,9 +156,9 @@ impl MaybeIdentifiable for AreaViewBuilder {
 }
 
 impl BuildableIdentity for AreaViewBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
         self.identity = Some(identity);
-        Ok(())
+        Ok(self)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
@@ -175,9 +175,9 @@ impl BuildableIdentity for AreaViewBuilder {
 }
 
 impl BuildableDescriptor for AreaViewBuilder {
-    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<()> {
+    fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self> {
         self.descriptor = Some(descriptor);
-        Ok(())
+        Ok(self)
     }
 
     fn descriptor_builder(&mut self) -> &mut DescriptorBuilder {
@@ -202,13 +202,13 @@ impl BuildableRouteUIDList for AreaViewBuilder {
 }
 
 impl BuildableOccupantList for AreaViewBuilder {
-    fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<()> {
+    fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self> {
         Build::add_uid_to_listops(thing_uid, &mut self.occupant_uids, AreaViewField::Things)?;
-        Ok(())
+        Ok(self)
     }
 
-    fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<()> {
+    fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self> {
         Build::remove_uid_from_listops(thing_uid, &mut self.occupant_uids, AreaViewField::Things)?;
-        Ok(())
+        Ok(self)
     }
 }

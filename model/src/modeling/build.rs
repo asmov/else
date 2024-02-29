@@ -51,14 +51,19 @@ impl Build {
         let builder = builder_option.take()
             .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?;
 
-        if builder.builder_mode() == BuilderMode::Creator {
-            panic!("BuilderMode::Creator is not allowed for Build::modify()")
+        if builder.builder_mode() == BuilderMode::Editor {
+            let modification = builder.modify(existing)?;
+            let (builder, built_fields_changed) = modification.split();
+            let _ = builder_option.insert(builder);
+            fields_changed.extend(field, ChangeOp::Modify, built_fields_changed);
+        } else {
+            let creation = builder.create()?;
+            let (builder, model) = creation.split();
+            *existing = model;
+            let _ = builder_option.insert(builder);
+            //todo: fields_changed.extend(field, ChangeOp::Create, built_fields_changed);
         }
 
-        let modification = builder.modify(existing)?;
-        let (builder, built_fields_changed) = modification.split();
-        let _ = builder_option.insert(builder);
-        fields_changed.extend(field, ChangeOp::Modify, built_fields_changed);
         Ok(())
     }
 

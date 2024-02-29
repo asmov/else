@@ -111,10 +111,10 @@ impl MaybeIdentifiable for InterfaceBuilder {
 }
 
 impl BuildableIdentity for InterfaceBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
         assert!(self.builder_mode == BuilderMode::Creator);
         self.identity = Some(identity);
-        Ok(())
+        Ok(self)
     }
     
     fn identity_builder(&mut self) -> &mut IdentityBuilder {

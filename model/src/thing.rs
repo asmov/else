@@ -160,8 +160,9 @@ impl MaybeIdentifiable for ThingBuilder {
 }
 
 impl BuildableIdentity for ThingBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
-        self.entity_builder().identity(identity)
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
+        self.entity_builder().identity(identity)?;
+        Ok(self)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
@@ -175,12 +176,12 @@ impl BuildableIdentity for ThingBuilder {
 }
 
 pub trait BuildableThingList {
-    fn add_thing(&mut self, thing: ThingBuilder) -> Result<()>;
-    fn edit_thing(&mut self, thing: ThingBuilder) -> Result<()>;
-    fn remove_thing(&mut self, thing_uid: UID) -> Result<()>;
+    fn add_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self>;
+    fn edit_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self>;
+    fn remove_thing(&mut self, thing_uid: UID) -> Result<&mut Self>;
 }
 
 pub trait BuildableOccupantList {
-    fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<()>;
-    fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<()>;
+    fn add_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self>;
+    fn remove_occupant_uid(&mut self, thing_uid: UID) -> Result<&mut Self>;
 }

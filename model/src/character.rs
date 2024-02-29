@@ -185,8 +185,9 @@ impl MaybeIdentifiable for CharacterBuilder {
 }
 
 impl BuildableIdentity for CharacterBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<()> {
-        self.entity_builder().identity(identity)
+    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
+        self.entity_builder().identity(identity)?;
+        Ok(self)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
