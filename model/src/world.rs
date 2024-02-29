@@ -1,5 +1,4 @@
 use serde;
-use ahash::AHashMap;
 use crate::{area::*, modeling::*, character::*, route::*, timeframe::*, sync::*};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -8,7 +7,6 @@ pub struct World {
     frame: Frame,
     descriptor: Descriptor,
     areas: Vec<Area>,
-    areas_fast: AHashMap<UID, Area>,
     routes: Vec<Route>,
     things: Vec<Thing>,
     next_id: ID,
@@ -250,7 +248,6 @@ impl Builder for WorldBuilder {
             frame,
             descriptor,
             areas,
-            areas_fast,
             routes,
             things,
             next_id,
