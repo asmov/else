@@ -79,7 +79,7 @@ impl WorldRuntime {
         Ok(())
     }
 
-    fn on_timeframe(&mut self, timeframe: model::TimeFrame) -> model::Result<Vec<behavior::Action>> {
+    fn on_timeframe(&mut self, timeframe: model::TimeFrame) -> model::Result<Vec<model::Action>> {
         let mut reactions = Vec::new();
 
         for routine in &mut self.character_routines {
@@ -93,7 +93,7 @@ impl WorldRuntime {
         Ok(reactions)
     }
 
-    fn react(&mut self, reactions: Vec<behavior::Action>) -> model::Result<Vec<model::Sync>> {
+    fn react(&mut self, reactions: Vec<model::Action>) -> model::Result<Vec<model::Sync>> {
         let mut syncs = Vec::new();
 
         for reaction in reactions {

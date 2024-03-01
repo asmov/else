@@ -14,10 +14,13 @@ const LONG_HELP: &'static str = "--help";
 
 /// Standard methods for a CLI command
 pub trait Cli where Self: Sized {
+    const NAME: &'static str;
+    const USAGE: &'static str;
+
     /// The name of the command
-    fn name() -> &'static str;
+    fn name() -> &'static str { Self::NAME }
     /// The usage / help string
-    fn usage() -> &'static str;
+    fn usage() -> &'static str { Self::USAGE }
     /// Parses command-line input into a command struct
     fn parse(input: &TextInput) -> Result<Self>;
 
@@ -34,8 +37,16 @@ pub trait Cli where Self: Sized {
     }
 
     /// Ensures that the number of arguments matches the specified size. Returns a CommandUsage error otherwise.
-    fn check_len(input: &TextInput, len: usize) -> Result<()> {
-        if input.args().len() != len {
+    fn check_num_args(input: &TextInput, num: usize) -> Result<()> {
+        if input.args().len() != num+1 {
+            return Err(Error::CommandUsage{usage: Self::usage()})
+        } else {
+            Ok(())
+        }
+    }
+
+    fn check_num_args_max(input: &TextInput, max_num: usize) -> Result<()> {
+        if input.args().len() > max_num+1 {
             return Err(Error::CommandUsage{usage: Self::usage()})
         } else {
             Ok(())
