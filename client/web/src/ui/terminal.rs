@@ -4,7 +4,8 @@ use yew::prelude::*;
 pub struct TerminalProps {
     pub title: AttrValue,
     pub stats: Vec<AttrValue>,
-    pub output_entries: ChildrenWithProps<Entry>
+    pub output_entries: ChildrenWithProps<Entry>,
+    pub on_submit: Callback<SubmitEvent>,
 }
 
 pub enum TerminalMsg {
@@ -12,6 +13,7 @@ pub enum TerminalMsg {
 }
 
 pub struct Terminal {
+
 }
 
 impl Component for Terminal {
@@ -19,11 +21,12 @@ impl Component for Terminal {
     type Properties = TerminalProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self {
-        }
+        Self {}
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let onsubmit = ctx.props().on_submit.clone();
+
         html! {
             <div class="terminal border rounded p-1 h-full flex flex-col space-y-2">
                 <div class="terminal-title border rounded px-2 text-center text-lg">
@@ -32,7 +35,9 @@ impl Component for Terminal {
                 <Output>
                     {for ctx.props().output_entries.iter() }
                 </Output>
-                <input type="input" class="hover:shadow-md rounded border px-4" placeholder="input text ..." title="Input" />
+                <form {onsubmit} class="w-full">
+                <input class="w-full hover:shadow-md rounded border px-4" placeholder="input text ..." title="Input" />
+                </form>
                 <div class="terminal-stats flex justify-between items-center px-6 text-sm">
                 {
                     ctx.props().stats.iter()
@@ -86,13 +91,13 @@ impl Component for Output {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TerminalContext {
     Global,
     Inventory
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EntryCategory {
     Standard,
     Technical,

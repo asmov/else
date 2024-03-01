@@ -1,7 +1,10 @@
+use std::{borrow::Borrow, ops::Deref};
+
+use web_sys::{wasm_bindgen::JsCast, HtmlElement, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VChild};
 use asmov_else_model as model;
 use model::{Descriptive, Identifiable, Routing};
-use crate::{net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
+use crate::{net, ui::terminal::{EntryCategory, EntryProps, Terminal}, input::ParsedInput};
 
 use super::terminal;
 
@@ -12,6 +15,7 @@ pub enum AppMsg {
     Frame(model::Frame),
     TerminalOutput(String, EntryCategory),
     Synchronized(model::InterfaceView, model::Frame),
+    Input(String),
     Ready,
 }
 
@@ -59,7 +63,7 @@ impl Component for App {
             stats_output,
             ready: false,
             frame: 0,
-            interface_view: None
+            interface_view: None,
         };
 
         ctx.link().send_message(AppMsg::Start);
@@ -67,10 +71,24 @@ impl Component for App {
         app
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let on_submit = ctx.link().callback(move |event: SubmitEvent| {
+            event.prevent_default();
+
+            let input: HtmlInputElement = event
+                .target_dyn_into::<HtmlElement>().unwrap()
+                .first_element_child().unwrap()
+                .dyn_into::<HtmlInputElement>().unwrap();
+
+            let value = input.value();
+            input.set_value("");
+
+            AppMsg::Input(value)
+        });
+
         html! {
             <div id="app" class="container h-screen mx-auto p-1">
-                <Terminal title={self.terminal_title.clone()} stats={self.stats_output.clone()} output_entries={self.terminal_output_entries.clone()}/>
+                <Terminal {on_submit} title={self.terminal_title.clone()} stats={self.stats_output.clone()} output_entries={self.terminal_output_entries.clone()}/>
             </div>
         }
     }
@@ -155,6 +173,17 @@ impl Component for App {
                 self.refresh_stats();
             },
             AppMsg::TerminalOutput(msg, category) => self.terminal_output(&msg, category),
+            AppMsg::Input(text) => {
+                match ParsedInput::parse(text) {
+                    Ok(cmd) => {
+                        let text = format!("{:?}", cmd);
+                        self.terminal_output(&text, EntryCategory::Standard);
+                    },
+                    Err(e) => {
+                        self.terminal_output(&e.to_string(), EntryCategory::Error);
+                    },
+                }
+            }
         }
 
         true
@@ -172,13 +201,15 @@ impl App {
     }
 
     fn terminal_output(&mut self, text: &str, category: EntryCategory) {
-        self.terminal_output_entries.push(VChild::new(
-            EntryProps {
-                text: AttrValue::Rc(text.into()),
-                category
-            },
-            None
-        ));
+        for text in text.split('\n') {
+            self.terminal_output_entries.push(VChild::new(
+                EntryProps {
+                    text: AttrValue::Rc(text.into()),
+                    category
+                },
+                None
+            ));
+        }
     }
 }
 

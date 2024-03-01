@@ -1,3 +1,4 @@
+use strum;
 pub mod global;
 
 //use shellwords;
@@ -7,6 +8,7 @@ use crate::{error::*, cmd::global::*, input::TextInput};
 #[derive(Debug, PartialEq, Eq)]
 pub enum Cmd {
     Go(GoCmd),
+    Look(LookCmd)
 }
 
 const SHORT_HELP: &'static str = "-h";
@@ -61,6 +63,7 @@ impl Cmd {
         
         let cmd = match cmdname.as_str() {
             GoCmd::NAME => Cmd::Go(GoCmd::parse(input)?),
+            LookCmd::NAME => Cmd::Look(LookCmd::parse(input)?),
             _ => return Err(Error::UnknownCommand(input.text().to_string()))
         };
 
