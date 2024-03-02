@@ -1,3 +1,5 @@
+use asmov_else_model as model;
+
 use crate::error::{Error, Result};
 use crate::cmd;
 
@@ -137,6 +139,10 @@ impl Command {
         Self {
             cmd
         }
+    }
+
+    pub fn process(mut self, interface_view: &model::InterfaceView) -> Result<cmd::Cmd> {
+        self.cmd.process(interface_view)
     }
 }
 

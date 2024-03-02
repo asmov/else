@@ -13,7 +13,11 @@ pub enum Error {
     #[error("{usage}")]
     CommandUsage{usage: &'static str},
     #[error("Unknown command: {0}")]
-    UnknownCommand(String)
+    UnknownCommand(String),
+    #[error("{target} not found: {search}")]
+    TargetNotFound { target: &'static str, search: String },
+
+
 }
 
 pub type Result<T> = core::result::Result<T, Error>;

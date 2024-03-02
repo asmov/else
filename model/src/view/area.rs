@@ -1,4 +1,8 @@
-use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, route::*, world::*, thing::*};
+use std::borrow::Cow;
+
+use crate::{codebase::*, descriptor::*, error::*, identity::*, modeling::*, route::*, world::*, thing::*, view::world::*};
+
+use super::world;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct AreaView {
@@ -40,6 +44,53 @@ impl AreaView {
     pub fn occupant_uids(&self) -> &Vec<UID> {
         &self.occupant_uids
     }
+
+    /// This will return the name of a route with a numeric suffix if there are multiple routes with the same name.
+    /// The suffixed name will be in the format of: "{name} #{index}". The index is 1-based.
+    /// If the name is relatively unique, it will not be suffixed. 
+    pub fn indexed_route_name<'w>(&self, route_uid: UID, world_view: &'w WorldView) -> Result<Cow<'w, str>> {
+        if !self.route_uids.contains(&route_uid) {
+            return Err(Error::ModelNotFound { model: RouteField::classname(), uid: route_uid });
+        }
+
+        let route = world_view.route(route_uid)?;
+        let route_name = route.name();
+
+        let similar_routes = world_view.routes().iter()
+            .filter(|r| r.name() == route_name);
+
+        if similar_routes.clone().count() > 1 {
+            let index = 1 + similar_routes.into_iter().position(|r| r.uid() == route_uid).unwrap();
+            let name = format!("{route_name} #{index}");
+            Ok(Cow::Owned(name))
+        } else {
+            Ok(Cow::Borrowed(&route_name))
+        }
+    }
+
+    /// This will return the name of a thing with a numeric suffix if there are multiple routes with the same name.
+    /// The suffixed name will be in the format of: "{name} #{index}". The index is 1-based.
+    /// If the name is relatively unique, it will not be suffixed.
+    pub fn unique_thing_name<'w>(&self, thing_uid: UID, world_view: &'w WorldView) -> Result<Cow<'w, str>> {
+        if !self.occupant_uids.contains(&thing_uid) {
+            return Err(Error::ModelNotFound { model: RouteField::classname(), uid: thing_uid });
+        }
+
+        let thing_view = world_view.thing_view(thing_uid)?;
+        let thing_name = thing_view.name();
+
+        let similar_things = world_view.thing_views().iter()
+            .filter(|r| r.name() == thing_name);
+
+        if similar_things.clone().count() > 1 {
+            let index = 1 + similar_things.into_iter().position(|r| r.uid() == thing_uid).unwrap();
+            let name = format!("{thing_name} #{index}");
+            Ok(Cow::Owned(name))
+        } else {
+            Ok(Cow::Borrowed(&thing_name))
+        }
+    }
+
 }
 
 pub enum AreaViewField {

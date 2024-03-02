@@ -175,10 +175,23 @@ impl Component for App {
             AppMsg::TerminalOutput(msg, category) => self.terminal_output(&msg, category),
             AppMsg::Input(text) => {
                 match ParsedInput::parse(text) {
-                    Ok(cmd) => {
-                        let text = format!("{:?}", cmd);
-                        self.terminal_output(&text, EntryCategory::Standard);
-                    },
+                    Ok(input) => {
+                        match input {
+                            ParsedInput::Command(command) => {
+                                match command.process(self.interface_view.as_ref().unwrap()) {
+                                    Ok(cmd) => {
+                                        let text = format!("{:?}", cmd);
+                                        self.terminal_output(&text, EntryCategory::Standard);
+                                    },
+                                    Err(e) => {
+                                        self.terminal_output(&e.to_string(), EntryCategory::Error);
+                                    }
+                                }
+                            },
+                            ParsedInput::Context(_) => todo!(),
+                            ParsedInput::Talk(_) => todo!(),
+                        }
+                   },
                     Err(e) => {
                         self.terminal_output(&e.to_string(), EntryCategory::Error);
                     },
