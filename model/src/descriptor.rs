@@ -35,7 +35,7 @@ pub trait Descriptive: Keyed {
         &self.descriptor().name
     }
 
-    /// Any term that might be used to reference this
+    /// Any term that might be used to reference this. Always lowercase, never any whitespace.
     fn keywords(&self) -> &Vec<String> {
         &self.descriptor().keywords
     }

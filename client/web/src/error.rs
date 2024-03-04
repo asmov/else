@@ -16,6 +16,8 @@ pub enum Error {
     UnknownCommand(String),
     #[error("{target} not found: {search}")]
     TargetNotFound { target: &'static str, search: String },
+    #[error("{target} has multiple possible results: {search}")]
+    TargetNotUnique { target: &'static str, search: String },
 
 
 }

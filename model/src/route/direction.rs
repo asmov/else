@@ -5,23 +5,77 @@ use crate::{error::*, modeling::*, codebase::*, identity::*};
 
 #[derive(PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize, Debug, strum::Display, strum::EnumString)]
 pub enum HorizontalDirection {
+    #[strum(serialize = "Vertical", ascii_case_insensitive)]
     Vertical  = -1,
+    #[strum(serialize = "North", ascii_case_insensitive)]
     North     = 0,
-    NorthEast = 45,
+    #[strum(serialize = "Northeast", ascii_case_insensitive)]
+    Northeast = 45,
+    #[strum(serialize = "East", ascii_case_insensitive)]
     East      = 90,
-    SouthEast = 135,
+    #[strum(serialize = "Southeast", ascii_case_insensitive)]
+    Southeast = 135,
+    #[strum(serialize = "South", ascii_case_insensitive)]
     South     = 180,
-    SouthWest = 225,
+    #[strum(serialize = "Soutwest", ascii_case_insensitive)]
+    Southwest = 225,
+    #[strum(serialize = "West", ascii_case_insensitive)]
     West      = 270,
-    NorthWest = 315,
+    #[strum(serialize = "Northwest", ascii_case_insensitive)]
+    Northwest = 315,
+}
+
+impl HorizontalDirection {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Vertical  => "Vertical",
+            Self::North     => "North",
+            Self::Northeast => "Northeast",
+            Self::East      => "East",
+            Self::Southeast => "Southeast",
+            Self::South     => "South",
+            Self::Southwest => "Southwest",
+            Self::West      => "West",
+            Self::Northwest => "Northwest",
+        }
+    }
+
+    pub fn name_lowercase(&self) -> &'static str {
+        match self {
+            Self::Vertical  => "vertical",
+            Self::North     => "north",
+            Self::Northeast => "northeast",
+            Self::East      => "east",
+            Self::Southeast => "southeast",
+            Self::South     => "south",
+            Self::Southwest => "southwest",
+            Self::West      => "west",
+            Self::Northwest => "northwest",
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize, Debug, strum::Display, strum::EnumString)]
 pub enum VerticalDirection {
+    #[strum(serialize = "Down", ascii_case_insensitive)]
     Down  = -1,
+    #[strum(serialize = "Level", ascii_case_insensitive)]
     Level = 0,
+    #[strum(serialize = "Up", ascii_case_insensitive)]
     Up    = 1,
 }
+
+impl VerticalDirection {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Down  => "Down",
+            Self::Level => "Level",
+            Self::Up    => "Up",
+        }
+    }
+}
+
+
 
 #[derive(Eq, PartialEq, Clone, Copy, serde::Serialize, serde::Deserialize, Debug)]
 pub struct Direction {
@@ -31,11 +85,7 @@ pub struct Direction {
 
 impl fmt::Display for Direction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.is_level() {
-            write!(f, "{}", self.horizontal)
-        } else {
-            write!(f, "{} & {}", self.horizontal, self.vertical)
-        }
+        f.write_str(self.name())
     }
 }
 
@@ -120,6 +170,70 @@ impl Direction {
 
     pub const fn class_ident_const() -> &'static ClassIdent {
         &Self::CLASS_IDENT
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self.vertical {
+            VerticalDirection::Level => self.horizontal.name(),
+            VerticalDirection::Up =>  {
+                match self.horizontal {
+                    HorizontalDirection::Vertical => "Up",
+                    HorizontalDirection::North => "Up North",
+                    HorizontalDirection::Northeast => "Up Northeast",
+                    HorizontalDirection::East => "Up East",
+                    HorizontalDirection::Southeast => "Up Southeast",
+                    HorizontalDirection::South => "Up South",
+                    HorizontalDirection::Southwest => "Up Southwest",
+                    HorizontalDirection::West => "Up West",
+                    HorizontalDirection::Northwest => "Up Northwest",
+                }
+            },
+            VerticalDirection::Down =>  {
+                match self.horizontal {
+                    HorizontalDirection::Vertical => "Down",
+                    HorizontalDirection::North => "Down North",
+                    HorizontalDirection::Northeast => "Down Northeast",
+                    HorizontalDirection::East => "Down East",
+                    HorizontalDirection::Southeast => "Down Southeast",
+                    HorizontalDirection::South => "Down South",
+                    HorizontalDirection::Southwest => "Down Southwest",
+                    HorizontalDirection::West => "Down West",
+                    HorizontalDirection::Northwest => "Down Northwest",
+                }
+            }
+        }
+    }
+
+    pub fn name_lowercase(&self) -> &'static str {
+        match self.vertical {
+            VerticalDirection::Level => self.horizontal.name_lowercase(),
+            VerticalDirection::Up =>  {
+                match self.horizontal {
+                    HorizontalDirection::Vertical => "up",
+                    HorizontalDirection::North => "up north",
+                    HorizontalDirection::Northeast => "up northeast",
+                    HorizontalDirection::East => "up east",
+                    HorizontalDirection::Southeast => "up southeast",
+                    HorizontalDirection::South => "up south",
+                    HorizontalDirection::Southwest => "up southwest",
+                    HorizontalDirection::West => "up west",
+                    HorizontalDirection::Northwest => "up northwest",
+                }
+            },
+            VerticalDirection::Down =>  {
+                match self.horizontal {
+                    HorizontalDirection::Vertical => "down",
+                    HorizontalDirection::North => "down north",
+                    HorizontalDirection::Northeast => "down northeast",
+                    HorizontalDirection::East => "down east",
+                    HorizontalDirection::Southeast => "down southeast",
+                    HorizontalDirection::South => "down south",
+                    HorizontalDirection::Southwest => "down southwest",
+                    HorizontalDirection::West => "down west",
+                    HorizontalDirection::Northwest => "down northwest",
+                }
+            }
+        }
     }
 }
 

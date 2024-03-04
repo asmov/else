@@ -71,7 +71,7 @@ impl AreaView {
     /// This will return the name of a thing with a numeric suffix if there are multiple routes with the same name.
     /// The suffixed name will be in the format of: "{name} #{index}". The index is 1-based.
     /// If the name is relatively unique, it will not be suffixed.
-    pub fn unique_thing_name<'w>(&self, thing_uid: UID, world_view: &'w WorldView) -> Result<Cow<'w, str>> {
+    pub fn indexed_thing_name<'w>(&self, thing_uid: UID, world_view: &'w WorldView) -> Result<Cow<'w, str>> {
         if !self.occupant_uids.contains(&thing_uid) {
             return Err(Error::ModelNotFound { model: RouteField::classname(), uid: thing_uid });
         }
