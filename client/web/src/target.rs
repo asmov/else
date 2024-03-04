@@ -6,7 +6,6 @@ use crate::error::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Target {
-    None,
     Area(model::UID),
     Route(model::UID),
     Thing(model::UID),

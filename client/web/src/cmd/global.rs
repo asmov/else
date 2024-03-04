@@ -1,5 +1,6 @@
 use crate::{cmd::Cli, error::*, input::*, target::*};
 use asmov_else_model as model;
+use model::Identifiable;
 
 
 #[derive(Debug, PartialEq, Eq)]
@@ -47,13 +48,13 @@ impl Cli for GoCmd {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct LookCmd {
-    subject: Option<String>,
-    processed: Option<ProcessedLookCmd>
+    pub subject: Option<String>,
+    pub processed: Option<ProcessedLookCmd>
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ProcessedLookCmd {
-    subject: Target
+    pub subject: Target
 }
 
 impl LookCmd {
@@ -79,7 +80,14 @@ impl Cli for LookCmd {
     
     
     fn process(&mut self, interface_view: &model::InterfaceView) -> Result<()> {
-        todo!()
+        let subject = if let Some(subject) = &self.subject {
+            Target::find(subject, interface_view, TargetType::all(), "Destination")?
+        } else {
+            Target::Area(interface_view.world_view().area_view().uid())
+        };
+
+        self.processed = Some(ProcessedLookCmd { subject });
+        Ok(())
     }
     
     fn processed(&self) -> Option<&Self::ProcessedCmdType> {

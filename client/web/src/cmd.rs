@@ -33,6 +33,13 @@ impl Cmd {
 
         Ok(self)
     }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Cmd::Go(_) => GoCmd::NAME,
+            Cmd::Look(_) => LookCmd::NAME
+        }
+    }
 }
 
 const SHORT_HELP: &'static str = "-h";

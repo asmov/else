@@ -1,10 +1,8 @@
-use std::{borrow::Borrow, ops::Deref};
-
 use web_sys::{wasm_bindgen::JsCast, HtmlElement, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VChild};
 use asmov_else_model as model;
-use model::{Descriptive, Identifiable, Routing};
-use crate::{net, ui::terminal::{EntryCategory, EntryProps, Terminal}, input::ParsedInput};
+use model::{area, view::world, Descriptive, Identifiable, Routing};
+use crate::{target::*, cmd::{self, global::LookCmd, Cli}, error::*, input::ParsedInput, net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
 
 use super::terminal;
 
@@ -180,8 +178,14 @@ impl Component for App {
                             ParsedInput::Command(command) => {
                                 match command.process(self.interface_view.as_ref().unwrap()) {
                                     Ok(cmd) => {
-                                        let text = format!("{:?}", cmd);
-                                        self.terminal_output(&text, EntryCategory::Standard);
+                                        let text = format!("{:?}", &cmd);
+                                        self.terminal_output(&text, EntryCategory::Debug);
+                                        match self.cmd(cmd) {
+                                            Ok(_) => {},
+                                            Err(e) => {
+                                                self.terminal_output(&e.to_string(), EntryCategory::Error);
+                                            }
+                                        }
                                     },
                                     Err(e) => {
                                         self.terminal_output(&e.to_string(), EntryCategory::Error);
@@ -203,7 +207,51 @@ impl Component for App {
     }
 }
 
+pub trait AppCmd {
+    fn run(self, app: &mut App) -> Result<()>;
+}
+
+impl AppCmd for LookCmd {
+    fn run(self, app: &mut App) -> Result<()> {
+        let world_view = app.interface_view.as_ref().unwrap().world_view();
+        let area_view = world_view.area_view();
+        let area_uid = area_view.uid();
+
+        let mut output: Vec<String> = Vec::new();
+        match self.processed.unwrap().subject {
+            Target::Area(_area_uid) => {
+                output.push(area_view.name().to_string());
+                output.push(area_view.description().unwrap().to_string())
+            },
+            Target::Route(route_uid) => {
+                let route = world_view.route(route_uid).unwrap();
+                let end = route.end_for_area(area_uid).unwrap();
+                output.push(end.name().to_string());
+                output.push(end.description().unwrap().to_string());
+            },
+            Target::Thing(thing_uid) => {
+                let thing_view = world_view.thing_view(thing_uid).unwrap();
+                output.push(thing_view.name().to_string());
+                output.push(thing_view.description().unwrap().to_string());
+            },
+        };
+
+        for line in output {
+            app.terminal_output(&line, EntryCategory::Standard);
+        }
+
+        Ok(())
+    }
+}
+
 impl App {
+    fn cmd(&mut self, cmd: cmd::Cmd) -> Result<()> {
+        match cmd {
+            cmd::Cmd::Look(look_cmd) => look_cmd.run(self),
+            _ => Err(Error::Generic(format!("Command not implemented: {}", cmd.name())))
+        }
+    }
+
     fn refresh_stats(&mut self) {
         self.stats_output = vec![
             self.stats.device.clone(),
@@ -211,6 +259,10 @@ impl App {
             self.stats.permeability.clone(),
             self.stats.right_hand.clone(),
             self.stats.frame.clone() ];
+    }
+
+    fn terminal_newline(&mut self) {
+        self.terminal_output("", EntryCategory::Standard);
     }
 
     fn terminal_output(&mut self, text: &str, category: EntryCategory) {

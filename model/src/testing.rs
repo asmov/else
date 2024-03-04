@@ -105,7 +105,7 @@ pub fn create_world() -> World {
         route_creator.descriptor({
             let mut descriptor_creator = Descriptor::creator();
             descriptor_creator.key(s!("backyard_and_dog_house")).unwrap();
-            descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
+            descriptor_creator.name(s!("Route beteen Backyard and Dog House")).unwrap();
             descriptor_creator
         }).unwrap();
         route_creator.point_a({
@@ -114,8 +114,9 @@ pub fn create_world() -> World {
                 let mut end_creator = route::End::creator();
                 end_creator.descriptor({
                     let mut descriptor_creator = Descriptor::creator();
-                    descriptor_creator.key(s!("backyard_and_dog_house_point_a")).unwrap();
-                    descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
+                    descriptor_creator.key(s!("backyard_to_dog_house")).unwrap();
+                    descriptor_creator.name(s!("Path to Dog House")).unwrap();
+                    descriptor_creator.description(s!("A narrow brick pathway leads to a wooden dog house.")).unwrap();
                     descriptor_creator
                 }).unwrap();
                 end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_a)).unwrap();
@@ -130,8 +131,9 @@ pub fn create_world() -> World {
                 let mut end_creator = route::End::creator();
                 end_creator.descriptor({
                     let mut descriptor_creator = Descriptor::creator();
-                    descriptor_creator.key(s!("backyard_and_dog_house_point_b")).unwrap();
-                    descriptor_creator.name(s!("Path between Backyard and Dog House")).unwrap();
+                    descriptor_creator.key(s!("dog_house_to_backyard")).unwrap();
+                    descriptor_creator.name(s!("Path to Backyard")).unwrap();
+                    descriptor_creator.description(s!("A narrow brick pathway leads to a grassy backyard.")).unwrap();
                     descriptor_creator
                 }).unwrap();
                 end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_b)).unwrap();
@@ -151,7 +153,7 @@ pub fn create_world() -> World {
         route_creator.descriptor({
             let mut descriptor_creator = Descriptor::creator();
             descriptor_creator.key(s!("backyard_and_cat_house")).unwrap();
-            descriptor_creator.name(s!("Path between Backyard and Cat House")).unwrap();
+            descriptor_creator.name(s!("Route between Backyard and Cat House")).unwrap();
             descriptor_creator
         }).unwrap();
         route_creator.point_a({
@@ -160,8 +162,9 @@ pub fn create_world() -> World {
                 let mut end_creator = route::End::creator();
                 end_creator.descriptor({
                     let mut descriptor_creator = Descriptor::creator();
-                    descriptor_creator.key(s!("backyard_and_cat_house_point_a")).unwrap();
-                    descriptor_creator.name(s!("Path between Backyard and Cat House")).unwrap();
+                    descriptor_creator.key(s!("backyard_to_cat_house")).unwrap();
+                    descriptor_creator.name(s!("Path to Cat House")).unwrap();
+                    descriptor_creator.description(s!("A well-worn dirt path winds its way to a pink cat house.")).unwrap();
                     descriptor_creator
                 }).unwrap();
                 end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_a)).unwrap();
@@ -176,8 +179,9 @@ pub fn create_world() -> World {
                 let mut end_creator = route::End::creator();
                 end_creator.descriptor({
                     let mut descriptor_creator = Descriptor::creator();
-                    descriptor_creator.key(s!("backyard_and_cat_house_point_b")).unwrap();
-                    descriptor_creator.name(s!("Path between Backyard and Cat House")).unwrap();
+                    descriptor_creator.key(s!("cat_house_to_backyard")).unwrap();
+                    descriptor_creator.name(s!("Path to Backyard")).unwrap();
+                    descriptor_creator.description(s!("A well-worn dirt path winds its way to a grassy backyard.")).unwrap();
                     descriptor_creator
                 }).unwrap();
                 end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_b)).unwrap();
