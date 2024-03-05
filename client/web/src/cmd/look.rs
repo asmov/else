@@ -1,50 +1,7 @@
-use crate::{cmd::Cli, error::*, input::*, target::*};
-use asmov_else_model as model;
-use model::Identifiable;
+use model::{Descriptive, Identifiable};
+use yew::AttrValue;
 
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct GoCmd {
-    destination: String,
-    processed: Option<ProcessedGoCmd>
-}
-
-impl GoCmd {
-    pub fn new(destination: String) -> Self {
-        Self { destination, processed: None }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct ProcessedGoCmd {
-    destination: Target
-}
-
-impl Cli for GoCmd {
-    type ProcessedCmdType = ProcessedGoCmd;
-    const NAME: &'static str = "go";
-    const USAGE: &'static str = r"Usage: go <destination>
-    Moves to the specified route or area.
-
-    <destination> := The name or key of a nearby route, endpoint, or adjoining area.";
-
-    fn parse(input: &TextInput) -> Result<Self> {
-        Self::check_help(input)?;
-        Self::check_num_args(input, 1)?;
-        let destination = input.args().get(1).unwrap().to_owned();
-        Ok(Self::new(destination))
-    }
-
-    fn process(&mut self, interface_view: &model::InterfaceView) -> Result<()> {
-        let target = Target::find(&self.destination, interface_view, &[TargetType::Route], "Destination")?;
-        self.processed = Some(ProcessedGoCmd { destination: target });
-        Ok(())
-    }
-
-    fn processed(&self) -> Option<&Self::ProcessedCmdType> {
-        self.processed.as_ref()
-    }
-}
+use crate::{error::*, target::*, cmd::*, input::*, ui::terminal::*};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct LookCmd {
@@ -94,3 +51,37 @@ impl Cli for LookCmd {
         self.processed.as_ref()
     }
 }
+
+impl AppCmd for LookCmd {
+    fn run(self, app: &App) -> Result<Vec<AppAction>> {
+        let world_view = app.interface_view().unwrap().world_view();
+        let area_view = world_view.area_view();
+        let area_uid = area_view.uid();
+
+        let mut output: Vec<&str> = Vec::new();
+        match self.processed.unwrap().subject {
+            Target::Area(_area_uid) => {
+                output.push(area_view.name());
+                output.push(area_view.description().unwrap())
+            },
+            Target::Route(route_uid) => {
+                let route = world_view.route(route_uid).unwrap();
+                let end = route.end_for_area(area_uid).unwrap();
+                output.push(end.name());
+                output.push(end.description().unwrap());
+            },
+            Target::Thing(thing_uid) => {
+                let thing_view = world_view.thing_view(thing_uid).unwrap();
+                output.push(thing_view.name());
+                output.push(thing_view.description().unwrap());
+            },
+        };
+
+        let entries: Vec<(&str, EntryCategory)> = output.into_iter()
+            .map(|s| (s, EntryCategory::Standard))
+            .collect();
+
+        Ok(vec![AppAction::new_terminal_outputs(entries)])
+    }
+}
+

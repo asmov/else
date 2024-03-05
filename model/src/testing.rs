@@ -9,6 +9,7 @@ pub const BACKYARD: &'static str = "backyard";
 pub const DOG_HOUSE: &'static str = "dog_house";
 pub const CAT_HOUSE: &'static str = "cat_house";
 pub const BLACK_CAT: &'static str = "black_cat";
+pub const HOUSEKEEPER: &'static str = "housekeeper";
 
 /// Creates a world for unit and integration testing.
 /// 
@@ -87,6 +88,26 @@ pub fn create_world() -> World {
         character_creator.entity_builder().descriptor({
             let mut descriptor_creator = Descriptor::creator();
             descriptor_creator
+                .key(s!(HOUSEKEEPER)).unwrap()
+                .name(s!("Housekeeper")).unwrap()
+                .description(s!("The housekeeper for this property")).unwrap();
+            descriptor_creator
+        }).unwrap();
+        character_creator.entity_builder().location(Location::Area(world.find_area(BACKYARD).unwrap().uid())).unwrap();
+        character_creator.thing_builder()
+    }).unwrap();
+
+    world_editor.add_thing({
+        let mut character_creator = model::Character::creator();
+        character_creator.cortex({
+            let mut routine_cortex_creator = RoutineCortexBuilder::creator();
+            routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
+            routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
+            routine_cortex_creator.cortex_builder()
+        }).unwrap();
+        character_creator.entity_builder().descriptor({
+            let mut descriptor_creator = Descriptor::creator();
+            descriptor_creator
                 .key(s!(BLACK_CAT)).unwrap()
                 .name(s!("Black Cat")).unwrap()
                 .description(s!("A cheerful cat with a shiny black coat")).unwrap();
@@ -95,7 +116,6 @@ pub fn create_world() -> World {
         character_creator.entity_builder().location(Location::Area(world.find_area(CAT_HOUSE).unwrap().uid())).unwrap();
         character_creator.thing_builder()
     }).unwrap();
-
 
     // route: dog_house <--> backyard
     world_editor.add_route({

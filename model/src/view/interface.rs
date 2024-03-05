@@ -1,10 +1,11 @@
 use serde;
-use crate::{codebase::*, error::*, identity::*, interface::*, modeling::*, view::world::*};
+use crate::{codebase::*, error::*, identity::*, interface::*, character::*, view::world::*, view::thing::*};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct InterfaceView {
     interface: Interface,
-    world_view: WorldView
+    world_view: WorldView,
+    downlink_uid: UID, // Thing
 }
 
 impl Keyed for InterfaceView {}
@@ -23,18 +24,28 @@ impl InterfaceView {
     pub fn world_view(&self) -> &WorldView {
         &self.world_view
     }
+
+    pub fn downlink_uid(&self) -> UID {
+        self.downlink_uid
+    }
+
+    pub fn downlink(&self) -> &ThingView {
+        &self.world_view.thing_view(self.downlink_uid).unwrap()
+    }
 }
 
 pub enum InterfaceViewField {
     Interface,
-    World
+    World,
+    Downlink
 }
 
 impl Fields for InterfaceViewField {
     fn field(&self) -> &'static Field {
         match self {
             Self::Interface => &Self::FIELD_INTERFACE,
-            Self::World => &Self::FIELD_WORLD
+            Self::World => &Self::FIELD_WORLD,
+            Self::Downlink => &Self::FIELD_WORLD,
         }
     }
 }
@@ -50,11 +61,14 @@ impl InterfaceViewField {
     const CLASSNAME: &'static str = "InterfaceView";
     const FIELDNAME_INTERFACE: &'static str = "interface";
     const FIELDNAME_WORLD: &'static str = "world";
+    const FIELDNAME_DOWNLINK: &'static str = "downlink";
 
     const FIELD_INTERFACE: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACE,
         FieldValueType::Model(InterfaceField::class_ident_const()));
     const FIELD_WORLD: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_WORLD,
         FieldValueType::Model(WorldViewField::class_ident_const()));
+    const FIELD_DOWNLINK: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_WORLD,
+        FieldValueType::UID(WorldViewField::class_ident_const()));
 
     pub const fn class_ident_const() -> &'static ClassIdent {
         &Self::CLASS_IDENT
@@ -65,7 +79,8 @@ impl InterfaceViewField {
 pub struct InterfaceViewBuilder {
     builder_mode: BuilderMode,
     interface: Option<InterfaceBuilder>,
-    world_view: Option<WorldViewBuilder>
+    world_view: Option<WorldViewBuilder>,
+    downlink_uid: Option<IdentityBuilder>
 }
 
 impl Builder for InterfaceViewBuilder {
@@ -76,7 +91,8 @@ impl Builder for InterfaceViewBuilder {
         Self {
             builder_mode: BuilderMode::Creator,
             interface: None,
-            world_view: None
+            world_view: None,
+            downlink_uid: None
         }
     }
 
@@ -100,10 +116,13 @@ impl Builder for InterfaceViewBuilder {
 
         let interface = Build::create(&mut self.interface, &mut fields_changed, InterfaceViewField::Interface)?;
         let world_view = Build::create(&mut self.world_view, &mut fields_changed, InterfaceViewField::World)?;
+        let downlink_uid = Build::create(&mut self.downlink_uid, &mut fields_changed, InterfaceViewField::Downlink)?
+            .uid();
 
         let interface_view = InterfaceView {
             interface,
-            world_view 
+            world_view,
+            downlink_uid
         };
 
         Ok(Creation::new(self, interface_view))
@@ -133,6 +152,11 @@ impl InterfaceViewBuilder {
 
     pub fn world_view(&mut self, world_view: WorldViewBuilder) -> Result<&mut Self> {
         self.world_view = Some(world_view);
+        Ok(self)
+    }
+
+    pub fn downlink_uid(&mut self, downlink_uid: IdentityBuilder) -> Result<&mut Self> {
+        self.downlink_uid = Some(downlink_uid);
         Ok(self)
     }
 }

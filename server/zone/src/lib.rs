@@ -68,6 +68,11 @@ impl ClientSession {
             world_view_creator
         })?;
 
+        interface_view_creator.downlink_uid({
+            let housekeeper = world.find_thing(model::testing::HOUSEKEEPER).unwrap();
+            model::IdentityBuilder::from_existing(&interface_view_creator, housekeeper)
+        })?;
+
         let (_, interface_view) = interface_view_creator.create()?.split();
 
         Ok(Self {

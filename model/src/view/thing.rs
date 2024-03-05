@@ -122,31 +122,35 @@ impl Builder for ThingViewBuilder {
 
 impl MaybeIdentifiable for ThingViewBuilder {
     fn try_uid(&self) -> Result<UID> {
-        todo!()
+        self.identity.as_ref()
+            .ok_or(Error::IdentityNotGenerated)
+            .and_then(|i| i.try_uid())
     }
 }
 
 
 impl BuildableIdentity for ThingViewBuilder {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        todo!()
+        self.identity = Some(identity);
+        Ok(self)
     }
 
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        todo!()
+        self.identity.get_or_insert_with(IdentityBuilder::creator)
     }
 
     fn get_identity(&self) -> Option<&IdentityBuilder> {
-        todo!()
+        self.identity.as_ref()
     }
 }
 
 impl BuildableDescriptor for ThingViewBuilder {
     fn descriptor(&mut self, descriptor: DescriptorBuilder) -> Result<&mut Self> {
-        todo!()
+        self.descriptor = Some(descriptor);
+        Ok(self)
     }
 
     fn descriptor_builder(&mut self) -> &mut DescriptorBuilder {
-        todo!()
+        self.descriptor.get_or_insert_with(DescriptorBuilder::creator)
     }
 }

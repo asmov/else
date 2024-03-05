@@ -38,7 +38,7 @@ pub enum ParsedInput {
     Command(Command),
     /// Any further input is within the specified context.
     /// E.g.: .inventory
-    Context(Context),
+    Context(InputContext),
     /// The user's character speaks out loud in its local area.
     /// E.g.: 'Hello to everyone in this area
     Talk(Talk),
@@ -58,7 +58,7 @@ impl ParsedInput {
             .next().unwrap();
 
         let parsed = match first_char {
-            Self::CHAR_PERIOD => Self::Context(Context::parse(input)?),
+            Self::CHAR_PERIOD => Self::Context(InputContext::parse(input)?),
             Self::CHAR_SINGLE_QUOTE => Self::Talk(Talk::parse(input)?),
             _ => Self::Command(Command::parse(input)?)
         };
@@ -70,11 +70,11 @@ impl ParsedInput {
 
 
 #[derive(PartialEq, Eq, Debug)]
-pub struct Context {
+pub struct InputContext {
     name: String
 }
 
-impl Parser for Context {
+impl Parser for InputContext {
     fn parse(input: TextInput) -> Result<Self> {
         let name = input.text()
             .strip_prefix(ParsedInput::CHAR_PERIOD)
@@ -87,7 +87,7 @@ impl Parser for Context {
     }
 }
 
-impl Context {
+impl InputContext {
     pub fn new(name: String) -> Self {
         Self {
             name
@@ -242,8 +242,8 @@ mod tests {
 
     #[test] 
     fn test_context() {
-        let tests: Vec<(&'static str, Result<Context>)> = vec![
-            (".inventory", Ok(Context::new(s!("inventory")))),
+        let tests: Vec<(&'static str, Result<InputContext>)> = vec![
+            (".inventory", Ok(InputContext::new(s!("inventory")))),
             ("'hello there!", Err(Error::Test)),
             ("command style", Err(Error::Test))
         ];
@@ -251,7 +251,7 @@ mod tests {
         for test in tests {
             let input = test.0;
             let expected = test.1;
-            let actual = Context::parse(TextInput::parse(input.to_string()).unwrap());
+            let actual = InputContext::parse(TextInput::parse(input.to_string()).unwrap());
             assert_eq!(expected.is_ok(), actual.is_ok(), "Failed on: {input}");
             if expected.is_ok() {
                 assert_eq!(expected.unwrap(), actual.unwrap());
@@ -264,7 +264,7 @@ mod tests {
         let tests: Vec<(&'static str, Result<Command>)> = vec![
             //(".inventory", Ok(Context::new("inventory"))),
             //("'hello there!", Err(Error::Test)),
-            ("go there", Ok(Command::new(cmd::Cmd::Go(cmd::global::GoCmd::new(s!("there")))))),
+            ("go there", Ok(Command::new(cmd::Cmd::Go(cmd::GoCmd::new(s!("there")))))),
             ("go", Err(Error::Test))
         ];
 
@@ -285,9 +285,9 @@ mod tests {
     #[test] 
     fn test_input_parse() {
         let tests: Vec<(&'static str, Result<ParsedInput>)> = vec![
-            (".inventory", Ok(ParsedInput::Context(Context::new(s!("inventory"))))),
+            (".inventory", Ok(ParsedInput::Context(InputContext::new(s!("inventory"))))),
             ("'hello there!", Ok(ParsedInput::Talk(Talk::new(s!("hello there!"))))),
-            ("go there", Ok(ParsedInput::Command(Command::new(cmd::Cmd::Go(cmd::global::GoCmd::new(s!("there")))))))
+            ("go there", Ok(ParsedInput::Command(Command::new(cmd::Cmd::Go(cmd::GoCmd::new(s!("there")))))))
         ];
 
         for test in tests {

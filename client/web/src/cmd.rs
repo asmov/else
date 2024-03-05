@@ -1,14 +1,18 @@
-pub mod global;
+pub mod go;
+pub mod look;
+
 use asmov_else_model as model;
-
-//use shellwords;
-use crate::{error::*, cmd::global::*, input::TextInput};
-
+use crate::{error::*, input::*, ui::app::*};
+pub use crate::cmd::{go::GoCmd, look::LookCmd};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Cmd {
     Go(GoCmd),
     Look(LookCmd)
+}
+
+pub trait AppCmd {
+    fn run(self, app: &App) -> Result<Vec<AppAction>>;
 }
 
 impl Cmd {

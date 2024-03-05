@@ -1,9 +1,7 @@
 use web_sys::{wasm_bindgen::JsCast, HtmlElement, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VChild};
-use asmov_else_model as model;
-use model::{area, view::world, Descriptive, Identifiable, Routing};
-use crate::{target::*, cmd::{self, global::LookCmd, Cli}, error::*, input::ParsedInput, net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
-
+use asmov_else_model::{self as model, Descriptive, Identifiable, Routing};
+use crate::{cmd::{self, AppCmd}, error::*, input::{self, *}, net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
 use super::terminal;
 
 pub enum AppMsg {
@@ -113,7 +111,7 @@ impl Component for App {
                 //log!(input.parse().unwrap_err().to_string());
             },
             AppMsg::Connected => {
-                self.terminal_output("Synchronizing with zone server.", EntryCategory::Technical);
+                self.to_terminal_output("Synchronizing with zone server.", EntryCategory::Technical);
             },
             AppMsg::Synchronized(interface_view, frame) => {
                 self.interface_view = Some(interface_view);
@@ -130,9 +128,9 @@ impl Component for App {
                 }
             }
             AppMsg::Ready => {
-                self.terminal_output(&format!("Integrated into world at frame {}.", self.frame), EntryCategory::Technical);
-                self.terminal_output(&format!("{:?}.", self.interface_view.as_ref().unwrap()), EntryCategory::Debug);
-                self.terminal_output("", EntryCategory::Standard);
+                self.to_terminal_output(&format!("Integrated into world at frame {}.", self.frame), EntryCategory::Technical);
+                self.to_terminal_output(&format!("{:?}.", self.interface_view.as_ref().unwrap()), EntryCategory::Debug);
+                self.to_terminal_output("", EntryCategory::Standard);
 
                 //let terminal = model::hardcoded::terminal::create_terminal();
                 //let area = terminal.find_area(model::hardcoded::terminal::TERMINAL_AREA_KEY).unwrap();
@@ -158,7 +156,7 @@ impl Component for App {
                 }
 
                 for entry in text {
-                    self.terminal_output(&entry, EntryCategory::Standard);
+                    self.to_terminal_output(&entry, EntryCategory::Standard);
                 }
             },
             AppMsg::Disconnected => {
@@ -170,89 +168,101 @@ impl Component for App {
                 self.stats.frame = AttrValue::Rc(format!("{frame}").into());
                 self.refresh_stats();
             },
-            AppMsg::TerminalOutput(msg, category) => self.terminal_output(&msg, category),
-            AppMsg::Input(text) => {
-                match ParsedInput::parse(text) {
-                    Ok(input) => {
-                        match input {
-                            ParsedInput::Command(command) => {
-                                match command.process(self.interface_view.as_ref().unwrap()) {
-                                    Ok(cmd) => {
-                                        let text = format!("{:?}", &cmd);
-                                        self.terminal_output(&text, EntryCategory::Debug);
-                                        match self.cmd(cmd) {
-                                            Ok(_) => {},
-                                            Err(e) => {
-                                                self.terminal_output(&e.to_string(), EntryCategory::Error);
-                                            }
-                                        }
-                                    },
-                                    Err(e) => {
-                                        self.terminal_output(&e.to_string(), EntryCategory::Error);
-                                    }
-                                }
-                            },
-                            ParsedInput::Context(_) => todo!(),
-                            ParsedInput::Talk(_) => todo!(),
-                        }
-                   },
-                    Err(e) => {
-                        self.terminal_output(&e.to_string(), EntryCategory::Error);
-                    },
-                }
-            }
+            AppMsg::TerminalOutput(msg, category) => self.to_terminal_output(&msg, category),
+            AppMsg::Input(text) => self.handle_input(text)
         }
 
         true
     }
 }
 
-pub trait AppCmd {
-    fn run(self, app: &mut App) -> Result<()>;
+pub enum AppAction {
+    TerminalOutput(AttrValue, EntryCategory),
+    TerminalOutputs(Vec<(AttrValue, EntryCategory)>),
+    ModelAction(model::Action)
 }
 
-impl AppCmd for LookCmd {
-    fn run(self, app: &mut App) -> Result<()> {
-        let world_view = app.interface_view.as_ref().unwrap().world_view();
-        let area_view = world_view.area_view();
-        let area_uid = area_view.uid();
+impl AppAction {
+    pub fn new_terminal_output(text: &str, category: EntryCategory) -> Self {
+        Self::TerminalOutput(AttrValue::Rc(text.into()), category)
+    }
 
-        let mut output: Vec<String> = Vec::new();
-        match self.processed.unwrap().subject {
-            Target::Area(_area_uid) => {
-                output.push(area_view.name().to_string());
-                output.push(area_view.description().unwrap().to_string())
-            },
-            Target::Route(route_uid) => {
-                let route = world_view.route(route_uid).unwrap();
-                let end = route.end_for_area(area_uid).unwrap();
-                output.push(end.name().to_string());
-                output.push(end.description().unwrap().to_string());
-            },
-            Target::Thing(thing_uid) => {
-                let thing_view = world_view.thing_view(thing_uid).unwrap();
-                output.push(thing_view.name().to_string());
-                output.push(thing_view.description().unwrap().to_string());
-            },
+    pub fn new_terminal_outputs(entries: Vec<(&str, EntryCategory)>) -> Self {
+        let entries = entries.into_iter()
+            .map(|(text, category)| (AttrValue::Rc(text.into()), category))
+            .collect();
+
+        Self::TerminalOutputs(entries)
+    }
+}
+
+
+impl App {
+    fn run_cmd(&mut self, cmd: cmd::Cmd) -> Result<()> {
+        let app_action = match cmd {
+            cmd::Cmd::Look(cmd) => cmd.run(self)?,
+            cmd::Cmd::Go(cmd) => cmd.run(self)?,
+            _ => Err(Error::Generic(format!("Command not implemented: {}", cmd.name())))?
         };
 
-        for line in output {
-            app.terminal_output(&line, EntryCategory::Standard);
+        self.perform(app_action)
+    }
+
+    fn perform(&mut self, actions: Vec<AppAction>) -> Result<()> {
+        for action in actions {
+            match action {
+                AppAction::TerminalOutput(text, category) => self.terminal_output(text, category),
+                AppAction::TerminalOutputs(entries) => self.terminal_outputs(entries),
+                AppAction::ModelAction(model_action) => {
+                    self.to_terminal_output(&format!("{:?}", model_action), EntryCategory::Debug);
+                }
+            }
         }
 
         Ok(())
     }
-}
 
-impl App {
-    fn cmd(&mut self, cmd: cmd::Cmd) -> Result<()> {
-        match cmd {
-            cmd::Cmd::Look(look_cmd) => look_cmd.run(self),
-            _ => Err(Error::Generic(format!("Command not implemented: {}", cmd.name())))
+    fn handle_input(&mut self, text: String) {
+        let input = match input::ParsedInput::parse(text) {
+            Ok(input) => input,
+            Err(e) => {
+                self.to_terminal_output(&e.to_string(), EntryCategory::Error);
+                return;
+            }
+        };
+
+        match input {
+            ParsedInput::Command(command) => self.handle_command(command),
+            ParsedInput::Context(_) => todo!("handle_context"),
+            ParsedInput::Talk(_) => todo!("handle_talk"),
         }
     }
 
-    fn refresh_stats(&mut self) {
+    fn handle_command(&mut self, command: input::Command) {
+        let cmd = match command.process(self.interface_view.as_ref().unwrap()) {
+            Ok(cmd) => cmd,
+            Err(e) => {
+                self.to_terminal_output(&e.to_string(), EntryCategory::Error);
+                return;
+            }
+        };
+
+        let text = format!("{:?}", &cmd);
+        self.to_terminal_output(&text, EntryCategory::Debug);
+
+        match self.run_cmd(cmd) {
+            Ok(_) => {},
+            Err(e) => {
+                self.to_terminal_output(&e.to_string(), EntryCategory::Error);
+            }
+        }
+    }
+
+    pub fn interface_view(&self) -> Option<&model::InterfaceView> {
+        self.interface_view.as_ref()
+    }
+
+    pub fn refresh_stats(&mut self) {
         self.stats_output = vec![
             self.stats.device.clone(),
             self.stats.left_hand.clone(),
@@ -261,11 +271,11 @@ impl App {
             self.stats.frame.clone() ];
     }
 
-    fn terminal_newline(&mut self) {
-        self.terminal_output("", EntryCategory::Standard);
+    pub fn terminal_newline(&mut self) {
+        self.to_terminal_output("", EntryCategory::Standard);
     }
 
-    fn terminal_output(&mut self, text: &str, category: EntryCategory) {
+    pub fn to_terminal_output(&mut self, text: &str, category: EntryCategory) {
         for text in text.split('\n') {
             self.terminal_output_entries.push(VChild::new(
                 EntryProps {
@@ -276,5 +286,33 @@ impl App {
             ));
         }
     }
+
+    pub fn terminal_output(&mut self, text: AttrValue, category: EntryCategory) {
+        self.terminal_output_entries.push(VChild::new(EntryProps { text, category }, None));
+    }
+   
+    pub fn terminal_outputs(&mut self, entries: Vec<(AttrValue, EntryCategory)>) {
+        for (text, category) in entries {
+            self.terminal_output_entries.push(VChild::new(
+                EntryProps { text, category },
+                None
+            ));
+        }
+    }
+
+    pub fn to_terminal_outputs(&mut self, entries: Vec<&str>, category: EntryCategory) {
+        for entry in entries {
+            for text in entry.split('\n') {
+                self.terminal_output_entries.push(VChild::new(
+                    EntryProps {
+                        text: AttrValue::Rc(text.into()),
+                        category
+                    },
+                    None
+                ));
+            }   
+        }
+    }
+
 }
 
