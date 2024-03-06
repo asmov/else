@@ -79,7 +79,7 @@ impl CharacterField {
 
     const FIELD_ENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ENTITY, FieldValueType::Model(EntityField::class_ident_const()));
     //todo: this is the wrong class_ident
-    const FIELD_CORTEX: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_CORTEX, FieldValueType::Model(RoutineCortexField::class_ident_const()));
+    const FIELD_CORTEX: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_CORTEX, FieldValueType::Model(RoutineLobeField::class_ident_const()));
 
     pub const fn class_ident_const() -> &'static ClassIdent {
         &Self::CLASS_IDENT

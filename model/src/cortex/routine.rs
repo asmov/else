@@ -2,12 +2,12 @@ use crate::{codebase::*, error::*, identity::*, modeling::*};
 use super::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct RoutineCortex {
+pub struct RoutineLobe {
     routine_uid: UID,
     routine_awareness: Awareness
 }
 
-impl Sensory for RoutineCortex {
+impl Sensory for RoutineLobe {
     fn routine_uid(&self) -> UID {
         self.routine_uid
     }
@@ -17,7 +17,7 @@ impl Sensory for RoutineCortex {
     }
 }
 
-impl RoutineCortex {
+impl RoutineLobe {
     pub fn routine_uid(&mut self, routine_id: UID) -> Result<()> {
         self.routine_uid = routine_id;
         Ok(())
@@ -30,12 +30,12 @@ impl RoutineCortex {
 }
 
 #[derive(Debug)]
-pub enum RoutineCortexField {
+pub enum RoutineLobeField {
     RoutineUID,
     RoutineAwareness
 }
 
-impl Fields for RoutineCortexField {
+impl Fields for RoutineLobeField {
     fn field(&self) -> &'static Field {
         match self {
             Self::RoutineUID => &Self::FIELD_ROUTINE_UID,
@@ -44,14 +44,14 @@ impl Fields for RoutineCortexField {
     }
 }
 
-impl Class for RoutineCortexField {
+impl Class for RoutineLobeField {
     fn class_ident() -> &'static ClassIdent {
         &Self::CLASS_IDENT
     }
 }
 
-impl RoutineCortexField {
-    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::RoutineCortex as ClassID, Self::CLASSNAME);
+impl RoutineLobeField {
+    const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::RoutineLobe as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "RoutineCortex";
     const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
     const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
@@ -65,15 +65,15 @@ impl RoutineCortexField {
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct RoutineCortexBuilder {
+pub struct RoutineLobeBuilder {
     builder_mode: BuilderMode,
     routine_uid: Option<UID>,
     routine_awareness: Option<Awareness>
 }
 
-impl Builder for RoutineCortexBuilder {
-    type ModelType = RoutineCortex;
-    type BuilderType = CortexBuilder;
+impl Builder for RoutineLobeBuilder {
+    type ModelType = RoutineLobe;
+    type BuilderType = RoutineLobeBuilder;
 
     fn creator() -> Self {
         Self {
@@ -97,42 +97,36 @@ impl Builder for RoutineCortexBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let routine_uid = Build::create_value(&mut self.routine_uid, &mut fields_changed, RoutineCortexField::RoutineUID)?;
-        let routine_awareness = Build::create_value(&mut self.routine_awareness, &mut fields_changed, RoutineCortexField::RoutineAwareness)?;
+        let routine_uid = Build::create_value(&mut self.routine_uid, &mut fields_changed, RoutineLobeField::RoutineUID)?;
+        let routine_awareness = Build::create_value(&mut self.routine_awareness, &mut fields_changed, RoutineLobeField::RoutineAwareness)?;
 
-        let routine_cortex = RoutineCortex {
+        let routine_lobe = RoutineLobe {
             routine_uid,
             routine_awareness,
         };
 
-        Ok(Creation::new(CortexBuilder::Routine(self), Cortex::Routine(routine_cortex)))
+        Ok(Creation::new(self, routine_lobe))
     }
 
     fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
         if self.routine_uid.is_some() {
-            existing.routine_uid = Build::modify_value(&self.routine_uid, &mut fields_changed, RoutineCortexField::RoutineUID)?;
+            existing.routine_uid = Build::modify_value(&self.routine_uid, &mut fields_changed, RoutineLobeField::RoutineUID)?;
         }
         if self.routine_awareness.is_some() {
-            existing.routine_awareness = Build::modify_value(&self.routine_awareness, &mut fields_changed, RoutineCortexField::RoutineAwareness)?;
+            existing.routine_awareness = Build::modify_value(&self.routine_awareness, &mut fields_changed, RoutineLobeField::RoutineAwareness)?;
         }
 
-        Ok(Modification::new(CortexBuilder::Routine(self), fields_changed))
+        Ok(Modification::new(self, fields_changed))
     }
 
     fn class_ident(&self) -> &'static ClassIdent {
-        RoutineCortexField::class_ident()
+        RoutineLobeField::class_ident()
     }
 }
 
-impl CortexBuilderVariant for RoutineCortexBuilder {
-    fn cortex_builder(self) -> CortexBuilder {
-        CortexBuilder::Routine(self)
-    }
-}
-
-impl RoutineCortexBuilder {
+impl RoutineLobeBuilder {
     pub fn routine_uid(&mut self, routine_id: UID) -> Result<()> {
         self.routine_uid = Some(routine_id);
         Ok(())

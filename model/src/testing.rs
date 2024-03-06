@@ -3,7 +3,7 @@ use crate::{self as model, *};
 use bincode;
 use bytes;
 
-use self::routine::RoutineCortexBuilder;
+use self::routine::RoutineLobeBuilder;
 
 pub const BACKYARD: &'static str = "backyard";
 pub const DOG_HOUSE: &'static str = "dog_house";
@@ -80,7 +80,7 @@ pub fn create_world() -> World {
     world_editor.add_thing({
         let mut character_creator = model::Character::creator();
         character_creator.cortex({
-            let mut routine_cortex_creator = RoutineCortexBuilder::creator();
+            let mut routine_cortex_creator = RoutineLobeBuilder::creator();
             routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
             routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
             routine_cortex_creator.cortex_builder()
@@ -100,7 +100,7 @@ pub fn create_world() -> World {
     world_editor.add_thing({
         let mut character_creator = model::Character::creator();
         character_creator.cortex({
-            let mut routine_cortex_creator = RoutineCortexBuilder::creator();
+            let mut routine_cortex_creator = RoutineLobeBuilder::creator();
             routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
             routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
             routine_cortex_creator.cortex_builder()

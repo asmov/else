@@ -1,23 +1,24 @@
 pub mod routine;
-pub mod intelligent;
+pub mod intelligence;
 
 use { serde, strum };
 use crate::{error::*, modeling::*, world::*, identity::*, codebase::*};
 
-pub use intelligent::*;
+pub use intelligence::*;
 pub use routine::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub enum Cortex {
-    /// Local software automation (Behavior)
-    /// Acts as a submliminal information provider when an Interface is in control.
-    Routine(RoutineCortex),
+pub struct Cortex {
+    /// Local behavior
+    routine_lobe: RoutineLobe,
+
     // Remote software automation via Interface (API)
     //Machine(MachineCortex),
     // AI via Interface (API)
     //PsuedoIntelligent(PsuedoIntelligentCortex),
+
     /// Human via Interface (UI)
-    Intelligent(IntelligentCortex)
+    intelligence_lobe: Option<IntelligenceLobe>
 }
 
 /// Data model trait for a Cortex
@@ -29,25 +30,50 @@ pub trait Sensory {
 /// Composition model trait for a Cortex
 pub trait Sensitive {
     fn cortex(&self) -> &Cortex;
+}
+
+pub trait Habitual {
+    fn routine_lobe(&self) -> &RoutineLobe;
 
     fn routine_id(&self) -> UID {
-        self.cortex().routine_id()
+        self.routine_lobe().routine_uid()
     }
 
     fn routine_awareness(&self) -> Awareness {
-        self.cortex().routine_awareness()
+        self.routine_lobe().routine_awareness()
     }
 }
 
-pub trait SensitiveMut: Sensitive {
-    fn cortext_mut(&mut self) -> &mut Cortex;
+pub trait Productive {
+    //fn productive_lobe() -> Option<&RepetitionLobe>;
+    //todo
 }
 
+pub trait PsuedoIntelligent {
+    //fn psuedo_intelligence_lobe() -> Option<&PsuedoIntelligenceLobe>;
+    //todo
+}
+
+pub trait Intelligent {
+    fn intelligence_lobe(&self) -> Option<&IntelligenceLobe>;
+
+    fn interface_id(&self) -> Option<UID> {
+        self.intelligence_lobe()
+            .map(|lobe| lobe.interface_id())
+    }
+}
+
+/// Routines are either:
+/// - Fully in control of a Character's behavior: Conscious
+/// - Not in control, but provides prompts to a Character's behavior on how it would act: Subconscious
+/// - Temporarily suspending a Character's behavior due to trauma: Shock
+/// - Character behavior is completely suspended and all lobes non-responsive: Unconscious
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, strum::Display, strum::EnumString)]
 pub enum Awareness {
-    Shock,
+    Unconscious,
     Conscious,
     Subconscious,
+    Shock,
 }
 
 impl Awareness {
@@ -63,72 +89,42 @@ impl Sensitive for Cortex {
     fn cortex(&self) -> &Cortex {
         self
     }
+}
 
-    fn routine_id(&self) -> UID {
-        match self {
-            Cortex::Routine(cortex) => cortex.routine_uid(),
-            //Cortex::Machine(_) => todo!(),
-            //Cortex::PsuedoIntelligent(_) => todo!(),
-            Cortex::Intelligent(cortex) => cortex.routine_uid(),
-        }
+impl Habitual for Cortex {
+    fn routine_lobe(&self) -> &RoutineLobe {
+        &self.routine_lobe
     }
+}
 
-    fn routine_awareness(&self) -> Awareness {
-        match self {
-            Cortex::Routine(cortex) => cortex.routine_awareness(),
-            //Cortex::Machine(_) => todo!(),
-            //Cortex::PsuedoIntelligent(_) => todo!(),
-            Cortex::Intelligent(cortex) => cortex.routine_awareness(),
-        }        
+impl Intelligent for Cortex {
+    fn intelligence_lobe(&self) -> Option<&IntelligenceLobe> {
+        self.intelligence_lobe.as_ref()
     }
 }
 
 pub trait BuildableCortex: Builder {
-    fn cortex(&mut self, cortex: CortexBuilder) -> Result<()>;
-    fn get_cortex_builder_mut(&mut self) -> &mut Option<CortexBuilder>; 
+    fn cortex(&mut self, cortex: CortexBuilder) -> Result<&mut Self>;
+    fn cortex_builder(&mut self) -> &mut CortexBuilder;
+    fn get_cortex_builder(&self) -> Option<&CortexBuilder>;
 
-    fn routine_cortex_builder(&mut self) -> &mut RoutineCortexBuilder {
-        let builder_mode = self.builder_mode();
-        let cortex_builder = self.get_cortex_builder_mut();
-        if let Some(CortexBuilder::Routine(routine_builder)) = cortex_builder {
-            return routine_builder
-        }
-        
-        let routine_builder = RoutineCortexBuilder::builder(builder_mode);
-        *cortex_builder = Some(routine_builder.cortex_builder());
-        if let Some(CortexBuilder::Routine(routine_builder)) = cortex_builder {
-            return routine_builder
-        } else {
-            unreachable!("Dispatch mismatch");
-        }
+    fn routine_lobe(&mut self, routine_lobe: RoutineLobeBuilder) -> Result<&mut Self> {
+        self.cortex_builder().routine_lobe = Some(routine_lobe);
+        Ok(self)
     }
 
-    fn intelligent_cortex_builder(&mut self) -> &mut IntelligentCortexBuilder {
-        let builder_mode = self.builder_mode();
-        let cortex_builder = self.get_cortex_builder_mut();
-        if let Some(CortexBuilder::Intelligent(intelligent_builder)) = cortex_builder {
-            return intelligent_builder
-        }
-        
-        let intelligent_builder = IntelligentCortexBuilder::builder(builder_mode);
-        *cortex_builder = Some(intelligent_builder.cortex_builder());
-        if let Some(CortexBuilder::Intelligent(intelligent_builder)) = cortex_builder {
-            return intelligent_builder
-        } else {
-            unreachable!("Dispatch mismatch");
-        }
+    fn intelligence_lobe(&mut self, intelligence_lobe: IntelligenceLobeBuilder) -> Result<&mut Self> {
+        self.cortex_builder().intelligence_lobe = Some(intelligence_lobe);
+        Ok(self)
     }
 }
 
-
-pub trait CortexBuilderVariant: Builder {
-    fn cortex_builder(self) -> CortexBuilder;
-}
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub enum CortexBuilder {
-    Routine(RoutineCortexBuilder),
-    Intelligent(IntelligentCortexBuilder)
+pub struct CortexBuilder {
+    builder_mode: BuilderMode,
+    routine_lobe: Option<RoutineLobeBuilder>,
+    intelligence_lobe: Option<IntelligenceLobeBuilder>
 }
 
 impl Builder for CortexBuilder {
@@ -136,51 +132,34 @@ impl Builder for CortexBuilder {
     type BuilderType = Self;
 
     fn creator() -> Self {
-        panic!("Cannot call CortexBuilder::creator() directly")
+        Self {
+            builder_mode: BuilderMode::Creator,
+            routine_lobe: None,
+            intelligence_lobe: None
+        }
     }
 
     fn editor() -> Self {
-        panic!("Cannot call CortexBuilder::editor() directly")
+        Self {
+            builder_mode: BuilderMode::Editor,
+            ..Self::creator()
+        }
     }
 
     fn builder_mode(&self) -> BuilderMode {
-        match self {
-            CortexBuilder::Routine(builder) => builder.builder_mode(),
-            CortexBuilder::Intelligent(builder) => builder.builder_mode(),
-        }
+        self.builder_mode
     }
 
     fn create(self) -> Result<Creation<Self::BuilderType>> {
-        match self {
-            CortexBuilder::Routine(builder) => builder.create(),
-            CortexBuilder::Intelligent(builder) => builder.create(),
-        }
+        todo!()
     }
 
     fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        match self {
-            CortexBuilder::Routine(builder) => {
-                if let Cortex::Routine(original_routine_cortex) = existing {
-                    builder.modify(original_routine_cortex)
-                } else {
-                    unreachable!("Dispatch mismatch in CortexBuilder::modify() for RoutineCortex")
-                }
-            },
-            CortexBuilder::Intelligent(builder) => {
-                if let Cortex::Intelligent(original_intelligent_cortex) = existing {
-                    builder.modify(original_intelligent_cortex)
-                } else {
-                    unreachable!("Dispatch mismatch in CortexBuilder::modify() for IntelligentCortex")
-                }
-            }
-        }
+        todo!()
     }
 
     fn class_ident(&self) -> &'static ClassIdent {
-        match self {
-            Self::Routine(modeler) => modeler.class_ident(),
-            Self::Intelligent(modeler) => modeler.class_ident(),
-        }
+        CortexField::class_ident_const()
     }
 }
 
