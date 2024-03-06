@@ -139,15 +139,9 @@ impl Builder for AreaBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
-        if self.descriptor.is_some() {
-            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, AreaField::Descriptor)?;
-        }
-        if !self.occupant_uids.is_empty() {
-            Build::modify_uid_vec(&mut self.occupant_uids, &mut existing.occupant_uids, &mut fields_changed, AreaField::Occupants)?;
-        }
-        if !self.route_uids.is_empty() {
-            Build::modify_uid_vec(&mut self.route_uids, &mut existing.route_uids, &mut fields_changed, AreaField::Routes)?;
-        }
+        Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, AreaField::Descriptor)?;
+        Build::modify_uid_vec(&mut self.occupant_uids, &mut existing.occupant_uids, &mut fields_changed, AreaField::Occupants)?;
+        Build::modify_uid_vec(&mut self.route_uids, &mut existing.route_uids, &mut fields_changed, AreaField::Routes)?;
 
         Ok(Modification::new(self, fields_changed))
     }

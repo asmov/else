@@ -136,12 +136,8 @@ impl Builder for EndBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
-        if self.descriptor.is_some() {
-            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, EndField::Descriptor)?;
-        }
-        if self.direction.is_some() { 
-            existing.direction = Build::modify_value(&self.direction, &mut fields_changed, EndField::Descriptor)?;
-        }
+        Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, EndField::Descriptor)?;
+        Build::modify_value(&self.direction, &mut existing.direction, &mut fields_changed, EndField::Descriptor)?;
 
         Ok(Modification::new(self, fields_changed))
     }

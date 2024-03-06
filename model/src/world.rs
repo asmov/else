@@ -259,12 +259,8 @@ impl Builder for WorldBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::new(WorldField::class_ident(), ChangeOp::Modify);
 
-        if self.descriptor.is_some() {
-            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, WorldField::Descriptor)?;
-        }
-        if self.frame.is_some() {
-            existing.frame = Build::modify_value(&self.frame, &mut fields_changed, WorldField::Frame)?;
-        }
+        Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, WorldField::Descriptor)?;
+        Build::modify_value(&self.frame, &mut existing.frame, &mut fields_changed, WorldField::Frame)?;
 
         let (universe_id, world_id, _, _) = Identity::from_uid(existing.uid()).split();
 

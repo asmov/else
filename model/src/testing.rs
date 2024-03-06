@@ -3,8 +3,6 @@ use crate::{self as model, *};
 use bincode;
 use bytes;
 
-use self::routine::RoutineLobeBuilder;
-
 pub const BACKYARD: &'static str = "backyard";
 pub const DOG_HOUSE: &'static str = "dog_house";
 pub const CAT_HOUSE: &'static str = "cat_house";
@@ -80,10 +78,15 @@ pub fn create_world() -> World {
     world_editor.add_thing({
         let mut character_creator = model::Character::creator();
         character_creator.cortex({
-            let mut routine_cortex_creator = RoutineLobeBuilder::creator();
-            routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
-            routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
-            routine_cortex_creator.cortex_builder()
+            let mut cortex_creator = model::Cortex::creator();
+            cortex_creator.routine_lobe({
+                let mut routine_lobe_creator = model::RoutineLobe::creator();
+                routine_lobe_creator
+                    .routine_uid(IdentityBuilder::clone_uid(BuilderMode::Creator, 0)).unwrap() //todo: model crate should have an enum of IDs from behavior crate
+                    .routine_awareness(Awareness::Conscious).unwrap();
+                routine_lobe_creator
+            }).unwrap();
+            cortex_creator
         }).unwrap();
         character_creator.entity_builder().descriptor({
             let mut descriptor_creator = Descriptor::creator();
@@ -100,10 +103,15 @@ pub fn create_world() -> World {
     world_editor.add_thing({
         let mut character_creator = model::Character::creator();
         character_creator.cortex({
-            let mut routine_cortex_creator = RoutineLobeBuilder::creator();
-            routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
-            routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
-            routine_cortex_creator.cortex_builder()
+            let mut cortex_creator = model::Cortex::creator();
+            cortex_creator.routine_lobe({
+                let mut routine_lobe_creator = model::RoutineLobe::creator();
+                routine_lobe_creator
+                    .routine_uid(IdentityBuilder::clone_uid(BuilderMode::Creator, 0)).unwrap() //todo: model crate should have an enum of IDs from behavior crate
+                    .routine_awareness(Awareness::Conscious).unwrap();
+                routine_lobe_creator
+            }).unwrap();
+            cortex_creator
         }).unwrap();
         character_creator.entity_builder().descriptor({
             let mut descriptor_creator = Descriptor::creator();

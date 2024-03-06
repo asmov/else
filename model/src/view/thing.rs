@@ -108,9 +108,7 @@ impl Builder for ThingViewBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> crate::Result<Modification<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        if self.descriptor.is_some() {
-            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, ThingViewField::Descriptor)?;
-        }
+        Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, ThingViewField::Descriptor)?;
 
         Ok(Modification::new(self, fields_changed))
     }

@@ -150,13 +150,8 @@ impl Builder for WorldViewBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
-        if self.frame.is_some() {
-            Build::modify_value(&mut self.frame, &mut fields_changed, WorldField::Frame)?;
-        }
-        if self.area_view.is_some() {
-            Build::modify(&mut self.area_view, &mut existing.area_view, &mut fields_changed, WorldField::Areas)?;
-        }
-        
+        Build::modify_value(&mut self.frame, &mut existing.frame, &mut fields_changed, WorldField::Frame)?;
+        Build::modify(&mut self.area_view, &mut existing.area_view, &mut fields_changed, WorldField::Areas)?;
         Build::modify_vec(&mut self.routes, &mut existing.routes, &mut fields_changed, WorldViewField::Routes)?;
         Build::modify_vec(&mut self.thing_views, &mut existing.thing_views, &mut fields_changed, WorldViewField::Things)?;
 

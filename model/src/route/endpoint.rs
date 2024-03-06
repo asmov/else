@@ -88,9 +88,7 @@ impl Builder for EndpointBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
 
-        if self.end.is_some() {
-            Build::modify(&mut self.end, &mut existing.end, &mut fields_changed, EndpointField::End)?;
-        }
+        Build::modify(&mut self.end, &mut existing.end, &mut fields_changed, EndpointField::End)?;
 
         Ok(Modification::new(PointBuilder::Endpoint(self), fields_changed))
     }

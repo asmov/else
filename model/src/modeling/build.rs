@@ -13,15 +13,32 @@ impl Build {
         Ok(value)
     }
 
-    pub fn modify_value<T: Clone>(builder_option: &Option<T>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<T> {
+    pub fn modify_value<T: Clone>(builder_option: &Option<T>, value: &mut T, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<()> {
+        if !builder_option.is_some() {
+            return Ok(())
+        }
+
         let field = field.field();
-        let value = builder_option
+        *value = builder_option
             .as_ref()
             .expect("Calls to Build::modify_value() should be made after a guard against Option::is_some()")
             .clone();
 
-        //todo: fields_changed
-        Ok(value)
+        Ok(())
+    }
+
+    pub fn modify_uid(builder_option: &Option<IdentityBuilder>, value: &mut UID, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<()> {
+        if !builder_option.is_some() {
+            return Ok(())
+        }
+
+        let field = field.field();
+        *value = builder_option
+            .as_ref()
+            .expect("Calls to Build::modify_value() should be made after a guard against Option::is_some()")
+            .try_uid()?;
+
+        Ok(())
     }
 
     pub fn create<B, M>(builder_option: &mut Option<B>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<M>
@@ -43,10 +60,42 @@ impl Build {
         Ok(model)
     }
 
+    pub fn create_uid(builder_option: &mut Option<IdentityBuilder>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<UID> {
+        Self::create(builder_option, fields_changed, field)
+            .map(|identity| identity.to_uid())
+    }
+
+    pub fn create_option<B, M>(builder_option_op: &mut OptionOp<B>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Option<M>>
+    where
+        B: Builder<BuilderType = B, ModelType = M>
+    {
+        match builder_option_op {
+            OptionOp::None => Ok(None),
+            OptionOp::Set(_) => {
+                let builder = builder_option_op.take();
+                if builder.builder_mode() != BuilderMode::Creator {
+                    panic!("BuilderMode::Editor is not allowed for Build::create_option()")
+                }
+
+                let creation = builder.create()?;
+                let (builder, model) = creation.split();
+                *builder_option_op = OptionOp::Set(builder);
+                //todo: fields_changed
+                Ok(Some(model))
+            },
+            OptionOp::Edit(_) => unreachable!("OptionOp::Edit is not allowed in Build::create_option()"),
+            OptionOp::Unset => unreachable!("OptionOp::Unset is not allowed in Build::create_option()"),
+        }
+    }
+ 
     pub fn modify<B, M>(builder_option: &mut Option<B>, existing: &mut M, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<()>
     where
         B: Builder<BuilderType = B, ModelType = M>
     {
+        if !builder_option.is_some() {
+            return Ok(())
+        }
+
         let field = field.field();
         let builder = builder_option.take()
             .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?;
@@ -67,6 +116,34 @@ impl Build {
         Ok(())
     }
 
+    pub fn modify_option<B, M>(builder_option_op: &mut OptionOp<B>, existing_option: &mut Option<M>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<()>
+    where
+        B: Builder<BuilderType = B, ModelType = M>
+    {
+        match builder_option_op {
+            OptionOp::None => Ok(()),
+            OptionOp::Set(_) => {
+                let value = Self::create_option(builder_option_op, fields_changed, field)?;
+                *existing_option = value;
+                Ok(())
+            },
+            OptionOp::Edit(_) => {
+                let builder = builder_option_op.take();
+                let existing = existing_option.as_mut()
+                    .expect("Expected existing_option to be Some when OptionOp::Edit");
+                let modification = builder.modify(existing)?;
+                let (builder, built_fields_changed) = modification.split();
+                *builder_option_op = OptionOp::Edit(builder);
+                fields_changed.extend(field.field(), ChangeOp::Modify, built_fields_changed);
+                Ok(())
+            },
+            OptionOp::Unset => {
+                *existing_option = None;
+                //todo: fields changed
+                Ok(())
+            },
+        }
+    }
 
     pub fn create_vec<B,M,R>(builder_vec: &mut Vec<ListOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<M>>
     where
@@ -161,6 +238,10 @@ impl Build {
         fields_changed: &mut FieldsChanged,
         field: impl Fields
     ) -> Result<()> {
+        if builder_vec.is_empty() {
+            return Ok(())
+        }
+
         builder_vec
             .drain(0..)
             .filter_map(|list_op| { match list_op {

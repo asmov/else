@@ -169,15 +169,9 @@ impl Builder for RouteBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self>> {
         let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
-        if self.descriptor.is_some() {
-            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, RouteField::Descriptor)?;
-        }
-        if self.point_a.is_some() {
-            Build::modify(&mut self.point_a, &mut existing.point_a, &mut fields_changed, RouteField::PointA)?;
-        }
-        if self.point_b.is_some() {
-            Build::modify(&mut self.point_b, &mut existing.point_b, &mut fields_changed, RouteField::PointB)?;
-        }
+        Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, RouteField::Descriptor)?;
+        Build::modify(&mut self.point_a, &mut existing.point_a, &mut fields_changed, RouteField::PointA)?;
+        Build::modify(&mut self.point_b, &mut existing.point_b, &mut fields_changed, RouteField::PointB)?;
 
         Ok(Modification::new(self, fields_changed))
     }

@@ -105,6 +105,58 @@ pub trait Built {
     }
 }
 
+/// Represents an Add, Remove, or Modify operation against an Option
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub enum OptionOp<T> {
+    None,
+    Set(T),
+    Edit(T),
+    Unset
+}
+
+impl<T> OptionOp<T> {
+    pub fn is_none(&self) -> bool {
+        match self {
+            Self::None => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_set(&self) -> bool {
+        match self {
+            Self::Set(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_edit(&self) -> bool {
+        match self {
+            Self::Edit(_) => true,
+            _ => false
+        }
+    }
+
+    pub fn is_unset(&self) -> bool {
+        match self {
+            Self::Unset => true,
+            _ => false
+        }
+    }
+
+    pub fn take(&mut self) -> T {
+        let orig = match self {
+            Self::Set(value) | Self::Edit(value) => std::mem::replace(self, Self::None),
+            _ => panic!("OptionOp::take() called on None or Unset")
+        };
+
+        match orig {
+            Self::Set(value) | Self::Edit(value) => value,
+            _ => panic!("OptionOp::take() called on None or Unset")
+        }
+    }
+}
+
+
 /// Represents an Add, Remove, or Modify operation against a Vec
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum ListOp<T: MaybeIdentifiable, R: MaybeIdentifiable> {
@@ -116,21 +168,21 @@ pub enum ListOp<T: MaybeIdentifiable, R: MaybeIdentifiable> {
 impl<T: MaybeIdentifiable, R: MaybeIdentifiable> ListOp<T, R> {
     pub fn is_add(&self) -> bool {
         match self {
-            ListOp::Add(_) => true,
+            Self::Add(_) => true,
             _ => false,
         }
     }
 
     pub fn is_edit(&self) -> bool {
         match self {
-            ListOp::Edit(_) => true,
+            Self::Edit(_) => true,
             _ => false
         }
     }
 
     pub fn is_remove(&self) -> bool {
         match self {
-            ListOp::Remove(_) => true,
+            Self::Remove(_) => true,
             _ => false
         }
     }

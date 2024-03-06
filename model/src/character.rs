@@ -133,12 +133,8 @@ impl Builder for CharacterBuilder {
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
-        if self.entity.is_some() {
-            Build::modify(&mut self.entity, &mut existing.entity, &mut fields_changed, CharacterField::Entity)?;
-        }
-        if self.cortex.is_some() {
-            Build::modify(&mut self.cortex, &mut existing.cortex, &mut fields_changed, CharacterField::Cortex)?;
-        }
+        Build::modify(&mut self.entity, &mut existing.entity, &mut fields_changed, CharacterField::Entity)?;
+        Build::modify(&mut self.cortex, &mut existing.cortex, &mut fields_changed, CharacterField::Cortex)?;
 
         Ok(Modification::new(ThingBuilder::Character(self), fields_changed))
     }
@@ -149,13 +145,21 @@ impl Builder for CharacterBuilder {
 }
 
 impl BuildableCortex for CharacterBuilder {
-    fn cortex(&mut self, cortex: CortexBuilder) -> Result<()> {
+    fn cortex(&mut self, cortex: CortexBuilder) -> Result<&mut Self> {
         self.cortex = Some(cortex);
-        Ok(())
+        Ok(self)
     }
 
-    fn get_cortex_builder_mut(&mut self) -> &mut Option<CortexBuilder> {
-        &mut self.cortex
+    fn cortex_builder(&mut self) -> &mut CortexBuilder {
+        if self.cortex.is_none() {
+            self.cortex = Some(Cortex::builder(self.builder_mode()))
+        }
+
+        self.cortex.as_mut().unwrap()
+    }
+
+    fn get_cortex_builder(&self) -> Option<&CortexBuilder> {
+        self.cortex.as_ref()
     }
 }
 

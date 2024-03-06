@@ -21,10 +21,15 @@ mod tests {
 
         let mut character_creator = model::Character::creator();
         character_creator.cortex({
-            let mut routine_cortex_creator = model::RoutineLobeBuilder::creator();
-            routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
-            routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
-            routine_cortex_creator.cortex_builder()
+            let mut cortex_creator = model::Cortex::creator();
+            cortex_creator.routine_lobe({
+                let mut routine_lobe_creator = model::RoutineLobe::creator();
+                routine_lobe_creator
+                    .routine_uid(IdentityBuilder::clone_uid(BuilderMode::Creator, 0)).unwrap() //todo: model crate should have an enum of IDs from behavior crate
+                    .routine_awareness(Awareness::Conscious).unwrap();
+                routine_lobe_creator
+            }).unwrap();
+            cortex_creator
         }).unwrap();
         character_creator.entity({
             let mut entity_creator = model::Entity::creator();
@@ -54,11 +59,16 @@ mod tests {
 
         let mut gray_cat = model::Character::creator();
         gray_cat.cortex({
-            let mut routine_cortex_creator = model::RoutineLobeBuilder::creator();
-            routine_cortex_creator.routine_uid(0).unwrap(); //todo: model crate should have an enum of IDs from behavior crate
-            routine_cortex_creator.routine_awareness(Awareness::Conscious).unwrap();
-            routine_cortex_creator.cortex_builder()
-        }).unwrap();
+            let mut cortex_creator = model::Cortex::creator();
+            cortex_creator.routine_lobe({
+                let mut routine_lobe_creator = model::RoutineLobe::creator();
+                routine_lobe_creator
+                    .routine_uid(IdentityBuilder::clone_uid(BuilderMode::Creator, 0)).unwrap() //todo: model crate should have an enum of IDs from behavior crate
+                    .routine_awareness(Awareness::Conscious).unwrap();
+                routine_lobe_creator
+            }).unwrap();
+            cortex_creator
+       }).unwrap();
         gray_cat.entity({
             let mut entity = model::Entity::creator();
             entity.descriptor({

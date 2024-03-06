@@ -91,7 +91,7 @@ impl CharacterRoutine {
     const ID_MULTIPLIER: UID = 1;
 
     pub fn new(character: &Character) -> CharacterRoutine {
-        let routine_id = character.routine_id();
+        let routine_id = character.cortex().routine_uid();
         let uid = character.uid();
 
         match routine_id {

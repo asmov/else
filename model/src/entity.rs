@@ -141,12 +141,8 @@ impl Builder for EntityBuilder {
     fn modify(mut self, existing: &mut Entity) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
-        if self.descriptor.is_some() { 
-            Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, EntityField::Descriptor)?;
-        }
-        if self.location.is_some() {
-            existing.location = Build::modify_value(&self.location, &mut fields_changed, EntityField::Location)?;
-        }
+        Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, EntityField::Descriptor)?;
+        Build::modify_value(&self.location, &mut existing.location, &mut fields_changed, EntityField::Location)?;
 
         Ok(Modification::new(self, fields_changed))
     }

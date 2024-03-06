@@ -67,22 +67,13 @@ fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ClientToZoneMessage {
-    Acknowledged(AcknowledgedMsg), // 0
-    Error(ErrorMsg), // 1
     /// Request to connect to the world through this server.
     /// Expects responses: ZoneToClientMessage::[Connected, ConnectRejected]
     Connect,
-    /// Request to be transferred from another Zone (by the original Zone's instructions) to this one.
-    Transfer,
-    /// Notify the original Zone that the transfer it ordered is in progress.
-    Transferring,
-    /// Notify the original Zone that the transfer it ordered has failed.
-    TransferDenied,
-    /// Notify the original Zone that the transfer it ordered is complete and it is safe to Disconnect.
-    Transfered,
     /// Client is about to disconnect.
     /// Expects response: ZoneToClientMessage::Disconnect
     Disconnect,
+    Downlink(UID),
     Action(Action)
 }
 
@@ -93,14 +84,9 @@ impl Messaging for ClientToZoneMessage {
 
     fn message_name(&self) -> &'static str {
         match self {
-            ClientToZoneMessage::Acknowledged(_) => "ClientToZoneMessage::Acknowledge",
-            ClientToZoneMessage::Error(_) => "ClientToZoneMessage::Error",
             ClientToZoneMessage::Connect => "ClientToZoneMessage::Connect",
-            ClientToZoneMessage::Transfer => "ClientToZoneMessage::Transfer",
-            ClientToZoneMessage::Transferring => "ClientToZoneMessage::Transferring",
-            ClientToZoneMessage::TransferDenied => "ClientToZoneMessage::TransferDenied",
-            ClientToZoneMessage::Transfered => "ClientToZoneMessage::Transfered",
             ClientToZoneMessage::Disconnect => "ClientToZoneMessage::Disconnect",
+            ClientToZoneMessage::Downlink(_) => "ClientToZoneMessage::Downlink",
             ClientToZoneMessage::Action(_) => "ClientToZoneMessage::Action",
         }
     }
@@ -108,35 +94,32 @@ impl Messaging for ClientToZoneMessage {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ZoneToClientMessage {
-    Acknowledged(AuthorityAcknowledgedMsg), // 0
-    Error(ErrorMsg), // 1
     TimeFrame(NewTimeFrameMsg), // 2
     /// Response: Request to connect to the world through this server has been accepted.
     Connected,
     /// Response: Request to connect to the world through this server has been rejected.
     ConnectRejected,
     InitInterfaceView(TimeFrame, Vec<u8>),
-    Transfered,
-    TransferRejected,
+    Sync(Sync),
     Disconnect,
+    DownlinkApproved(Frame),
+    DownlinkRejected(Frame),
     ActionApproved(Frame),
-    /// The action was approved, but the frame was changed.
     ActionApprovedAt(Frame, Frame),
-    ActionRejected(Frame)
+    ActionRejected(Frame),
 }
 
 impl Messaging for ZoneToClientMessage {
     fn message_name(&self) -> &'static str {
         match self {
-            Self::Acknowledged(_) => "ZoneToClientMessage::Acknowledged",
-            Self::Error(_) => "ZoneToClientMessage::Error",
             Self::TimeFrame(_) => "ZoneToClientMessage::TimeFrame",
             Self::Connected => "ZoneToClientMessage::Connected",
             Self::ConnectRejected => "ZoneToClientMessage::ConnectRejected",
             Self::InitInterfaceView(_, _)=> "ZoneToClientMessage::InitInterfaceView",
-            Self::Transfered => "ZoneToClientMessage::Transfered",
-            Self::TransferRejected => "ZoneToClientMessage::TransferRejected",
+            Self::Sync(_) => "ZoneToClientMessage::Sync",
             Self::Disconnect => "ZoneToClientMessage::Disconnect",
+            Self::DownlinkApproved(_) => "ZoneToClientMessage::DownlinkApproved",
+            Self::DownlinkRejected(_) => "ZoneToClientMessage::DownlinkRejected",
             Self::ActionApproved(_) => "ZoneToClientMessage::ActionApproved",
             Self::ActionApprovedAt(_,_) => "ZoneToClientMessage::ActionApprovedWithChange",
             Self::ActionRejected(_) => "ZoneToClientMessage::ActionRejected",

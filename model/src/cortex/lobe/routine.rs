@@ -1,5 +1,4 @@
-use crate::{codebase::*, error::*, identity::*, modeling::*};
-use super::*;
+use crate::{codebase::*, error::*, identity::*, modeling::*, cortex::*};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct RoutineLobe {
@@ -7,7 +6,24 @@ pub struct RoutineLobe {
     routine_awareness: Awareness
 }
 
-impl Sensory for RoutineLobe {
+/// Composition trait for RoutineLobe
+pub trait Habitual {
+    fn routine_lobe(&self) -> &RoutineLobe;
+
+    fn routine_uid(&self) -> UID {
+        self.routine_lobe().routine_uid()
+    }
+
+    fn routine_awareness(&self) -> Awareness {
+        self.routine_lobe().routine_awareness()
+    }
+}
+
+impl Habitual for RoutineLobe {
+    fn routine_lobe(&self) -> &RoutineLobe {
+        self
+    }
+
     fn routine_uid(&self) -> UID {
         self.routine_uid
     }
@@ -15,6 +31,10 @@ impl Sensory for RoutineLobe {
     fn routine_awareness(&self) -> Awareness {
         self.routine_awareness
     }
+}
+
+impl Built for RoutineLobe {
+    type BuilderType = RoutineLobeBuilder;
 }
 
 impl RoutineLobe {
@@ -53,10 +73,10 @@ impl Class for RoutineLobeField {
 impl RoutineLobeField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::RoutineLobe as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "RoutineCortex";
-    const FIELDNAME_ROUTINE_ID: &'static str = "routine_id";
+    const FIELDNAME_ROUTINE_UID: &'static str = "routine_uid";
     const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
-    const FIELD_ROUTINE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_ID, FieldValueType::UID(&Self::CLASS_IDENT));
+    const FIELD_ROUTINE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_UID, FieldValueType::UID(&Self::CLASS_IDENT));
     const FIELD_ROUTINE_AWARENESS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_AWARENESS, FieldValueType::Enum(Awareness::class_ident_const()));
 
     pub const fn class_ident_const() -> &'static ClassIdent {
@@ -67,13 +87,13 @@ impl RoutineLobeField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct RoutineLobeBuilder {
     builder_mode: BuilderMode,
-    routine_uid: Option<UID>,
+    routine_uid: Option<IdentityBuilder>,
     routine_awareness: Option<Awareness>
 }
 
 impl Builder for RoutineLobeBuilder {
     type ModelType = RoutineLobe;
-    type BuilderType = RoutineLobeBuilder;
+    type BuilderType = Self;
 
     fn creator() -> Self {
         Self {
@@ -97,7 +117,8 @@ impl Builder for RoutineLobeBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let routine_uid = Build::create_value(&mut self.routine_uid, &mut fields_changed, RoutineLobeField::RoutineUID)?;
+        let routine_uid = Build::create(&mut self.routine_uid, &mut fields_changed, RoutineLobeField::RoutineUID)?
+            .uid();
         let routine_awareness = Build::create_value(&mut self.routine_awareness, &mut fields_changed, RoutineLobeField::RoutineAwareness)?;
 
         let routine_lobe = RoutineLobe {
@@ -108,15 +129,11 @@ impl Builder for RoutineLobeBuilder {
         Ok(Creation::new(self, routine_lobe))
     }
 
-    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
+    fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        if self.routine_uid.is_some() {
-            existing.routine_uid = Build::modify_value(&self.routine_uid, &mut fields_changed, RoutineLobeField::RoutineUID)?;
-        }
-        if self.routine_awareness.is_some() {
-            existing.routine_awareness = Build::modify_value(&self.routine_awareness, &mut fields_changed, RoutineLobeField::RoutineAwareness)?;
-        }
+        Build::modify_uid(&self.routine_uid, &mut existing.routine_uid, &mut fields_changed, RoutineLobeField::RoutineUID)?;
+        Build::modify_value(&self.routine_awareness, &mut existing.routine_awareness, &mut fields_changed, RoutineLobeField::RoutineAwareness)?;
 
         Ok(Modification::new(self, fields_changed))
     }
@@ -127,13 +144,13 @@ impl Builder for RoutineLobeBuilder {
 }
 
 impl RoutineLobeBuilder {
-    pub fn routine_uid(&mut self, routine_id: UID) -> Result<()> {
+    pub fn routine_uid(&mut self, routine_id: IdentityBuilder) -> Result<&mut Self> {
         self.routine_uid = Some(routine_id);
-        Ok(())
+        Ok(self)
     }
 
-    pub fn routine_awareness(&mut self, awareness: Awareness) -> Result<()> {
+    pub fn routine_awareness(&mut self, awareness: Awareness) -> Result<&mut Self> {
         self.routine_awareness = Some(awareness);
-        Ok(())
+        Ok(self)
     }
 }
