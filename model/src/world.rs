@@ -1,5 +1,5 @@
 use serde;
-use crate::{area::*, modeling::*, character::*, route::*, timeframe::*, sync::*};
+use crate::{area::*, modeling::*, character::*, route::*, timeframe::*, interface::*};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct World {
@@ -9,6 +9,7 @@ pub struct World {
     areas: Vec<Area>,
     routes: Vec<Route>,
     things: Vec<Thing>,
+    interfaces: Vec<Interface>,
     next_id: ID,
 }
 
@@ -57,6 +58,10 @@ impl World {
         &self.things
     }
 
+    pub fn interfaces(&self) -> &Vec<Interface> {
+        &self.interfaces
+    }
+
     pub fn area(&self, uid: UID) -> Result<&Area> {
         self.areas.iter().find(|area| area.uid() == uid)
             .ok_or_else(|| Error::ModelNotFound{model: "Area", uid})
@@ -69,7 +74,12 @@ impl World {
 
     pub fn thing(&self, uid: UID) -> Result<&Thing> {
         self.things.iter().find(|thing| thing.uid() == uid)
-            .ok_or_else(|| Error::ModelNotFound{model: "Thing", uid})
+            .ok_or_else(|| Error::ModelNotFound{model: Thing::class_ident_const().classname(), uid})
+    }
+
+    pub fn interface(&self, uid: UID) -> Result<&Interface> {
+        self.interfaces.iter().find(|interface| interface.uid() == uid)
+            .ok_or_else(|| Error::ModelNotFound{model: InterfaceField::classname(), uid})
     }
 
     pub fn find_area(&self, key: &str) -> Result<&Area> {
@@ -84,6 +94,10 @@ impl World {
 
     pub fn find_thing(&self, key: &str) -> Option<&Thing> {
         self.things.iter().find(|thing| thing.key().is_some_and(|k| k == key))
+    }
+
+    pub fn find_interface(&self, key: &str) -> Option<&Interface> {
+        self.interfaces.iter().find(|interface| interface.key().is_some_and(|k| k == key))
     }
 
     pub fn spawn_thing(&mut self, mut thing: ThingBuilder) -> Result<(UID, Modification<WorldBuilder>)> {
@@ -113,7 +127,8 @@ pub enum WorldField {
     Descriptor,
     Areas,
     Routes,
-    Things
+    Things,
+    Interfaces
 }
 
 impl Fields for WorldField {
@@ -124,7 +139,8 @@ impl Fields for WorldField {
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::Areas => &Self::FIELD_AREAS,
             Self::Routes => &Self::FIELD_ROUTES,
-            Self::Things => &Self::FIELD_THINGS
+            Self::Things => &Self::FIELD_THINGS,
+            Self::Interfaces => &Self::FIELD_INTERFACES,
         }
     }
 }
@@ -144,12 +160,14 @@ impl WorldField {
     const FIELDNAME_AREAS: &'static str = "areas";
     const FIELDNAME_ROUTES: &'static str = "routes";
     const FIELDNAME_THINGS: &'static str = "things";
+    const FIELDNAME_INTERFACES: &'static str = "interfaces";
     const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID, FieldValueType::UID(&Self::CLASS_IDENT));
     const FIELD_FRAME: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_FRAME, FieldValueType::U64);
     const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
     const FIELD_AREAS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREAS, FieldValueType::ModelList(AreaField::class_ident_const()));
     const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::ModelList(RouteField::class_ident_const()));
     const FIELD_THINGS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_THINGS, FieldValueType::ModelList(Thing::class_ident_const()));
+    const FIELD_INTERFACES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACES, FieldValueType::ModelList(InterfaceField::class_ident_const()));
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -161,6 +179,7 @@ pub struct WorldBuilder {
     areas: Vec<ListOp<AreaBuilder, UID>>,
     routes: Vec<ListOp<RouteBuilder, UID>>,
     things: Vec<ListOp<ThingBuilder, UID>>,
+    interfaces: Vec<ListOp<InterfaceBuilder, UID>>,
     next_id: ID,
 }
 
@@ -177,6 +196,7 @@ impl Builder for WorldBuilder {
             areas: Vec::new(),
             routes: Vec::new(),
             things: Vec::new(),
+            interfaces: Vec::new(),
             next_id: 2 // universe is always 1
         }
     }
@@ -240,6 +260,7 @@ impl Builder for WorldBuilder {
         let areas = Build::create_vec(&mut self.areas, &mut fields_changed, WorldField::Areas)?;
         let routes = Build::create_vec(&mut self.routes, &mut fields_changed, WorldField::Routes)?;
         let things = Build::create_vec(&mut self.things, &mut fields_changed, WorldField::Things)?;
+        let interfaces = Build::create_vec(&mut self.interfaces, &mut fields_changed, WorldField::Interfaces)?;
 
         let next_id = self.next_id + 1; //todo: ?
 
@@ -250,6 +271,7 @@ impl Builder for WorldBuilder {
             areas,
             routes,
             things,
+            interfaces,
             next_id,
         };
 
@@ -268,11 +290,13 @@ impl Builder for WorldBuilder {
         let mut areas = self.areas;
         let mut routes = self.routes;
         let mut things = self.things;
+        let mut interfaces = self.interfaces;
 
         // build identities
         Self::build_local_identities(existing, &mut areas, universe_id, world_id)?;
         Self::build_local_identities(existing, &mut routes, universe_id, world_id)?;
         Self::build_local_identities(existing, &mut things, universe_id, world_id)?;
+        Self::build_local_identities(existing, &mut interfaces, universe_id, world_id)?;
 
         // handle movement of things between locations
         things.iter_mut()
@@ -294,10 +318,12 @@ impl Builder for WorldBuilder {
         self.areas = areas;
         self.routes = routes;
         self.things = things;
+        self.interfaces = interfaces;
 
         Build::modify_vec(&mut self.areas, &mut existing.areas, &mut fields_changed, WorldField::Areas)?;
         Build::modify_vec(&mut self.routes, &mut existing.routes, &mut fields_changed, WorldField::Routes)?;
         Build::modify_vec(&mut self.things, &mut existing.things, &mut fields_changed, WorldField::Things)?;
+        Build::modify_vec(&mut self.interfaces, &mut existing.interfaces, &mut fields_changed, WorldField::Interfaces)?;
 
         Ok(Modification::new(self, fields_changed))
     }
@@ -398,6 +424,23 @@ impl BuildableThingList for WorldBuilder {
     }
 }
 
+impl BuildableInterfaceList for WorldBuilder {
+    fn add_interface(&mut self, interface: InterfaceBuilder) -> Result<&mut Self> {
+        self.interfaces.push(ListOp::Add(interface));
+        Ok(self)
+    }
+
+    fn edit_interface(&mut self, interface: InterfaceBuilder) -> Result<&mut Self> {
+        self.interfaces.push(ListOp::Edit(interface));
+        Ok(self)
+    }
+
+    fn remove_interface(&mut self, interface_uid: UID) -> Result<&mut Self> {
+        self.interfaces.push(ListOp::Remove(interface_uid));
+        Ok(self)
+    }
+}
+
 impl SynchronizedDomainBuilder<World> for WorldBuilder {
     fn synchronize(self, world: &mut World) -> Result<Modification<Self::BuilderType>> {
         self.modify(world)
@@ -405,6 +448,14 @@ impl SynchronizedDomainBuilder<World> for WorldBuilder {
 }
 
 impl WorldBuilder {
+    /*pub fn downlink(&mut self, interface_uid: UID, character_uid: UID) -> Result<Self> {
+        let mut interface = Interface::editor();
+        interface.identity(IdentityBuilder::editor_from_uid(interface_uid))?;
+        let mut character = Character::editor();
+        character.identity(IdentityBuilder::editor_from_uid(character_uid))?;
+        todo
+    }*/
+
     //todo: generate_uid(..) { IdentityGenerator::generate_uid(&mut self, universe_id: UID, world_id: UID, class_id: ClassID) -> UID }
     fn generate_id(&mut self) -> ID {
         let id = self.next_id;

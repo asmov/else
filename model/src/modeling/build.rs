@@ -87,6 +87,28 @@ impl Build {
             OptionOp::Unset => unreachable!("OptionOp::Unset is not allowed in Build::create_option()"),
         }
     }
+
+    pub fn create_uid_option(builder_option_op: &mut OptionOp<IdentityBuilder>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Option<UID>> {
+        match builder_option_op {
+            OptionOp::None => Ok(None),
+            OptionOp::Set(_) => {
+                let builder = builder_option_op.take();
+                if builder.builder_mode() != BuilderMode::Creator {
+                    panic!("BuilderMode::Editor is not allowed for Build::create_option()")
+                }
+
+                let creation = builder.create()?;
+                let (builder, model) = creation.split();
+                *builder_option_op = OptionOp::Set(builder);
+                //todo: fields_changed
+                Ok(Some(model.into_uid()))
+            },
+            OptionOp::Edit(_) => unreachable!("OptionOp::Edit is not allowed in Build::create_option()"),
+            OptionOp::Unset => unreachable!("OptionOp::Unset is not allowed in Build::create_option()"),
+        }
+    }
+
+
  
     pub fn modify<B, M>(builder_option: &mut Option<B>, existing: &mut M, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<()>
     where
@@ -144,6 +166,29 @@ impl Build {
             },
         }
     }
+
+    pub fn modify_uid_option(
+        builder_option_op: &mut OptionOp<IdentityBuilder>,
+        existing_option: &mut Option<UID>,
+        fields_changed: &mut FieldsChanged,
+        field: impl Fields
+    ) -> Result<()> {
+        match builder_option_op {
+            OptionOp::None => Ok(()),
+            OptionOp::Set(_) => {
+                let uid_option = Self::create_uid_option(builder_option_op, fields_changed, field)?;
+                *existing_option = uid_option;
+                Ok(())
+            },
+            OptionOp::Edit(_) => unreachable!("OptionOp::Edit is not allowed in Build::modify_uid_option()"),
+            OptionOp::Unset => {
+                *existing_option = None;
+                //todo: fields changed
+                Ok(())
+            },
+        }
+    }
+
 
     pub fn create_vec<B,M,R>(builder_vec: &mut Vec<ListOp<B,R>>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Vec<M>>
     where
