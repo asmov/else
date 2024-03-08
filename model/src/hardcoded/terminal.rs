@@ -6,11 +6,13 @@ pub const TERMINAL_AREA_KEY: &'static str ="terminal";
 /// Creates the starting room that all players join
 pub fn create_terminal() -> World {
     let mut world_creator = World::creator();
-    world_creator.identity_builder()
-        .universe_id(UniverseID::MAX).unwrap()
-        .world_id(1).unwrap()
-        .class_id(WorldField::class_id()).unwrap()
-        .id(2).unwrap();
+    let identity = Identity::new(
+        UniverseID::MAX,
+        1,
+        WorldField::class_id(),
+        2);
+    world_creator.uid(identity.uid()).unwrap();
+
     world_creator.frame(0).unwrap();
     world_creator.descriptor({
             let mut descriptor = Descriptor::creator();

@@ -21,18 +21,18 @@ pub struct Identity {
     id: ID
 }
 
-pub trait Identifiable: Keyed {
-    fn uid(&self) -> UID;
+pub trait MaybeIdentifiable {
+    fn try_uid(&self) -> Result<UID>;
 }
 
 /// Unique to the World. Should be used to permanently reference objects (never use UID manually).
 pub trait Keyed {
     fn key(&self) -> Option<&str> {
-        {
-            let x = UID::BITS as usize;
-        }
         None
     }
+}
+pub trait Identifiable: Keyed {
+    fn uid(&self) -> UID;
 }
 
 impl MaybeIdentifiable for Identity {
@@ -62,10 +62,6 @@ impl Identifiable for UID {
 }
 
 impl Keyed for UID {}
-
-impl Built for Identity {
-    type BuilderType = IdentityBuilder;
-}
 
 impl Identity {
     pub fn new(universe_id: UniverseID, world_id: WorldID, class_id: ClassID, id: ID) -> Self {
@@ -265,199 +261,14 @@ impl IdentityField {
     }
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct IdentityBuilder {
-    builder_mode: BuilderMode,
-    universe_id: Option<UniverseID>,
-    world_id: Option<WorldID>,
-    class_id: Option<ClassID>,
-    id: Option<ID>
-}
-
-impl Builder for IdentityBuilder {
-    type ModelType = Identity;
-    type BuilderType = Self;
-
-    fn creator() -> Self {
-        Self {
-            builder_mode: BuilderMode::Creator,
-            universe_id: None,
-            world_id: None,
-            class_id: None,
-            id: None,
-        }
-    }
-
-    fn editor() -> Self {
-        Self {
-            builder_mode: BuilderMode::Editor,
-            ..Self::creator()
-        }
-    }
-
-    fn builder_mode(&self) -> BuilderMode {
-        self.builder_mode
-    }
-
-    fn create(self) -> Result<Creation<Self::BuilderType>> {
-        let identity = Identity {
-            id: self.id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::ID.field().name()})?,
-            class_id: self.class_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::ClassID.field().name()})?,
-            world_id: self.world_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::WorldID.field().name()})?,
-            universe_id: self.universe_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::UniverseID.field().name()})?
-        };
-
-        Ok(Creation::new(self, identity))
-    }
-
-    fn modify(self, existing: &mut Self::ModelType) -> Result<Modification<Self>> {
-        let mut fields_changed = FieldsChanged::from_builder(&self);
-
-        if let Some(id) = self.id {
-            existing.id = id;
-        }
-        if let Some(region_id) = self.class_id {
-            existing.class_id = region_id;
-        }
-        if let Some(world_id) = self.world_id {
-            existing.world_id = world_id;
-        }
-        if let Some(universe_id) = self.universe_id {
-            existing.universe_id = universe_id;
-        }
-
-        Ok(Modification::new(self, fields_changed))
-    }
-
-    fn class_ident(&self) -> &'static ClassIdent {
-        IdentityField::class_ident()
-    }
-
-    fn bi(&self) -> bool { true }
-}
-
-impl CloneBuilding for IdentityBuilder {
-    fn clone_model(builder_mode: BuilderMode, existing: &Self::ModelType) -> Self {
-        Self {
-            builder_mode,
-            universe_id: Some(existing.universe_id),
-            world_id: Some(existing.world_id),
-            class_id: Some(existing.class_id),
-            id: Some(existing.id)
-        }
-    }
-}
-
-impl IdentityBuilder {
-}
-
-impl IdentityBuilder {
-    pub fn universe_id(&mut self, universe_id: UniverseID) -> Result<&mut Self> {
-        self.universe_id = Some(universe_id);
-        Ok(self)
-    }
-
-    pub fn world_id(&mut self, world_id: WorldID) -> Result<&mut Self> {
-        self.world_id = Some(world_id);
-        Ok(self)
-    }
-
-    pub fn class_id(&mut self, region_id: ClassID) -> Result<&mut Self> {
-        self.class_id = Some(region_id);
-        Ok(self)
-    }
-
-    pub fn id(&mut self, id: ID) -> Result<&mut Self> {
-        self.id = Some(id);
-        Ok(self)
-    }
-    
-    pub fn uid(&mut self, uid: UID) -> Result<()> {
-        let identity = Identity::from_uid(uid);
-        self.universe_id(identity.universe_id)?;
-        self.world_id(identity.world_id)?;
-        self.class_id(identity.class_id)?;
-        self.id(identity.id)?;
-        Ok(())
-    }
-
-    pub fn get_universe_id(&self) -> Option<UniverseID> {
-        self.universe_id
-    }
-
-    pub fn get_world_id(&self) -> Option<WorldID> {
-        self.world_id
-    }
-
-    pub fn get_class_id(&self) -> Option<ClassID> {
-        self.class_id
-    }
-
-    pub fn get_id(&self) -> Option<ID> {
-        self.id
-    }
-
-    pub fn get_uid(&self) -> Result<UID> {
-        let identity = Identity {
-            id: self.id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::ID.field().name()})?,
-            class_id: self.class_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::ClassID.field().name()})?,
-            world_id: self.world_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::WorldID.field().name()})?,
-            universe_id: self.universe_id.ok_or_else(||
-                Error::FieldNotSet {class: IdentityField::CLASSNAME, field: IdentityField::UniverseID.field().name()})?
-        };
-
-        Ok(identity.into())
-    }
-
-    pub fn editor_from_uid(uid: UID) -> Self {
-        let identity = Identity::from_uid(uid); 
-        Self {
-            builder_mode: BuilderMode::Editor,
-            universe_id: Some(identity.universe_id()), 
-            world_id: Some(identity.world_id()),
-            class_id: Some(identity.class_id()),
-            id: Some(identity.id())
-        }
-    }
-
-    pub fn from_existing(builder: &impl Builder, identifiable: &impl Identifiable) -> Self {
-        let mut me = Self::builder(builder.builder_mode());
-        me.uid(identifiable.uid()).unwrap();
-        me
-    }
-
-    pub fn clone_uid(builder_mode: BuilderMode, uid: UID) -> Self {
-        let identity = Identity::from_uid(uid); 
-        Self {
-            builder_mode,
-            universe_id: Some(identity.universe_id),
-            world_id: Some(identity.world_id),
-            class_id: Some(identity.class_id),
-            id: Some(identity.id)
-        }
-    }
-}
-
-pub trait MaybeIdentifiable {
-    fn try_uid(&self) -> Result<UID>;
-}
-
-impl MaybeIdentifiable for IdentityBuilder {
-    fn try_uid(&self) -> Result<UID> {
-        self.get_uid()
-    }
-}
-
 pub trait BuildableUID: Builder + MaybeIdentifiable {
     fn uid(&mut self, uid: UID) -> Result<&mut Self>;
     fn get_uid(&self) -> Option<&UID>;
+
+    fn uid_from(&mut self, identifiable: &impl Identifiable) -> Result<&mut Self> {
+        self.uid(identifiable.uid())?;
+        Ok(self)
+    }
 
     fn has_uid(&self) -> bool {
         self.get_uid().is_some()
@@ -467,37 +278,6 @@ pub trait BuildableUID: Builder + MaybeIdentifiable {
         self.get_uid()
             .ok_or_else(|| Error::IdentityNotGenerated)
             .and_then(|uid| uid.try_uid())
-    }
-}
-
-pub trait BuildableIdentity: Builder + MaybeIdentifiable {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self>; 
-    fn identity_builder(&mut self) -> &mut IdentityBuilder;
-    fn get_identity(&self) -> Option<&IdentityBuilder>;
-
-    fn has_identity(&self) -> bool {
-        self.get_identity().is_some()
-    }
-
-    fn _try_uid(&self) -> Result<UID> {
-        self.get_identity()
-            .ok_or_else(|| Error::IdentityNotGenerated)
-            .and_then(|identity| identity.get_uid())
-    }
-}
-
-impl BuildableIdentity for IdentityBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        *self = identity;
-        Ok(self)
-    }
-
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        self
-    }
-
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
-        Some(self)
     }
 }
 
@@ -545,17 +325,6 @@ impl IdentityGenerator {
         let identity = Identity::new(self.universe_id, self.world_id, class_id, self.next_id);
         self.next_id += 1;
         identity
-    }
-
-    pub fn next_builder(&mut self, class_id: ClassID) -> IdentityBuilder {
-        let mut identity_builder = Identity::creator();
-        identity_builder
-            .universe_id(self.universe_id).unwrap()
-            .world_id(self.world_id).unwrap()
-            .class_id(class_id).unwrap()
-            .id(self.next_id).unwrap();
-        self.next_id += 1;
-        identity_builder
     }
 
     pub fn get_next_id(&self) -> ID {

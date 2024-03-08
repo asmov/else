@@ -133,7 +133,7 @@ impl AreaViewField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct AreaViewBuilder {
     builder_mode: BuilderMode,
-    identity: Option<IdentityBuilder>,
+    uid: Option<UID>,
     descriptor: Option<DescriptorBuilder>,
     occupant_uids: Vec<ListOp<UID, UID>>,
     route_uids: Vec<ListOp<UID, UID>>
@@ -146,7 +146,7 @@ impl Builder for AreaViewBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            identity: None,
+            uid: None,
             descriptor: None,
             occupant_uids: Vec::new(),
             route_uids: Vec::new()
@@ -167,7 +167,7 @@ impl Builder for AreaViewBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let uid = Build::create(&mut self.identity, &mut fields_changed, AreaViewField::UID)?.to_uid();
+        let uid = Build::create_uid(&mut self.uid, &mut fields_changed, AreaViewField::UID)?;
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, AreaViewField::Descriptor)?;
         let occupant_uids = Build::create_uid_vec(&mut self.occupant_uids, &mut fields_changed, AreaViewField::Things)?;
         let route_uids = Build::create_uid_vec(&mut self.route_uids, &mut fields_changed, AreaViewField::Routes)?;
@@ -203,22 +203,14 @@ impl MaybeIdentifiable for AreaViewBuilder {
     }
 }
 
-impl BuildableIdentity for AreaViewBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        self.identity = Some(identity);
+impl BuildableUID for AreaViewBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.uid = Some(uid);
         Ok(self)
     }
 
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        if self.identity.is_none() {
-            self.identity = Some(IdentityBuilder::builder(self.builder_mode));
-        }
-
-        self.identity.as_mut().unwrap()
-    }
-
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
-        self.identity.as_ref()
+    fn get_uid(&self) -> Option<&UID> {
+        self.uid.as_ref()
     }
 }
 

@@ -200,17 +200,17 @@ impl BuildableUID for CharacterBuilder {
     }
 }
 
-/*impl BuildableIdentity for CharacterBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
+/*impl BuildableUID for CharacterBuilder {
+    fn identity(&mut self, identity: UID) -> Result<&mut Self> {
         self.entity_builder().identity(identity)?;
         Ok(self)
     }
 
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
+    fn identity_builder(&mut self) -> &mut UID {
         self.entity_builder().identity_builder()
     }
 
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
+    fn get_identity(&self) -> Option<&UID> {
         self.get_entity()
             .and_then(|entity| entity.get_identity())
     }

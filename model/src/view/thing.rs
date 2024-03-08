@@ -64,7 +64,7 @@ impl ThingViewField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct ThingViewBuilder {
     builder_mode: BuilderMode,
-    identity: Option<IdentityBuilder>,
+    uid: Option<UID>,
     descriptor: Option<DescriptorBuilder>
 }
 
@@ -75,7 +75,7 @@ impl Builder for ThingViewBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            identity: None,
+            uid: None,
             descriptor: None
         }
     }
@@ -94,7 +94,7 @@ impl Builder for ThingViewBuilder {
     fn create(mut self) -> crate::Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let uid = Build::create(&mut self.identity, &mut fields_changed, ThingViewField::UID)?.to_uid();
+        let uid = Build::create_uid(&mut self.uid, &mut fields_changed, ThingViewField::UID)?;
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, ThingViewField::Descriptor)?;
 
         let thing_view = ThingView {
@@ -120,25 +120,19 @@ impl Builder for ThingViewBuilder {
 
 impl MaybeIdentifiable for ThingViewBuilder {
     fn try_uid(&self) -> Result<UID> {
-        self.identity.as_ref()
-            .ok_or(Error::IdentityNotGenerated)
-            .and_then(|i| i.try_uid())
+        Self::_try_uid(&self)
     }
 }
 
 
-impl BuildableIdentity for ThingViewBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        self.identity = Some(identity);
+impl BuildableUID for ThingViewBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.uid = Some(uid);
         Ok(self)
     }
 
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        self.identity.get_or_insert_with(IdentityBuilder::creator)
-    }
-
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
-        self.identity.as_ref()
+    fn get_uid(&self) -> Option<&UID> {
+        self.uid.as_ref()
     }
 }
 

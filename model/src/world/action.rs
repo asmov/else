@@ -33,12 +33,12 @@ impl WorldAction {
         } // todo: this is where reservations would be checked
 
         let mut interface_editor = interface.edit_self();
-        interface_editor.downlink_uid(IdentityBuilder::editor_from_uid(character_uid))?;
+        interface_editor.downlink_uid(character_uid)?;
 
         let mut character_editor = character.edit_self();
         character_editor.cortex_builder().set_intelligence_lobe({
             let mut intelligence_lobe = IntelligenceLobeBuilder::creator();
-            intelligence_lobe.interface_uid(IdentityBuilder::editor_from_uid(interface_uid))?;
+            intelligence_lobe.interface_uid(interface_uid)?;
             intelligence_lobe
         })?;
         

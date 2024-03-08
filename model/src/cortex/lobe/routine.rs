@@ -87,7 +87,7 @@ impl RoutineLobeField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct RoutineLobeBuilder {
     builder_mode: BuilderMode,
-    routine_uid: Option<IdentityBuilder>,
+    routine_uid: Option<UID>,
     routine_awareness: Option<Awareness>
 }
 
@@ -117,8 +117,7 @@ impl Builder for RoutineLobeBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let routine_uid = Build::create(&mut self.routine_uid, &mut fields_changed, RoutineLobeField::RoutineUID)?
-            .uid();
+        let routine_uid = Build::create_uid(&mut self.routine_uid, &mut fields_changed, RoutineLobeField::RoutineUID)?;
         let routine_awareness = Build::create_value(&mut self.routine_awareness, &mut fields_changed, RoutineLobeField::RoutineAwareness)?;
 
         let routine_lobe = RoutineLobe {
@@ -144,7 +143,7 @@ impl Builder for RoutineLobeBuilder {
 }
 
 impl RoutineLobeBuilder {
-    pub fn routine_uid(&mut self, routine_id: IdentityBuilder) -> Result<&mut Self> {
+    pub fn routine_uid(&mut self, routine_id: UID) -> Result<&mut Self> {
         self.routine_uid = Some(routine_id);
         Ok(self)
     }

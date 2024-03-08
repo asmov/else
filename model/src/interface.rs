@@ -70,8 +70,8 @@ impl InterfaceField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct InterfaceBuilder {
     builder_mode: BuilderMode,
-    identity: Option<IdentityBuilder>,
-    downlink_uid: OptionOp<IdentityBuilder>
+    uid: Option<UID>,
+    downlink_uid: OptionOp<UID>
 }
 
 impl Builder for InterfaceBuilder {
@@ -81,7 +81,7 @@ impl Builder for InterfaceBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            identity: None,
+            uid: None,
             downlink_uid: OptionOp::None
         }
     }
@@ -104,7 +104,7 @@ impl Builder for InterfaceBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
         
-        let uid = Build::create_uid(&mut self.identity, &mut fields_changed, InterfaceField::UID)?;
+        let uid = Build::create_uid(&mut self.uid, &mut fields_changed, InterfaceField::UID)?;
         let downlink_uid = Build::create_uid_option(&mut self.downlink_uid, &mut fields_changed, InterfaceField::DownlinkUID)?;
 
         let interface = Interface {
@@ -126,30 +126,23 @@ impl Builder for InterfaceBuilder {
 
 impl MaybeIdentifiable for InterfaceBuilder {
     fn try_uid(&self) -> Result<UID> {
-        self.identity
-            .as_ref()
-            .ok_or_else(|| Error::IdentityNotGenerated)
-            .and_then(|identity| identity.try_uid())
+        Self::_try_uid(&self)
     }
 }
 
-impl BuildableIdentity for InterfaceBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        self.identity = Some(identity);
+impl BuildableUID for InterfaceBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.uid = Some(uid);
         Ok(self)
     }
-    
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        self.identity.get_or_insert_with(IdentityBuilder::creator)
-    }
-    
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
-        self.identity.as_ref()
+
+    fn get_uid(&self) -> Option<&UID> {
+        self.uid.as_ref()
     }
 }
 
 impl InterfaceBuilder {
-    pub fn downlink_uid(&mut self, downlink_uid: IdentityBuilder) -> Result<&mut Self> {
+    pub fn downlink_uid(&mut self, downlink_uid: UID) -> Result<&mut Self> {
         self.downlink_uid = OptionOp::Set(downlink_uid);
         Ok(self)
     }
@@ -159,7 +152,7 @@ impl InterfaceBuilder {
         Ok(self)
     }
 
-    pub fn get_downlink_uid_op(&self) -> OptionOp<&IdentityBuilder> {
+    pub fn get_downlink_uid_op(&self) -> OptionOp<&UID> {
         self.downlink_uid.as_ref()
     }
 }

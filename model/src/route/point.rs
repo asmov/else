@@ -1,4 +1,4 @@
-use crate::{error::*, modeling::*, route::*, world::*};
+use crate::{error::*, modeling::*, route::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -109,7 +109,7 @@ impl PointBuilder {
                 Ok(vec![
                     b.get_end_builder()
                         .expect("EndBuilder should exist")
-                        .get_area_identity()
+                        .get_area_uid()
                         .expect("AreaIdentity should exist")
                         .try_uid()?
                 ])
@@ -118,7 +118,7 @@ impl PointBuilder {
                 b.entrances().iter()
                     .filter_map(|entrance_op| match entrance_op {
                         ListOp::Add(end) | ListOp::Edit(end) => {
-                            Some(end.get_area_identity()
+                            Some(end.get_area_uid()
                                 .expect("AreaIdentity should exist")
                                 .try_uid())
                         },

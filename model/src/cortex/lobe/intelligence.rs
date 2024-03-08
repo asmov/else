@@ -71,7 +71,7 @@ impl IntelligenceLobeField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct IntelligenceLobeBuilder {
     builder_mode: BuilderMode,
-    interface_uid: Option<IdentityBuilder>,
+    interface_uid: Option<UID>,
 }
 
 impl Builder for IntelligenceLobeBuilder {
@@ -122,7 +122,7 @@ impl Builder for IntelligenceLobeBuilder {
 }
 
 impl IntelligenceLobeBuilder {
-    pub fn interface_uid(&mut self, interface_uid: IdentityBuilder) -> Result<&mut Self> {
+    pub fn interface_uid(&mut self, interface_uid: UID) -> Result<&mut Self> {
         self.interface_uid = Some(interface_uid);
         Ok(self)
     }

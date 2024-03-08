@@ -88,7 +88,7 @@ impl EndField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct EndBuilder {
     builder_mode: BuilderMode,
-    area_identity: Option<IdentityBuilder>,
+    area_uid: Option<UID>,
     descriptor: Option<DescriptorBuilder>,
     direction: Option<Direction>
 }
@@ -100,7 +100,7 @@ impl Builder for EndBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            area_identity: None,
+            area_uid: None,
             descriptor: None,
             direction: None
         }
@@ -120,7 +120,7 @@ impl Builder for EndBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let area_uid = Build::create(&mut self.area_identity, &mut fields_changed, EndField::AreaIdentity)?.uid();
+        let area_uid = Build::create_uid(&mut self.area_uid, &mut fields_changed, EndField::AreaIdentity)?.uid();
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, EndField::Descriptor)?;
         let direction = Build::create_value(&mut self.direction, &mut fields_changed, EndField::Direction)?;
 
@@ -164,7 +164,7 @@ impl BuildableDescriptor for EndBuilder {
 
 impl MaybeIdentifiable for EndBuilder {
     fn try_uid(&self) -> Result<UID> {
-        self.area_identity.as_ref()
+        self.area_uid.as_ref()
             .ok_or_else(|| Error::IdentityNotGenerated)
             .and_then(|uid| uid.try_uid())
     }
@@ -174,7 +174,7 @@ impl CloneBuilding for EndBuilder {
     fn clone_model(builder_mode: BuilderMode, existing: &Self::ModelType) -> Self {
         Self {
             builder_mode,
-            area_identity: Some(IdentityBuilder::clone_uid(builder_mode, existing.area_uid)),
+            area_uid: Some(existing.area_uid),
             descriptor: Some(DescriptorBuilder::clone_model(builder_mode, &existing.descriptor)),
             direction: Some(existing.direction)
         }
@@ -182,21 +182,13 @@ impl CloneBuilding for EndBuilder {
 }
 
 impl EndBuilder {
-    pub fn area_identity(&mut self, id: IdentityBuilder) -> Result<&mut Self> {
-        self.area_identity = Some(id);
+    pub fn area_uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.area_uid = Some(uid);
         Ok(self)
     }
 
-    pub fn area_identity_builder(&mut self) -> &mut IdentityBuilder {
-        if self.area_identity.is_none() {
-            self.area_identity = Some(Identity::builder(self.builder_mode()));
-        }
-
-        self.area_identity.as_mut().unwrap()
-    }
-
-    pub fn get_area_identity(&self) -> Option<&IdentityBuilder> {
-        self.area_identity.as_ref()
+    pub const fn get_area_uid(&self) -> Option<&UID> {
+        self.area_uid.as_ref()
     }
 
     pub fn direction(&mut self, direction: Direction) -> Result<&mut Self> {

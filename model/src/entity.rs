@@ -1,4 +1,4 @@
-use crate::{codebase::*, error::*, identity::*, modeling::*, descriptor::*, location::*, world::*};
+use crate::{codebase::*, error::*, identity::*, modeling::*, descriptor::*, location::*};
 use serde;
 
 
@@ -93,7 +93,7 @@ impl EntityField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct EntityBuilder {
     builder_mode: BuilderMode,
-    identity: Option<UID>,
+    uid: Option<UID>,
     location: Option<Location>,
     descriptor: Option<DescriptorBuilder>
 }
@@ -105,7 +105,7 @@ impl Builder for EntityBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            identity: None,
+            uid: None,
             descriptor: None,
             location: None
         }
@@ -125,7 +125,7 @@ impl Builder for EntityBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let uid = Build::create_value(&mut self.identity, &mut fields_changed, EntityField::Identity)?;
+        let uid = Build::create_value(&mut self.uid, &mut fields_changed, EntityField::Identity)?;
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, EntityField::Descriptor)?;
         let location = Build::create_value(&self.location, &mut fields_changed, EntityField::Location)?;
 
@@ -139,7 +139,7 @@ impl Builder for EntityBuilder {
     }
 
     fn modify(mut self, existing: &mut Entity) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Build::prepare_modify_ex(&mut self, existing)?;
+        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
         Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, EntityField::Descriptor)?;
         Build::modify_value(&self.location, &mut existing.location, &mut fields_changed, EntityField::Location)?;
@@ -166,12 +166,12 @@ impl MaybeIdentifiable for EntityBuilder {
 
 impl BuildableUID for EntityBuilder {
     fn uid(&mut self, uid: UID) -> Result<&mut Self> {
-        self.identity = Some(uid);
+        self.uid = Some(uid);
         Ok(self)
     }
 
     fn get_uid(&self) -> Option<&UID> {
-        self.identity.as_ref()
+        self.uid.as_ref()
     }
 }
 

@@ -54,7 +54,7 @@ impl WorldField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct WorldBuilder {
     builder_mode: BuilderMode,
-    identity: Option<IdentityBuilder>,
+    uid: Option<UID>,
     frame: Option<Frame>,
     descriptor: Option<DescriptorBuilder>,
     areas: Vec<ListOp<AreaBuilder, UID>>,
@@ -71,7 +71,7 @@ impl Builder for WorldBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            identity: None,
+            uid: None,
             frame: None,
             descriptor: None,
             areas: Vec::new(),
@@ -96,12 +96,11 @@ impl Builder for WorldBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::new(WorldField::class_ident(), ChangeOp::Create);
 
-        let identity = Build::create(&mut self.identity, &mut fields_changed, WorldField::UID)?;
+        let uid = Build::create_uid(&mut self.uid, &mut fields_changed, WorldField::UID)?;
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, WorldField::Descriptor)?;
         let frame = Build::create_value(&mut self.frame, &mut fields_changed, WorldField::Frame)?;
 
-        let mut idgen = IdentityGenerator::from_identity(&identity, self.next_id);
-        let uid = identity.to_uid();
+        let mut idgen = IdentityGenerator::from_uid(uid, self.next_id);
 
         // reassign these to self later
         let mut areas = self.areas;
@@ -203,22 +202,14 @@ impl MaybeIdentifiable for WorldBuilder {
     }
 }
 
-impl BuildableIdentity for WorldBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        self.identity = Some(identity);
+impl BuildableUID for WorldBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.uid = Some(uid);
         Ok(self)
     }
 
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        if self.identity.is_none() {
-            self.identity = Some(Identity::builder(self.builder_mode()))
-        }
-
-        self.identity.as_mut().unwrap()
-    }
-
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
-        self.identity.as_ref()
+    fn get_uid(&self) -> Option<&UID> {
+        self.uid.as_ref()
     }
 }
 
@@ -307,9 +298,9 @@ impl SynchronizedDomainBuilder<World> for WorldBuilder {
 impl WorldBuilder {
     /*pub fn downlink(&mut self, interface_uid: UID, character_uid: UID) -> Result<Self> {
         let mut interface = Interface::editor();
-        interface.identity(IdentityBuilder::editor_from_uid(interface_uid))?;
+        interface.identity(UID::editor_from_uid(interface_uid))?;
         let mut character = Character::editor();
-        character.identity(IdentityBuilder::editor_from_uid(character_uid))?;
+        character.identity(UID::editor_from_uid(character_uid))?;
         todo
     }*/
 
@@ -401,18 +392,18 @@ impl WorldBuilder {
     }
 
     fn build_local_identities(
-        operations: &mut Vec<ListOp<impl BuildableIdentity, UID>>,
+        operations: &mut Vec<ListOp<impl BuildableUID, UID>>,
         idgen: &mut IdentityGenerator
     ) -> Result<()> {
         for op in operations {
             match op {
                 ListOp::Add(builder) => {
-                    if builder.has_identity() {
+                    if builder.has_uid() {
                         continue;
                     }
 
-                    let identity = idgen.next_builder(builder.class_ident().class_id());
-                    builder.identity(identity).unwrap();
+                    let uid = idgen.next_uid(builder.class_ident().class_id());
+                    builder.uid(uid).unwrap();
                 },
                 _ => {},
             }
@@ -441,7 +432,7 @@ impl WorldBuilder {
     pub fn area_builder_from_existing(areas: &mut Vec<ListOp<AreaBuilder, UID>>, existing_area_uid: UID) -> Result<&mut AreaBuilder> {
         // otherwise create it
         let mut area_editor = Area::editor();
-        area_editor.identity(IdentityBuilder::editor_from_uid(existing_area_uid))?;
+        area_editor.uid(existing_area_uid)?;
         areas.push(ListOp::Edit(area_editor));
 
         // find it again

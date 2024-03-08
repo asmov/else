@@ -1,5 +1,5 @@
 use serde;
-use crate::{modeling::*, codebase::*, error::*, identity::*, world::*};
+use crate::{modeling::*, codebase::*, error::*, identity::*};
 
 /// All descriptive information about and object that can be observed by a player.
 /// See also its corresponding trait: `Descriptive`

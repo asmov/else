@@ -94,7 +94,7 @@ impl WorldViewField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct WorldViewBuilder {
     builder_mode: BuilderMode,
-    identity: Option<IdentityBuilder>,
+    uid: Option<UID>,
     frame: Option<Frame>,
     area_view: Option<AreaViewBuilder>,
     routes: Vec<ListOp<RouteBuilder, UID>>,
@@ -108,7 +108,7 @@ impl Builder for WorldViewBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            identity: None,
+            uid: None,
             frame: None,
             area_view: None,
             routes: Vec::new(),
@@ -130,7 +130,7 @@ impl Builder for WorldViewBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let uid = Build::create(&mut self.identity, &mut fields_changed, WorldViewField::UID)?.to_uid();
+        let uid = Build::create_uid(&mut self.uid, &mut fields_changed, WorldViewField::UID)?;
         let frame = Build::create_value(&self.frame, &mut fields_changed, WorldViewField::Frame)?;
         let area_view = Build::create(&mut self.area_view, &mut fields_changed, WorldViewField::Area)?;
         let routes = Build::create_vec(&mut self.routes, &mut fields_changed, WorldViewField::Routes)?;
@@ -163,12 +163,24 @@ impl Builder for WorldViewBuilder {
     }
 }
 
-impl WorldViewBuilder {
-    pub fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        self.identity = Some(identity);
-        Ok(self) 
+impl MaybeIdentifiable for WorldViewBuilder {
+    fn try_uid(&self) -> Result<UID> {
+        Self::_try_uid(&self)
     }
+}
 
+impl BuildableUID for WorldViewBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.uid = Some(uid);
+        Ok(self)
+    }
+    
+    fn get_uid(&self) -> Option<&UID> {
+        self.uid.as_ref()
+    }
+}
+
+impl WorldViewBuilder {
     pub fn frame(&mut self, frame: Frame) -> Result<&mut Self> {
         self.frame = Some(frame);
         Ok(self)

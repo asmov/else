@@ -19,11 +19,12 @@ pub const HOUSEKEEPER: &'static str = "housekeeper";
 pub fn create_world() -> World {
     let mut world_creator = model::World::creator();
 
-    world_creator.identity_builder()
-        .universe_id(UniverseID::MAX).unwrap()
-        .world_id(WorldID::MAX).unwrap()
-        .class_id(WorldField::class_id()).unwrap()
-        .id(2).unwrap();
+    let identity = Identity::new(
+        UniverseID::MAX,
+        WorldID::MAX,
+        WorldField::class_id(),
+        2);
+    world_creator.uid(identity.into_uid()).unwrap();
 
     world_creator.frame(0).unwrap();
 
@@ -82,7 +83,7 @@ pub fn create_world() -> World {
             cortex_creator.routine_lobe({
                 let mut routine_lobe_creator = model::RoutineLobe::creator();
                 routine_lobe_creator
-                    .routine_uid(IdentityBuilder::clone_uid(BuilderMode::Creator, 0)).unwrap() //todo: model crate should have an enum of IDs from behavior crate
+                    .routine_uid(0).unwrap() //todo: model crate should have an enum of IDs from behavior crate
                     .routine_awareness(Awareness::Conscious).unwrap();
                 routine_lobe_creator
             }).unwrap();
@@ -107,7 +108,7 @@ pub fn create_world() -> World {
             cortex_creator.routine_lobe({
                 let mut routine_lobe_creator = model::RoutineLobe::creator();
                 routine_lobe_creator
-                    .routine_uid(IdentityBuilder::clone_uid(BuilderMode::Creator, 0)).unwrap() //todo: model crate should have an enum of IDs from behavior crate
+                    .routine_uid(0).unwrap() //todo: model crate should have an enum of IDs from behavior crate
                     .routine_awareness(Awareness::Conscious).unwrap();
                 routine_lobe_creator
             }).unwrap();
@@ -147,7 +148,7 @@ pub fn create_world() -> World {
                     descriptor_creator.description(s!("A narrow brick pathway leads to a wooden dog house.")).unwrap();
                     descriptor_creator
                 }).unwrap();
-                end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_a)).unwrap();
+                end_creator.area_uid(area_a.uid()).unwrap();
                 end_creator.direction(Direction::level(HorizontalDirection::West)).unwrap();
                 end_creator
             }).unwrap();
@@ -164,7 +165,7 @@ pub fn create_world() -> World {
                     descriptor_creator.description(s!("A narrow brick pathway leads to a grassy backyard.")).unwrap();
                     descriptor_creator
                 }).unwrap();
-                end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_b)).unwrap();
+                end_creator.area_uid(area_b.uid()).unwrap();
                 end_creator.direction(Direction::level(HorizontalDirection::East)).unwrap();
                 end_creator
             }).unwrap();
@@ -195,7 +196,7 @@ pub fn create_world() -> World {
                     descriptor_creator.description(s!("A well-worn dirt path winds its way to a pink cat house.")).unwrap();
                     descriptor_creator
                 }).unwrap();
-                end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_a)).unwrap();
+                end_creator.area_uid(area_a.uid()).unwrap();
                 end_creator.direction(Direction::level(HorizontalDirection::East)).unwrap();
                 end_creator
             }).unwrap();
@@ -212,7 +213,7 @@ pub fn create_world() -> World {
                     descriptor_creator.description(s!("A well-worn dirt path winds its way to a grassy backyard.")).unwrap();
                     descriptor_creator
                 }).unwrap();
-                end_creator.area_identity(IdentityBuilder::from_existing(&end_creator, area_b)).unwrap();
+                end_creator.area_uid(area_b.uid()).unwrap();
                 end_creator.direction(Direction::level(HorizontalDirection::West)).unwrap();
                 end_creator
             }).unwrap();
@@ -241,11 +242,12 @@ pub fn world_from_binary(world_bytes: Vec<u8>) -> Result<World> {
 
 pub fn interface_from_universe() -> InterfaceBuilder {
     let mut interface_creator = Interface::creator();
-    interface_creator.identity_builder()
-        .universe_id(UniverseID::MAX).unwrap()
-        .world_id(WorldID::MAX).unwrap()
-        .class_id(InterfaceField::class_id()).unwrap()
-        .id(ID::MAX).unwrap();
+    let identity = Identity::new(
+        UniverseID::MAX,
+        WorldID::MAX,
+        InterfaceField::class_id(),
+        ID::MAX);
+    interface_creator.uid(identity.into_uid()).unwrap();
     interface_creator.create().unwrap().split().0
 }
 

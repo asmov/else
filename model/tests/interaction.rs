@@ -25,7 +25,7 @@ mod tests {
             cortex_creator.routine_lobe({
                 let mut routine_lobe_creator = model::RoutineLobe::creator();
                 routine_lobe_creator
-                    .routine_uid(IdentityBuilder::clone_uid(BuilderMode::Creator, 0)).unwrap() //todo: model crate should have an enum of IDs from behavior crate
+                    .routine_uid(0).unwrap() //todo: model crate should have an enum of IDs from behavior crate
                     .routine_awareness(Awareness::Conscious).unwrap();
                 routine_lobe_creator
             }).unwrap();
@@ -63,7 +63,7 @@ mod tests {
             cortex_creator.routine_lobe({
                 let mut routine_lobe_creator = model::RoutineLobe::creator();
                 routine_lobe_creator
-                    .routine_uid(IdentityBuilder::clone_uid(BuilderMode::Creator, 0)).unwrap() //todo: model crate should have an enum of IDs from behavior crate
+                    .routine_uid(0).unwrap() //todo: model crate should have an enum of IDs from behavior crate
                     .routine_awareness(Awareness::Conscious).unwrap();
                 routine_lobe_creator
             }).unwrap();

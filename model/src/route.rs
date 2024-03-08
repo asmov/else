@@ -117,7 +117,7 @@ impl RouteField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct RouteBuilder {
     builder_mode: BuilderMode,
-    identity: Option<IdentityBuilder>,
+    uid: Option<UID>,
     descriptor: Option<DescriptorBuilder>,
     point_a: Option<PointBuilder>,
     point_b: Option<PointBuilder>
@@ -130,7 +130,7 @@ impl Builder for RouteBuilder {
     fn creator() -> Self {
         Self {
             builder_mode: BuilderMode::Creator,
-            identity: None,
+            uid: None,
             descriptor: None,
             point_a: None,
             point_b: None
@@ -151,7 +151,7 @@ impl Builder for RouteBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let uid = Build::create(&mut self.identity, &mut fields_changed, RouteField::UID)?.uid();
+        let uid = Build::create_uid(&mut self.uid, &mut fields_changed, RouteField::UID)?;
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, RouteField::Descriptor)?;
         let point_a = Build::create(&mut self.point_a, &mut fields_changed, RouteField::PointA)?;
         let point_b = Build::create(&mut self.point_b, &mut fields_changed, RouteField::PointB)?;
@@ -187,22 +187,14 @@ impl MaybeIdentifiable for RouteBuilder {
     }
 }
 
-impl BuildableIdentity for RouteBuilder {
-    fn identity(&mut self, id: IdentityBuilder) -> Result<&mut Self> {
-        self.identity = Some(id);
+impl BuildableUID for RouteBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.uid = Some(uid);
         Ok(self)
     }
 
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        if self.identity.is_none() {
-            self.identity = Some(Identity::builder(self.builder_mode()));
-        }
-
-        self.identity.as_mut().unwrap()
-    }
-
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
-        self.identity.as_ref()
+    fn get_uid(&self) -> Option<&UID> {
+        self.uid.as_ref()
     }
 }
 
@@ -282,7 +274,7 @@ impl CloneBuilding for RouteBuilder {
     fn clone_model(builder_mode: BuilderMode, existing: &Route) -> Self {
         Self {
             builder_mode,
-            identity: Some(IdentityBuilder::clone_uid(builder_mode, existing.uid)),
+            uid: Some(existing.uid),
             descriptor: Some(DescriptorBuilder::clone_model(builder_mode, &existing.descriptor)),
             point_a: Some(PointBuilder::clone_model(builder_mode, &existing.point_a)),
             point_b: Some(PointBuilder::clone_model(builder_mode, &existing.point_b))
@@ -309,7 +301,7 @@ mod tests {
                 point_a.end({ 
                     let mut end = End::creator();
                     end
-                        .area_identity(IdentityBuilder::from_existing(&point_a, cat_house)).unwrap()
+                        .area_uid(cat_house.uid()).unwrap()
                         .direction(Direction::up()).unwrap()
                         .descriptor({
                             let mut descriptor = Descriptor::creator();
@@ -327,7 +319,7 @@ mod tests {
                 point_b.end({ 
                     let mut end = End::creator();
                     end
-                        .area_identity(IdentityBuilder::from_existing(&point_b, dog_house)).unwrap()
+                        .area_uid(dog_house.uid()).unwrap()
                         .direction(Direction::up()).unwrap()
                         .descriptor({
                             let mut descriptor = Descriptor::creator();
@@ -397,7 +389,7 @@ mod tests {
                 .end({
                     let mut end_creator = End::creator();
                     end_creator
-                        .area_identity(IdentityBuilder::from_existing(&end_creator, backyard)).unwrap()
+                        .area_uid(backyard.uid()).unwrap()
                         .direction(Direction::down()).unwrap()
                         .descriptor({
                             let mut descriptor_creator = Descriptor::creator();

@@ -55,7 +55,7 @@ impl Built for Thing {
     fn edit_self(&self) -> Self::BuilderType
         where
             Self: Identifiable,
-            Self::BuilderType: BuildableIdentity {
+            Self::BuilderType: BuildableUID {
         match self {
             Thing::Character(character) => character.edit_self().thing_builder(),
             Thing::Item(_item) => todo!(),
@@ -155,28 +155,21 @@ impl BuildableEntity for ThingBuilder {
 
 impl MaybeIdentifiable for ThingBuilder {
     fn try_uid(&self) -> Result<UID> {
-        self.get_identity()
-            .ok_or_else(|| Error::IdentityNotGenerated)?
-            .get_uid()
-            
+        Self::_try_uid(&self)
     }
 }
 
-impl BuildableIdentity for ThingBuilder {
-    fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        self.entity_builder().identity(identity)?;
+impl BuildableUID for ThingBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.entity_builder().uid(uid);
         Ok(self)
     }
 
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        self.entity_builder().identity_builder()
-    }
-
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
-        self.get_entity()
-            .and_then(|entity_builder| entity_builder.get_identity())
+    fn get_uid(&self) -> Option<&UID> {
+        self.get_entity().and_then(|e| e.get_uid())
     }
 }
+    
 
 pub trait BuildableThingList {
     fn thing_ops(&mut self) -> &mut Vec<ListOp<ThingBuilder, UID>>;

@@ -110,24 +110,12 @@ pub trait Built {
     fn edit_self(&self) -> Self::BuilderType
     where
         Self: Identifiable,
-        Self::BuilderType: BuildableIdentity
-    {
-        let mut editor = Self::editor();
-        let identity_builder = IdentityBuilder::editor_from_uid(self.uid());
-        editor.identity(identity_builder).unwrap();
-        editor
-    }
-
-    fn edit_self_ex(&self) -> Self::BuilderType
-    where
-        Self: Identifiable,
         Self::BuilderType: BuildableUID
     {
         let mut editor = Self::editor();
         editor.uid(self.uid()).unwrap();
         editor
     }
-
 }
 
 /// Represents an Add, Remove, or Modify operation against an Option

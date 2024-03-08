@@ -80,7 +80,7 @@ pub struct InterfaceViewBuilder {
     builder_mode: BuilderMode,
     interface: Option<InterfaceBuilder>,
     world_view: Option<WorldViewBuilder>,
-    downlink_uid: Option<IdentityBuilder>
+    downlink_uid: Option<UID>
 }
 
 impl Builder for InterfaceViewBuilder {
@@ -116,8 +116,7 @@ impl Builder for InterfaceViewBuilder {
 
         let interface = Build::create(&mut self.interface, &mut fields_changed, InterfaceViewField::Interface)?;
         let world_view = Build::create(&mut self.world_view, &mut fields_changed, InterfaceViewField::World)?;
-        let downlink_uid = Build::create(&mut self.downlink_uid, &mut fields_changed, InterfaceViewField::Downlink)?
-            .uid();
+        let downlink_uid = Build::create_uid(&mut self.downlink_uid, &mut fields_changed, InterfaceViewField::Downlink)?;
 
         let interface_view = InterfaceView {
             interface,
@@ -155,7 +154,7 @@ impl InterfaceViewBuilder {
         Ok(self)
     }
 
-    pub fn downlink_uid(&mut self, downlink_uid: IdentityBuilder) -> Result<&mut Self> {
+    pub fn downlink_uid(&mut self, downlink_uid: UID) -> Result<&mut Self> {
         self.downlink_uid = Some(downlink_uid);
         Ok(self)
     }

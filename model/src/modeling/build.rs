@@ -27,7 +27,7 @@ impl Build {
         Ok(())
     }
 
-    pub fn modify_uid(builder_option: &Option<IdentityBuilder>, value: &mut UID, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<()> {
+    pub fn modify_uid(builder_option: &Option<UID>, value: &mut UID, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<()> {
         if !builder_option.is_some() {
             return Ok(())
         }
@@ -58,9 +58,12 @@ impl Build {
         Ok(model)
     }
 
-    pub fn create_uid(builder_option: &mut Option<IdentityBuilder>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<UID> {
-        Self::create(builder_option, fields_changed, field)
-            .map(|identity| identity.to_uid())
+    pub fn create_uid(builder_option: &mut Option<UID>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<UID> {
+        let field = field.field();
+        let uid = builder_option
+            .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?;
+
+        Ok(uid)
     }
 
     pub fn create_option<B, M>(builder_option_op: &mut OptionOp<B>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Option<M>>
@@ -84,18 +87,15 @@ impl Build {
         }
     }
 
-    pub fn create_uid_option(builder_option_op: &mut OptionOp<IdentityBuilder>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Option<UID>> {
+    pub fn create_uid_option(builder_option_op: &mut OptionOp<UID>, fields_changed: &mut FieldsChanged, field: impl Fields) -> Result<Option<UID>> {
         match builder_option_op {
             OptionOp::None => Ok(None),
             OptionOp::Set(_) => {
-                let builder = builder_option_op.take().unwrap();
-                debug_assert!(builder.mode_matches(BuilderMode::Creator), "BuilderMode::Editor is not allowed for Build::create_option()");
+                let uid = builder_option_op.take().unwrap();
 
-                let creation = builder.create()?;
-                let (builder, model) = creation.split();
-                *builder_option_op = OptionOp::Set(builder);
+                *builder_option_op = OptionOp::Set(uid);
                 //todo: fields_changed
-                Ok(Some(model.into_uid()))
+                Ok(Some(uid))
             },
             OptionOp::Edit(_) => unreachable!("OptionOp::Edit is not allowed in Build::create_option()"),
             OptionOp::Unset => unreachable!("OptionOp::Unset is not allowed in Build::create_option()"),
@@ -162,7 +162,7 @@ impl Build {
     }
 
     pub fn modify_uid_option(
-        builder_option_op: &mut OptionOp<IdentityBuilder>,
+        builder_option_op: &mut OptionOp<UID>,
         existing_option: &mut Option<UID>,
         fields_changed: &mut FieldsChanged,
         field: impl Fields
@@ -341,11 +341,11 @@ impl Build {
 
     pub fn prepare_modify<B,M>(builder: &mut B, existing: &mut M) -> Result<FieldsChanged>
     where
-        B: Builder<ModelType = M> + BuildableIdentity,
+        B: Builder<ModelType = M> + BuildableUID,
         M: Identifiable
     {
-        if builder.get_identity().is_none() {
-            builder.identity(IdentityBuilder::from_existing(builder, existing))?;
+        if !builder.has_uid() {
+            builder.uid_from(existing)?;
         } else {
             assert_eq!(builder.try_uid()?, existing.uid());
         }

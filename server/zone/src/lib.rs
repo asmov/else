@@ -2,7 +2,7 @@ use std::fs;
 use native_tls as tls;
 use asmov_else_model as model;
 use asmov_else_server_common as server;
-use model::{area, identity, route, BuildableDescriptor, BuildableIdentity, BuildableOccupantList, BuildableRouteUIDList, Builder, Built, CloneBuilding, Descriptive, DomainSynchronizer, Exists, Identifiable, RouteBuilder};
+use model::{area, identity, route, BuildableDescriptor, BuildableUID, BuildableOccupantList, BuildableRouteUIDList, Builder, Built, CloneBuilding, Descriptive, DomainSynchronizer, Exists, Identifiable, RouteBuilder};
 
 pub struct ClientSession {
     interface_view: model::InterfaceView,
@@ -16,28 +16,18 @@ impl ClientSession {
     pub fn todo_from_universe_server(world: &model::World) -> model::Result<Self> {
         let mut interface_view_creator = model::InterfaceViewBuilder::creator();
 
-        interface_view_creator.interface({
-            let mut interface_creator = model::InterfaceBuilder::creator();
-            interface_creator.identity({
-                let mut identity_creator = model::IdentityBuilder::from_existing(&interface_creator, world);
-                identity_creator
-                    .class_id(model::CodebaseClassID::Interface as model::ClassID)?
-                    .id(1)?;
-                identity_creator
-            })?;
-            interface_creator
-        })?;
+        interface_view_creator.interface(model::testing::interface_from_universe())?;
 
         interface_view_creator.world_view({
             let mut world_view_creator = model::WorldViewBuilder::creator();
-            world_view_creator.identity(model::IdentityBuilder::from_existing(&world_view_creator, world))?;
+            world_view_creator.uid(world.uid())?;
             world_view_creator.frame(world.frame())?;
 
             let backyard_area = world.find_area(model::testing::BACKYARD)?; 
 
             world_view_creator.area_view({
                 let mut area_view_creator = model::AreaViewBuilder::creator();
-                area_view_creator.identity(model::IdentityBuilder::from_existing(&area_view_creator, backyard_area))?;
+                area_view_creator.uid(backyard_area.uid())?;
                 area_view_creator.descriptor(model::DescriptorBuilder::clone_model(model::BuilderMode::Creator, backyard_area.descriptor()))?;
                 
                 for occupant_uid in backyard_area.occupant_uids() {
@@ -60,7 +50,7 @@ impl ClientSession {
             for thing_uid in backyard_area.occupant_uids() {
                 let thing = world.thing(*thing_uid)?;
                 let mut thing_view_creator = model::ThingViewBuilder::creator();
-                thing_view_creator.identity(model::IdentityBuilder::from_existing(&thing_view_creator, thing))?;
+                thing_view_creator.uid(thing.uid())?;
                 thing_view_creator.descriptor(model::DescriptorBuilder::clone_model(model::BuilderMode::Creator, thing.entity().descriptor()))?;
                 world_view_creator.add_thing_view(thing_view_creator)?;
             } 
@@ -69,8 +59,9 @@ impl ClientSession {
         })?;
 
         interface_view_creator.downlink_uid({
-            let housekeeper = world.find_thing(model::testing::HOUSEKEEPER).unwrap();
-            model::IdentityBuilder::from_existing(&interface_view_creator, housekeeper)
+            world
+                .find_thing(model::testing::HOUSEKEEPER).unwrap()
+                .uid()
         })?;
 
         let (_, interface_view) = interface_view_creator.create()?.split();
