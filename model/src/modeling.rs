@@ -62,6 +62,20 @@ pub trait Builder: Sized {
         unimplemented!("Builder::set()")
     }
 
+    /// Determines whether the builder mode is strictly asserted against modify() and create() or not.
+    /// This only needs to be overridden in special circumstances, such as with IDs.
+    /// TRUE: BuilderMode doesn't matter
+    /// FALSE (default): BuilderMode must match
+    #[cfg(debug_assertions)]
+    fn bi(&self) -> bool {
+        false
+    }
+
+    #[cfg(debug_assertions)]
+    fn mode_matches(&self, mode: BuilderMode) -> bool {
+        self.builder_mode() == mode || self.bi()
+    }
+
     fn builder(mode: BuilderMode) -> Self {
         match mode {
             BuilderMode::Creator => Self::creator(),

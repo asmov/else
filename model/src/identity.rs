@@ -340,6 +340,8 @@ impl Builder for IdentityBuilder {
     fn class_ident(&self) -> &'static ClassIdent {
         IdentityField::class_ident()
     }
+
+    fn bi(&self) -> bool { true }
 }
 
 impl CloneBuilding for IdentityBuilder {
