@@ -1,5 +1,4 @@
-use crate::{codebase::*, error::*, identity::*, modeling::*, cortex::*, interface::*};
-use super::*;
+use crate::{codebase::*, error::*, identity::*, modeling::*, cortex::*, interface::*, thing::*};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct IntelligenceLobe {
@@ -13,6 +12,10 @@ pub trait Intelligent {
     fn intelligent_interface_uid(&self) -> Option<UID> {
         self.intelligence_lobe()
             .map(|lobe| lobe.interface_uid())
+    }
+
+    fn is_intelligent(&self) -> bool {
+        self.intelligence_lobe().is_some()
     }
 }
 
@@ -36,16 +39,12 @@ impl IntelligenceLobe {
 #[derive(Debug)]
 pub enum IntelligenceLobeField {
     InterfaceUID,
-    RoutineUID,
-    RoutineAwareness
 }
 
 impl Fields for IntelligenceLobeField {
     fn field(&self) -> &'static Field {
         match self {
             Self::InterfaceUID => &Self::FIELD_INTERFACE_UID,
-            Self::RoutineUID => &Self::FIELD_ROUTINE_UID,
-            Self::RoutineAwareness => &Self::FIELD_ROUTINE_AWARENESS,
         }
     }
 }
@@ -60,15 +59,9 @@ impl IntelligenceLobeField {
     const CLASSNAME: &'static str = "IntelligenceLobe";
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::IntelligenceLobe as ClassID, Self::CLASSNAME);
     const FIELDNAME_INTERFACE_UID: &'static str = "interface_uid";
-    const FIELDNAME_ROUTINE_UID: &'static str = "routine_uid";
-    const FIELDNAME_ROUTINE_AWARENESS: &'static str = "routine_awareness";
 
     const FIELD_INTERFACE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACE_UID,
         FieldValueType::UID(InterfaceField::class_ident_const()));
-    const FIELD_ROUTINE_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_UID,
-        FieldValueType::UID(RoutineLobeField::class_ident_const()));
-    const FIELD_ROUTINE_AWARENESS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTINE_AWARENESS,
-        FieldValueType::Enum(Awareness::class_ident_const()));
 
     pub const fn class_ident_const() -> &'static ClassIdent {
         &Self::CLASS_IDENT
@@ -79,8 +72,6 @@ impl IntelligenceLobeField {
 pub struct IntelligenceLobeBuilder {
     builder_mode: BuilderMode,
     interface_uid: Option<IdentityBuilder>,
-    routine_uid: Option<IdentityBuilder>,
-    routine_awareness: Option<Awareness>
 }
 
 impl Builder for IntelligenceLobeBuilder {
@@ -91,8 +82,6 @@ impl Builder for IntelligenceLobeBuilder {
         Self {
             builder_mode: BuilderMode::Creator,
             interface_uid: None,
-            routine_uid: None,
-            routine_awareness: None
         }
     }
 
@@ -129,5 +118,12 @@ impl Builder for IntelligenceLobeBuilder {
 
     fn class_ident(&self) -> &'static ClassIdent {
         IntelligenceLobeField::class_ident()
+    }
+}
+
+impl IntelligenceLobeBuilder {
+    pub fn interface_uid(&mut self, interface_uid: IdentityBuilder) -> Result<&mut Self> {
+        self.interface_uid = Some(interface_uid);
+        Ok(self)
     }
 }

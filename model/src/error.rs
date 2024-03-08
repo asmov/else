@@ -37,7 +37,16 @@ pub enum Error {
     IllegalRemoveOp{ model: &'static str, uid: u128, context: &'static str},
 
     #[error("Unable to parse {what}: {src}")]
-    Parsing { what: &'static str, src: String }
+    Parsing { what: &'static str, src: String },
+
+    #[error("Unable to link Interface ({interface_uid}) to Character ({character_uid}) :> Interface has existing link: {linked_character_uid}")]
+    InterfaceAlreadyLinked{interface_uid: u128, character_uid: u128, linked_character_uid: u128},
+
+    #[error("Unable to link Interface ({interface_uid}) to Character ({character_uid}) :> Character has existing link: {linked_interface_uid}")]
+    CharacterAlreadyLinked{interface_uid: u128, character_uid: u128, linked_interface_uid: u128},
+
+    #[error("Unexpected model type. Expected: {expected}, Found: {found}")]
+    UnexpectedModelType{expected: &'static str, found: &'static str},
 }
 
 pub type Result<T> = ::core::result::Result<T, Error>;

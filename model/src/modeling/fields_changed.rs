@@ -34,6 +34,7 @@ impl FieldsChanged {
     pub fn extend(&mut self, field: &'static Field, op: ChangeOp, rh: FieldsChanged) {
         let node = match field.value_type() {
             FieldValueType::Model(class_ident) => {
+                dbg!(rh.root.class_ident().class_id(), class_ident.class_id());
                 assert!(rh.root.class_ident().class_id() == class_ident.class_id());
                 let mut model_node = ModelChangeNode::new(class_ident, op);
                 model_node.children.extend(rh.root.children);

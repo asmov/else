@@ -44,7 +44,7 @@ mod tests {
             entity_creator
         }).unwrap();
 
-        let thing_id = world.spawn_thing(character_creator.thing_builder()).unwrap().0;
+        let thing_id = WorldAction::spawn_thing(&mut world, character_creator.thing_builder()).unwrap().0;
         let thing = world.thing(thing_id).unwrap();
 
         assert_eq!("A gray cat", thing.description().unwrap());
@@ -83,7 +83,7 @@ mod tests {
             entity
         }).unwrap();
 
-        let gray_cat_id = world.spawn_thing(gray_cat.thing_builder()).unwrap().0;
+        let gray_cat_id = model::WorldAction::spawn_thing(&mut world, gray_cat.thing_builder()).unwrap().0;
         let gray_cat = world.thing(gray_cat_id).unwrap();
 
         assert_eq!("Cat", gray_cat.name());
@@ -126,7 +126,7 @@ mod tests {
 
         let mut world_editor = World::editor();
         world_editor.edit_thing(black_cat_editor).unwrap();
-        dbg!(world_editor.modify(&mut world).unwrap());
+        world_editor.modify(&mut world).unwrap();
 
         // confirm the change in location for 'black_cat'
         let new_location_uid = world

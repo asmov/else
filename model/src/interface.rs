@@ -16,6 +16,10 @@ impl Identifiable for Interface {
     }
 }
 
+impl Built for Interface {
+    type BuilderType = InterfaceBuilder;
+}
+
 impl Interface {
     pub fn device_name(&self) -> String {
         format!("/dev/tty/{:0>3}", Identity::from_uid(self.uid).id_to_string())
@@ -131,13 +135,11 @@ impl MaybeIdentifiable for InterfaceBuilder {
 
 impl BuildableIdentity for InterfaceBuilder {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
-        assert!(self.builder_mode == BuilderMode::Creator);
         self.identity = Some(identity);
         Ok(self)
     }
     
     fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        assert!(self.builder_mode == BuilderMode::Creator);
         self.identity.get_or_insert_with(IdentityBuilder::creator)
     }
     
@@ -145,6 +147,23 @@ impl BuildableIdentity for InterfaceBuilder {
         self.identity.as_ref()
     }
 }
+
+impl InterfaceBuilder {
+    pub fn downlink_uid(&mut self, downlink_uid: IdentityBuilder) -> Result<&mut Self> {
+        self.downlink_uid = OptionOp::Set(downlink_uid);
+        Ok(self)
+    }
+
+    pub fn unset_downlink_uid(&mut self) -> Result<&mut Self> {
+        self.downlink_uid = OptionOp::Unset;
+        Ok(self)
+    }
+
+    pub fn get_downlink_uid_op(&self) -> OptionOp<&IdentityBuilder> {
+        self.downlink_uid.as_ref()
+    }
+}
+
 pub trait BuildableInterfaceList {
     fn add_interface(&mut self, interface: InterfaceBuilder) -> Result<&mut Self>;
     fn edit_interface(&mut self, interface: InterfaceBuilder) -> Result<&mut Self>;

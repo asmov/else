@@ -21,7 +21,7 @@ pub fn create_world() -> World {
 
     world_creator.identity_builder()
         .universe_id(UniverseID::MAX).unwrap()
-        .world_id(1).unwrap()
+        .world_id(WorldID::MAX).unwrap()
         .class_id(WorldField::class_id()).unwrap()
         .id(2).unwrap();
 
@@ -237,5 +237,15 @@ pub fn world_to_bytes(world: &model::World) -> Result<bytes::Bytes> {
 
 pub fn world_from_binary(world_bytes: Vec<u8>) -> Result<World> {
     Ok(bincode::serde::decode_from_slice(&world_bytes, bincode::config::standard()).unwrap().0)
+}
+
+pub fn interface_from_universe() -> InterfaceBuilder {
+    let mut interface_creator = Interface::creator();
+    interface_creator.identity_builder()
+        .universe_id(UniverseID::MAX).unwrap()
+        .world_id(WorldID::MAX).unwrap()
+        .class_id(InterfaceField::class_id()).unwrap()
+        .id(ID::MAX).unwrap();
+    interface_creator.create().unwrap().split().0
 }
 

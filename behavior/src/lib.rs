@@ -44,7 +44,7 @@ impl Actor for MultiplyAction {
             entity
         })?;
 
-        let _ = world.spawn_thing(character.thing_builder()).unwrap();
+        let _ = WorldAction::spawn_thing(world, character.thing_builder()).unwrap();
         todo!()
         //Ok(Vec::new())
     }

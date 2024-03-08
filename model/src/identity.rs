@@ -488,6 +488,68 @@ impl BuildableIdentity for IdentityBuilder {
     }
 }
 
+pub struct IdentityGenerator {
+    universe_id: UniverseID,
+    world_id: WorldID,
+    next_id: ID
+}
+
+impl IdentityGenerator {
+    pub fn new(universe_id: UniverseID, world_id: WorldID, next_id: ID) -> Self {
+        Self {
+            universe_id,
+            world_id,
+            next_id
+        }
+    }
+
+    pub fn from_identity(identity: &Identity, next_id: ID) -> Self {
+        Self {
+            universe_id: identity.universe_id(),
+            world_id: identity.world_id(),
+            next_id
+        }
+    }
+
+    pub fn from_uid(uid: UID, next_id: ID) -> Self {
+        let identity = Identity::from_uid(uid);
+        Self::from_identity(&identity, next_id)
+    }
+
+    pub fn next_uid(&mut self, class_id: ClassID) -> UID {
+        let uid = Identity::new(self.universe_id, self.world_id, class_id, self.next_id).into_uid();
+        self.next_id += 1;
+        uid
+    }
+
+    pub fn next_id(&mut self) -> ID {
+        let id = self.next_id;
+        self.next_id += 1;
+        id
+    }
+
+    pub fn next_identity(&mut self, class_id: ClassID) -> Identity {
+        let identity = Identity::new(self.universe_id, self.world_id, class_id, self.next_id);
+        self.next_id += 1;
+        identity
+    }
+
+    pub fn next_builder(&mut self, class_id: ClassID) -> IdentityBuilder {
+        let mut identity_builder = Identity::creator();
+        identity_builder
+            .universe_id(self.universe_id).unwrap()
+            .world_id(self.world_id).unwrap()
+            .class_id(class_id).unwrap()
+            .id(self.next_id).unwrap();
+        self.next_id += 1;
+        identity_builder
+    }
+
+    pub fn get_next_id(&self) -> ID {
+        self.next_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -143,6 +143,15 @@ impl<T> OptionOp<T> {
         }
     }
 
+    pub fn as_ref(&self) -> OptionOp<&T> {
+        match self {
+            Self::None => OptionOp::None,
+            Self::Set(value) => OptionOp::Set(value),
+            Self::Edit(value) => OptionOp::Edit(value),
+            Self::Unset => OptionOp::Unset
+        }
+    }
+
     pub fn take(&mut self) -> T {
         let orig = match self {
             Self::Set(value) | Self::Edit(value) => std::mem::replace(self, Self::None),
@@ -184,6 +193,27 @@ impl<T: MaybeIdentifiable, R: MaybeIdentifiable> ListOp<T, R> {
         match self {
             Self::Remove(_) => true,
             _ => false
+        }
+    }
+    
+    pub fn added(&self) -> Option<&T> {
+        match self {
+            Self::Add(value) => Some(value),
+            _ => None
+        }
+    }
+
+    pub fn edited(&self) -> Option<&T> {
+        match self {
+            Self::Edit(value) => Some(value),
+            _ => None
+        }
+    }
+
+    pub fn removed(&self) -> Option<&R> {
+        match self {
+            Self::Remove(value) => Some(value),
+            _ => None
         }
     }
 }

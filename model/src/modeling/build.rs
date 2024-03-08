@@ -49,9 +49,9 @@ impl Build {
         let builder = builder_option.take()
             .ok_or_else(|| Error::FieldNotSet {class: field.classname(), field: field.name()})?;
 
-        if builder.builder_mode() == BuilderMode::Editor {
-            panic!("BuilderMode::Editor is not allowed for Build::create()")
-        }
+        //if builder.builder_mode() == BuilderMode::Editor {
+        //    panic!("BuilderMode::Editor is not allowed for Build::create()")
+        //}
 
         let creation = builder.create()?;
         let (builder, model) = creation.split();
@@ -93,9 +93,9 @@ impl Build {
             OptionOp::None => Ok(None),
             OptionOp::Set(_) => {
                 let builder = builder_option_op.take();
-                if builder.builder_mode() != BuilderMode::Creator {
-                    panic!("BuilderMode::Editor is not allowed for Build::create_option()")
-                }
+                //if builder.builder_mode() != BuilderMode::Creator {
+                //    panic!("BuilderMode::Editor is not allowed for Build::create_option()")
+                //}
 
                 let creation = builder.create()?;
                 let (builder, model) = creation.split();

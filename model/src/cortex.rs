@@ -178,13 +178,13 @@ pub trait BuildableCortex: Builder {
         Ok(self)
     }
 
-    fn intelligence_lobe(&mut self, intelligence_lobe: IntelligenceLobeBuilder) -> Result<&mut Self> {
-        if self.builder_mode() == BuilderMode::Creator {
-            self.cortex_builder().intelligence_lobe = OptionOp::Set(intelligence_lobe);
-        } else {
-            self.cortex_builder().intelligence_lobe = OptionOp::Edit(intelligence_lobe);
-        }
+    fn set_intelligence_lobe(&mut self, intelligence_lobe: IntelligenceLobeBuilder) -> Result<&mut Self> {
+        self.cortex_builder().intelligence_lobe = OptionOp::Set(intelligence_lobe);
+        Ok(self)
+    }
 
+    fn edit_intelligence_lob(&mut self, intelligence_lobe: IntelligenceLobeBuilder) -> Result<&mut Self> {
+        self.cortex_builder().intelligence_lobe = OptionOp::Edit(intelligence_lobe);
         Ok(self)
     }
 

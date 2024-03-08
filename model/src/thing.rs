@@ -1,4 +1,4 @@
-use crate::{error::*, location::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*, world::*};
+use crate::{error::*, modeling::*, location::*, identity::*, descriptor::*, entity::*, something::*, character::*, item::*};
 use serde;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -76,15 +76,18 @@ impl Thing {
     pub const fn class_ident_const() -> &'static ClassIdent {
         &Self::CLASS_IDENT
     }
+
+    pub fn try_character(&self) -> Result<&Character> {
+        match self {
+            Thing::Character(character) => Ok(character),
+            Thing::Item(_) => Err(Error::UnexpectedModelType { expected: CharacterField::classname(), found: "Item" }),
+        }
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum ThingBuilder {
     Character(CharacterBuilder),
-}
-
-pub enum ThingBuilderRef<'thing> {
-    Character(&'thing CharacterBuilder),
 }
 
 impl Builder for ThingBuilder {
@@ -176,9 +179,23 @@ impl BuildableIdentity for ThingBuilder {
 }
 
 pub trait BuildableThingList {
-    fn add_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self>;
-    fn edit_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self>;
-    fn remove_thing(&mut self, thing_uid: UID) -> Result<&mut Self>;
+    fn thing_ops(&mut self) -> &mut Vec<ListOp<ThingBuilder, UID>>;
+    fn get_thing_ops(&self) -> &Vec<ListOp<ThingBuilder, UID>>;
+
+    fn add_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self> {
+       self.thing_ops().push(ListOp::Add(thing)); 
+       Ok(self)
+    }
+
+    fn edit_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self> {
+        self.thing_ops().push(ListOp::Edit(thing));
+        Ok(self)
+    }
+
+    fn remove_thing(&mut self, thing_uid: UID) -> Result<&mut Self> {
+        self.thing_ops().push(ListOp::Remove(thing_uid));
+        Ok(self)
+    }
 }
 
 pub trait BuildableOccupantList {
