@@ -131,7 +131,7 @@ impl Builder for CharacterBuilder {
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
+        let mut fields_changed = Build::prepare_modify_ex(&mut self, existing)?;
 
         Build::modify(&mut self.entity, &mut existing.entity, &mut fields_changed, CharacterField::Entity)?;
         Build::modify(&mut self.cortex, &mut existing.cortex, &mut fields_changed, CharacterField::Cortex)?;
@@ -184,11 +184,23 @@ impl BuildableEntity for CharacterBuilder {
 
 impl MaybeIdentifiable for CharacterBuilder {
     fn try_uid(&self) -> Result<UID> {
-        Self::_try_uid(&self)
+        <Self as BuildableUID>::_try_uid(self)
     }
 }
 
-impl BuildableIdentity for CharacterBuilder {
+impl BuildableUID for CharacterBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.entity_builder().uid(uid)?;
+        Ok(self)
+    }
+
+    fn get_uid(&self) -> Option<&UID> {
+        self.get_entity()
+            .and_then(|entity| entity.get_uid())
+    }
+}
+
+/*impl BuildableIdentity for CharacterBuilder {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self> {
         self.entity_builder().identity(identity)?;
         Ok(self)
@@ -202,7 +214,7 @@ impl BuildableIdentity for CharacterBuilder {
         self.get_entity()
             .and_then(|entity| entity.get_identity())
     }
-}
+}*/
 
 impl ThingBuilderVariant for CharacterBuilder {
     fn thing_builder(self) -> ThingBuilder {

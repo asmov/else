@@ -323,6 +323,22 @@ impl Build {
         Ok(fields_changed)
     }
 
+    pub fn prepare_modify_ex<B,M>(builder: &mut B, existing: &mut M) -> Result<FieldsChanged>
+    where
+        B: Builder<ModelType = M> + BuildableUID,
+        M: Identifiable
+    {
+        if !builder.has_uid() {
+            builder.uid(existing.uid())?;
+        } else {
+            assert_eq!(builder.try_uid()?, existing.uid());
+        }
+        
+        let mut fields_changed = FieldsChanged::from_builder(builder);
+        Ok(fields_changed)
+    }
+
+
     pub fn prepare_modify<B,M>(builder: &mut B, existing: &mut M) -> Result<FieldsChanged>
     where
         B: Builder<ModelType = M> + BuildableIdentity,

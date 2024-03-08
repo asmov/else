@@ -455,6 +455,21 @@ impl MaybeIdentifiable for IdentityBuilder {
     }
 }
 
+pub trait BuildableUID: Builder + MaybeIdentifiable {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self>;
+    fn get_uid(&self) -> Option<&UID>;
+
+    fn has_uid(&self) -> bool {
+        self.get_uid().is_some()
+    }
+    
+    fn _try_uid(&self) -> Result<UID> {
+        self.get_uid()
+            .ok_or_else(|| Error::IdentityNotGenerated)
+            .and_then(|uid| uid.try_uid())
+    }
+}
+
 pub trait BuildableIdentity: Builder + MaybeIdentifiable {
     fn identity(&mut self, identity: IdentityBuilder) -> Result<&mut Self>; 
     fn identity_builder(&mut self) -> &mut IdentityBuilder;

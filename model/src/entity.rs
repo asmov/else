@@ -93,7 +93,7 @@ impl EntityField {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct EntityBuilder {
     builder_mode: BuilderMode,
-    identity: Option<IdentityBuilder>,
+    identity: Option<UID>,
     location: Option<Location>,
     descriptor: Option<DescriptorBuilder>
 }
@@ -125,7 +125,7 @@ impl Builder for EntityBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let uid = Build::create(&mut self.identity, &mut fields_changed, EntityField::Identity)?.to_uid();
+        let uid = Build::create_value(&mut self.identity, &mut fields_changed, EntityField::Identity)?;
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, EntityField::Descriptor)?;
         let location = Build::create_value(&self.location, &mut fields_changed, EntityField::Location)?;
 
@@ -139,7 +139,7 @@ impl Builder for EntityBuilder {
     }
 
     fn modify(mut self, existing: &mut Entity) -> Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
+        let mut fields_changed = Build::prepare_modify_ex(&mut self, existing)?;
 
         Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, EntityField::Descriptor)?;
         Build::modify_value(&self.location, &mut existing.location, &mut fields_changed, EntityField::Location)?;
@@ -164,21 +164,13 @@ impl MaybeIdentifiable for EntityBuilder {
     }
 }
 
-impl BuildableIdentity for EntityBuilder {
-    fn identity(&mut self, id: IdentityBuilder) -> Result<&mut Self> {
-        self.identity = Some(id);
+impl BuildableUID for EntityBuilder {
+    fn uid(&mut self, uid: UID) -> Result<&mut Self> {
+        self.identity = Some(uid);
         Ok(self)
     }
 
-    fn identity_builder(&mut self) -> &mut IdentityBuilder {
-        if self.identity.is_none() {
-            self.identity = Some(Identity::builder(self.builder_mode()));
-        }
-
-        self.identity.as_mut().unwrap()
-    }
-
-    fn get_identity(&self) -> Option<&IdentityBuilder> {
+    fn get_uid(&self) -> Option<&UID> {
         self.identity.as_ref()
     }
 }
