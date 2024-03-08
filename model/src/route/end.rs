@@ -48,7 +48,7 @@ impl End {
 
 #[derive(Clone, Copy, Debug)]
 pub enum EndField {
-    AreaIdentity,
+    AreaUID,
     Descriptor,
     Direction
 }
@@ -56,7 +56,7 @@ pub enum EndField {
 impl Fields for EndField {
     fn field(&self) -> &'static Field {
         match self {
-            Self::AreaIdentity => &Self::FIELD_AREA_IDENTITY,
+            Self::AreaUID => &Self::FIELD_AREA_UID,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::Direction => &Self::FIELD_DIRECTION
         }
@@ -72,11 +72,11 @@ impl Class for EndField {
 impl EndField {
     const CLASS_IDENT: ClassIdent = ClassIdent::new(CodebaseClassID::End as ClassID, Self::CLASSNAME);
     const CLASSNAME: &'static str = "End";
-    const FIELDNAME_AREA_IDENTITY: &'static str = "area_identity";
+    const FIELDNAME_AREA_UID: &'static str = "area_identity";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_DIRECTION: &'static str = "direction";
 
-    const FIELD_AREA_IDENTITY: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREA_IDENTITY, FieldValueType::Model(IdentityField::class_ident_const()));
+    const FIELD_AREA_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_AREA_UID, FieldValueType::Model(IdentityField::class_ident_const()));
     const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR, FieldValueType::Model(DescriptorField::class_ident_const()));
     const FIELD_DIRECTION: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DIRECTION, FieldValueType::NonPrimitive(Direction::class_ident_const()));
 
@@ -120,7 +120,7 @@ impl Builder for EndBuilder {
     fn create(mut self) -> Result<Creation<Self::BuilderType>> {
         let mut fields_changed = FieldsChanged::from_builder(&self);
 
-        let area_uid = Build::create_uid(&mut self.area_uid, &mut fields_changed, EndField::AreaIdentity)?.uid();
+        let area_uid = Build::create_uid(&mut self.area_uid, &mut fields_changed, EndField::AreaUID)?.uid();
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, EndField::Descriptor)?;
         let direction = Build::create_value(&mut self.direction, &mut fields_changed, EndField::Direction)?;
 
