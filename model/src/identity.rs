@@ -8,16 +8,10 @@ pub type WorldID    = u32;
 pub type ClassID    = u16;
 pub type ID         = u64;
 
-const UID_BITS:         usize = std::mem::size_of::<UID>()        * 8;
-const UNIVERSE_ID_BITS: usize = std::mem::size_of::<UniverseID>() * 8;
-const WORLD_ID_BITS:    usize = std::mem::size_of::<WorldID>()    * 8;
-const CLASS_ID_BITS:    usize = std::mem::size_of::<ClassID>()    * 8;
-const ID_BITS:          usize = std::mem::size_of::<ID>()         * 8;
-
-const UNIVERSE_ID_SHIFT: usize = UID_BITS          - UNIVERSE_ID_BITS;
-const WORLD_ID_SHIFT:    usize = UNIVERSE_ID_SHIFT - WORLD_ID_BITS;
-const CLASS_ID_SHIFT:    usize = WORLD_ID_SHIFT    - CLASS_ID_BITS;
-const ID_SHIFT:          usize = CLASS_ID_SHIFT    - ID_BITS;
+const UNIVERSE_ID_SHIFT: usize = UID::BITS as usize - UniverseID::BITS as usize;
+const WORLD_ID_SHIFT:    usize = UNIVERSE_ID_SHIFT  - WorldID::BITS as usize;
+const CLASS_ID_SHIFT:    usize = WORLD_ID_SHIFT     - ClassID::BITS as usize;
+const ID_SHIFT:          usize = CLASS_ID_SHIFT     - ID::BITS as usize;
 
 #[derive(PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone, Copy, Debug)]
 pub struct Identity {
@@ -34,6 +28,9 @@ pub trait Identifiable: Keyed {
 /// Unique to the World. Should be used to permanently reference objects (never use UID manually).
 pub trait Keyed {
     fn key(&self) -> Option<&str> {
+        {
+            let x = UID::BITS as usize;
+        }
         None
     }
 }
