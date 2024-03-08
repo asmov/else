@@ -35,7 +35,7 @@ impl Build {
         let field = field.field();
         *value = builder_option
             .as_ref()
-            .expect("Calls to Build::modify_value() should be made after a guard against Option::is_some()")
+            .expect("Calls to Build::modify_value(builder_option) should be made after a guard against Option::is_some()")
             .try_uid()?;
 
         Ok(())
@@ -70,10 +70,8 @@ impl Build {
         match builder_option_op {
             OptionOp::None => Ok(None),
             OptionOp::Set(_) => {
-                let builder = builder_option_op.take();
-                if builder.builder_mode() != BuilderMode::Creator {
-                    panic!("BuilderMode::Editor is not allowed for Build::create_option()")
-                }
+                let builder = builder_option_op.take().unwrap();
+                debug_assert!(builder.mode_matches(BuilderMode::Creator), "BuilderMode::Editor is not allowed for Build::create_option()");
 
                 let creation = builder.create()?;
                 let (builder, model) = creation.split();
@@ -90,7 +88,7 @@ impl Build {
         match builder_option_op {
             OptionOp::None => Ok(None),
             OptionOp::Set(_) => {
-                let builder = builder_option_op.take();
+                let builder = builder_option_op.take().unwrap();
                 debug_assert!(builder.mode_matches(BuilderMode::Creator), "BuilderMode::Editor is not allowed for Build::create_option()");
 
                 let creation = builder.create()?;
@@ -146,7 +144,7 @@ impl Build {
                 Ok(())
             },
             OptionOp::Edit(_) => {
-                let builder = builder_option_op.take();
+                let builder = builder_option_op.take().unwrap();
                 let existing = existing_option.as_mut()
                     .expect("Expected existing_option to be Some when OptionOp::Edit");
                 let modification = builder.modify(existing)?;

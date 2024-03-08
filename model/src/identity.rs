@@ -29,7 +29,6 @@ pub struct Identity {
 
 pub trait Identifiable: Keyed {
     fn uid(&self) -> UID;
-
 }
 
 /// Unique to the World. Should be used to permanently reference objects (never use UID manually).

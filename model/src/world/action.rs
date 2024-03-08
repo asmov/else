@@ -1,4 +1,4 @@
-use crate::{character::*, identity::*, interface::{self, *}, modeling::*, route::*, timeframe::*};
+use crate::{character::*, interface::*};
 
 pub struct WorldAction;
 impl WorldAction {
@@ -54,7 +54,7 @@ impl WorldAction {
 
 #[cfg(test)]
 mod tests {
-    use crate::{interface::*, testing, view::world};
+    use crate::{interface::*, testing};
     use super::*;
 
     #[test]

@@ -129,52 +129,44 @@ pub enum OptionOp<T> {
 }
 
 impl<T> OptionOp<T> {
-    pub fn is_none(&self) -> bool {
-        match self {
-            Self::None => true,
-            _ => false,
-        }
+    pub const fn is_none(&self) -> bool {
+        matches!(*self, Self::None)
     }
 
-    pub fn is_set(&self) -> bool {
-        match self {
-            Self::Set(_) => true,
-            _ => false,
-        }
+    pub const fn is_set(&self) -> bool {
+        matches!(*self, Self::Set(_))
     }
 
-    pub fn is_edit(&self) -> bool {
-        match self {
-            Self::Edit(_) => true,
-            _ => false
-        }
+    pub const fn is_edit(&self) -> bool {
+        matches!(*self, Self::Edit(_))
     }
 
-    pub fn is_unset(&self) -> bool {
-        match self {
-            Self::Unset => true,
-            _ => false
-        }
+    pub const fn is_unset(&self) -> bool {
+        matches!(*self, Self::Unset)
     }
 
-    pub fn as_ref(&self) -> OptionOp<&T> {
-        match self {
+    pub const fn as_ref(&self) -> OptionOp<&T> {
+        match *self {
             Self::None => OptionOp::None,
-            Self::Set(value) => OptionOp::Set(value),
-            Self::Edit(value) => OptionOp::Edit(value),
+            Self::Set(ref value) => OptionOp::Set(value),
+            Self::Edit(ref value) => OptionOp::Edit(value),
             Self::Unset => OptionOp::Unset
         }
     }
 
-    pub fn take(&mut self) -> T {
-        let orig = match self {
-            Self::Set(value) | Self::Edit(value) => std::mem::replace(self, Self::None),
-            _ => panic!("OptionOp::take() called on None or Unset")
-        };
+    pub fn as_mut(&mut self) -> OptionOp<&mut T> {
+        match *self {
+            Self::None => OptionOp::None,
+            Self::Set(ref mut value) => OptionOp::Set(value),
+            Self::Edit(ref mut value) => OptionOp::Edit(value),
+            Self::Unset => OptionOp::Unset
+        }
+    }
 
-        match orig {
-            Self::Set(value) | Self::Edit(value) => value,
-            _ => panic!("OptionOp::take() called on None or Unset")
+    pub fn take(&mut self) -> Option<T> {
+        match std::mem::replace(self, Self::None) {
+            Self::Set(value) | Self::Edit(value) => Some(value),
+            _ => None
         }
     }
 }
@@ -189,42 +181,33 @@ pub enum ListOp<T: MaybeIdentifiable, R: MaybeIdentifiable> {
 }
 
 impl<T: MaybeIdentifiable, R: MaybeIdentifiable> ListOp<T, R> {
-    pub fn is_add(&self) -> bool {
-        match self {
-            Self::Add(_) => true,
-            _ => false,
-        }
+    pub const fn is_add(&self) -> bool {
+        matches!(*self, Self::Add(_))
     }
 
-    pub fn is_edit(&self) -> bool {
-        match self {
-            Self::Edit(_) => true,
-            _ => false
-        }
+    pub const fn is_edit(&self) -> bool {
+        matches!(*self, Self::Edit(_))
     }
 
-    pub fn is_remove(&self) -> bool {
-        match self {
-            Self::Remove(_) => true,
-            _ => false
-        }
+    pub const fn is_remove(&self) -> bool {
+        matches!(*self, Self::Remove(_))
     }
     
-    pub fn added(&self) -> Option<&T> {
+    pub const fn added(&self) -> Option<&T> {
         match self {
             Self::Add(value) => Some(value),
             _ => None
         }
     }
 
-    pub fn edited(&self) -> Option<&T> {
+    pub const fn edited(&self) -> Option<&T> {
         match self {
             Self::Edit(value) => Some(value),
             _ => None
         }
     }
 
-    pub fn removed(&self) -> Option<&R> {
+    pub const fn removed(&self) -> Option<&R> {
         match self {
             Self::Remove(value) => Some(value),
             _ => None
