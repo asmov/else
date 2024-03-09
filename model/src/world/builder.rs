@@ -49,6 +49,10 @@ impl WorldField {
     const FIELD_ROUTES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ROUTES, FieldValueType::ModelList(RouteField::class_ident_const()));
     const FIELD_THINGS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_THINGS, FieldValueType::ModelList(Thing::class_ident_const()));
     const FIELD_INTERFACES: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_INTERFACES, FieldValueType::ModelList(InterfaceField::class_ident_const()));
+
+    pub const fn class_ident_const() -> &'static ClassIdent {
+        &Self::CLASS_IDENT
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -263,11 +267,11 @@ impl BuildableRouteVector for WorldBuilder {
 }
 
 impl BuildableThingList for WorldBuilder {
-    fn thing_ops(&mut self) -> &mut Vec<ListOp<ThingBuilder, UID>> {
+    fn get_thing_listops_mut(&mut self) -> &mut Vec<ListOp<ThingBuilder, UID>> {
         self.things.as_mut()
     }
     
-    fn get_thing_ops(&self) -> &Vec<ListOp<ThingBuilder, UID>> {
+    fn get_thing_listops(&self) -> &Vec<ListOp<ThingBuilder, UID>> {
         self.things.as_ref()
     }
 }
@@ -453,7 +457,7 @@ impl WorldBuilder {
     }
 
     fn process_thing_location(thing_builder: &ThingBuilder, areas: &mut Vec<ListOp<AreaBuilder, UID>>, existing_world: &mut World) -> Result<()> {
-        let entity_builder = match thing_builder.get_entity() {
+        let entity_builder = match thing_builder.get_entity_builder() {
             Some(entity_builder) => entity_builder,
             None => return Ok(())
         };

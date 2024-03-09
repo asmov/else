@@ -47,6 +47,9 @@ pub enum Error {
 
     #[error("Unexpected model type. Expected: {expected}, Found: {found}")]
     UnexpectedModelType{expected: &'static str, found: &'static str},
+
+    #[error("Unable to authenticate")]
+    AuthenticationFailed
 }
 
 pub type Result<T> = ::core::result::Result<T, Error>;

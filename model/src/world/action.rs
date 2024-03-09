@@ -7,7 +7,7 @@ impl WorldAction {
         world_editor.add_thing(thing)?;
         let modification = world_editor.modify(world)?;
         let uid = modification.builder()
-            .get_thing_ops()
+            .get_thing_listops()
             .last().unwrap()
             .added().unwrap()
             .try_uid().unwrap();
@@ -20,12 +20,12 @@ impl WorldAction {
         let character = world.thing(character_uid)?.try_character()?;
 
         // perform validation
-        if interface.downlinked() {
+        if interface.linked() {
             return Err(Error::InterfaceAlreadyLinked{
                 interface_uid,
                 character_uid,
                 linked_character_uid: interface.downlink_uid().unwrap()});
-        } else if character.cortex().is_intelligent() {
+        } else if character.is_intelligent() {
             return Err(Error::CharacterAlreadyLinked {
                 interface_uid,
                 character_uid,

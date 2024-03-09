@@ -24,6 +24,7 @@ pub mod cortex;
 pub mod sync;
 pub mod view;
 pub mod action;
+pub mod universe;
 pub mod hardcoded;
 pub mod testing;
 
@@ -49,3 +50,4 @@ pub use interface::*;
 pub use timeframe::*;
 pub use sync::*;
 pub use view::*;
+pub use universe::*;

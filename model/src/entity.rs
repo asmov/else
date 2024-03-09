@@ -155,7 +155,8 @@ impl Builder for EntityBuilder {
 pub trait BuildableEntity: Builder {
     fn entity(&mut self, entity: EntityBuilder) -> Result<()>; 
     fn entity_builder(&mut self) -> &mut EntityBuilder;
-    fn get_entity(&self) -> Option<&EntityBuilder>;
+    fn get_entity_builder(&self) -> Option<&EntityBuilder>;
+    fn get_entity_builder_mut(&mut self) -> Option<&mut EntityBuilder>;
 }
 
 impl MaybeIdentifiable for EntityBuilder {

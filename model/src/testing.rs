@@ -3,6 +3,44 @@ use crate::{self as model, *};
 use bincode;
 use bytes;
 
+pub fn create_universe() -> (Universe, World, Interface) {
+    let mut universe_creator = model::Universe::creator();
+
+    let identity = Identity::new(
+        UniverseID::MAX,
+        0,
+        UniverseField::class_id(),
+        1);
+    universe_creator.uid(identity.into_uid()).unwrap();
+
+    universe_creator.descriptor({
+        let mut descriptor_creator = model::Descriptor::creator();
+        descriptor_creator
+            .key(s!("test_universe")).unwrap()
+            .name(s!("Test Universe")).unwrap()
+            .description(s!("A universe where all models are equally buggy")).unwrap();
+        descriptor_creator
+    }).unwrap();
+
+    let mut universe = universe_creator.create().unwrap().split().1;
+
+    let world = create_world();
+    let mut universe_editor = universe.edit_self();
+    universe_editor.add_world_uid(world.uid()).unwrap();
+    universe_editor.modify(&mut universe).unwrap();
+
+    let mut interface_creator = Interface::creator();
+    let identity = Identity::new(
+        UniverseID::MAX,
+        WorldID::MAX,
+        InterfaceField::class_id(),
+        ID::MAX);
+    interface_creator.uid(identity.into_uid()).unwrap();
+    let interface = interface_creator.create().unwrap().split().1;
+
+    (universe, world, interface)
+}
+
 pub const BACKYARD: &'static str = "backyard";
 pub const DOG_HOUSE: &'static str = "dog_house";
 pub const CAT_HOUSE: &'static str = "cat_house";
@@ -30,8 +68,8 @@ pub fn create_world() -> World {
 
     world_creator.descriptor({
             let mut descriptor = model::Descriptor::creator();
-            descriptor.key(s!("unit_test_world")).unwrap();
-            descriptor.name(s!("Unit Test World")).unwrap();
+            descriptor.key(s!("test_world")).unwrap();
+            descriptor.name(s!("Test World")).unwrap();
             descriptor.description(s!("A world where all models are equally buggy")).unwrap();
             descriptor.notes(s!("Testing only")).unwrap();
             descriptor

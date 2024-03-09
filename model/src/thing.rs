@@ -146,10 +146,16 @@ impl BuildableEntity for ThingBuilder {
         }
     }
     
-    fn get_entity(&self) -> Option<&EntityBuilder> {
+    fn get_entity_builder(&self) -> Option<&EntityBuilder> {
        match self {
-            ThingBuilder::Character(character_builder) => character_builder.get_entity()
+            ThingBuilder::Character(character_builder) => character_builder.get_entity_builder()
         } 
+    }
+    
+    fn get_entity_builder_mut(&mut self) -> Option<&mut EntityBuilder> {
+        match self {
+            ThingBuilder::Character(character_builder) => character_builder.get_entity_builder_mut()
+        }
     }
 }
 
@@ -161,32 +167,32 @@ impl MaybeIdentifiable for ThingBuilder {
 
 impl BuildableUID for ThingBuilder {
     fn uid(&mut self, uid: UID) -> Result<&mut Self> {
-        self.entity_builder().uid(uid);
+        self.entity_builder().uid(uid)?;
         Ok(self)
     }
 
     fn get_uid(&self) -> Option<&UID> {
-        self.get_entity().and_then(|e| e.get_uid())
+        self.get_entity_builder().and_then(|e| e.get_uid())
     }
 }
     
 
 pub trait BuildableThingList {
-    fn thing_ops(&mut self) -> &mut Vec<ListOp<ThingBuilder, UID>>;
-    fn get_thing_ops(&self) -> &Vec<ListOp<ThingBuilder, UID>>;
+    fn get_thing_listops(&self) -> &Vec<ListOp<ThingBuilder, UID>>;
+    fn get_thing_listops_mut(&mut self) -> &mut Vec<ListOp<ThingBuilder, UID>>;
 
     fn add_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self> {
-       self.thing_ops().push(ListOp::Add(thing)); 
+       self.get_thing_listops_mut().push(ListOp::Add(thing)); 
        Ok(self)
     }
 
     fn edit_thing(&mut self, thing: ThingBuilder) -> Result<&mut Self> {
-        self.thing_ops().push(ListOp::Edit(thing));
+        self.get_thing_listops_mut().push(ListOp::Edit(thing));
         Ok(self)
     }
 
     fn remove_thing(&mut self, thing_uid: UID) -> Result<&mut Self> {
-        self.thing_ops().push(ListOp::Remove(thing_uid));
+        self.get_thing_listops_mut().push(ListOp::Remove(thing_uid));
         Ok(self)
     }
 }

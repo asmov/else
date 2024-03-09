@@ -40,9 +40,11 @@ pub struct Cortex {
 }
 
 /// Composition trait for Cortex
-pub trait Sensitive {
+pub trait HasCortex {
     fn cortex(&self) -> &Cortex;
 }
+
+pub trait Sensitive: HasCortex + Habitual + Intelligent + Productive + PsuedoIntelligent {}
 
 pub trait Productive {
     //fn productive_lobe() -> Option<&RepetitionLobe>;
@@ -53,12 +55,6 @@ pub trait Productive {
 pub trait PsuedoIntelligent {
     //fn psuedo_intelligence_lobe() -> Option<&PsuedoIntelligenceLobe>;
     //todo
-}
-
-impl Sensitive for Cortex {
-    fn cortex(&self) -> &Cortex {
-        self
-    }
 }
 
 impl Habitual for Cortex {
@@ -172,6 +168,7 @@ pub trait BuildableCortex: Builder {
     fn cortex(&mut self, cortex: CortexBuilder) -> Result<&mut Self>;
     fn cortex_builder(&mut self) -> &mut CortexBuilder;
     fn get_cortex_builder(&self) -> Option<&CortexBuilder>;
+    fn get_cortex_builder_mut(&mut self) -> Option<&mut CortexBuilder>;
 
     fn routine_lobe(&mut self, routine_lobe: RoutineLobeBuilder) -> Result<&mut Self> {
         self.cortex_builder().routine_lobe = Some(routine_lobe);
@@ -205,6 +202,10 @@ impl BuildableCortex for CortexBuilder {
     }
 
     fn get_cortex_builder(&self) -> Option<&CortexBuilder> {
+        Some(self)
+    }
+
+    fn get_cortex_builder_mut(&mut self) -> Option<&mut CortexBuilder> {
         Some(self)
     }
 }

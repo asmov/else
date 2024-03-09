@@ -42,12 +42,28 @@ impl Exists for Character {
     }
 }
 
-impl Sensitive for Character {
+impl HasCortex for Character {
     fn cortex(&self) -> &Cortex {
         &self.cortex
     }
 }
 
+impl Habitual for Character {
+    fn routine_lobe(&self) -> &RoutineLobe {
+        self.cortex.routine_lobe()
+    }
+}
+
+impl Productive for Character {}
+impl PsuedoIntelligent for Character {}
+
+impl Intelligent for Character {
+    fn intelligence_lobe(&self) -> Option<&IntelligenceLobe> {
+        self.cortex.intelligence_lobe()
+    }
+}
+
+impl Sensitive for Character {}
 impl Something for Character {}
 
 #[derive(Debug)]
@@ -161,6 +177,10 @@ impl BuildableCortex for CharacterBuilder {
     fn get_cortex_builder(&self) -> Option<&CortexBuilder> {
         self.cortex.as_ref()
     }
+    
+    fn get_cortex_builder_mut(&mut self) -> Option<&mut CortexBuilder> {
+        self.cortex.as_mut()
+    }
 }
 
 impl BuildableEntity for CharacterBuilder {
@@ -177,8 +197,12 @@ impl BuildableEntity for CharacterBuilder {
         self.entity.as_mut().unwrap()
     }
 
-    fn get_entity(&self) -> Option<&EntityBuilder> {
+    fn get_entity_builder(&self) -> Option<&EntityBuilder> {
         self.entity.as_ref()
+    }
+    
+    fn get_entity_builder_mut(&mut self) -> Option<&mut EntityBuilder> {
+        self.entity.as_mut()
     }
 }
 
@@ -195,7 +219,7 @@ impl BuildableUID for CharacterBuilder {
     }
 
     fn get_uid(&self) -> Option<&UID> {
-        self.get_entity()
+        self.get_entity_builder()
             .and_then(|entity| entity.get_uid())
     }
 }

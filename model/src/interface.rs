@@ -29,7 +29,7 @@ impl Interface {
         self.downlink_uid
     }
 
-    pub fn downlinked(&self) -> bool {
+    pub fn linked(&self) -> bool {
         self.downlink_uid.is_some()
     }
 }
@@ -163,6 +163,11 @@ pub trait BuildableInterfaceList {
     fn remove_interface(&mut self, interface_uid: UID) -> Result<&mut Self>;
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
+pub enum Auth{
+    Password(String),
+}
+
 /*todo
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub struct InterfaceContact {
@@ -174,12 +179,6 @@ pub struct InterfaceContact {
 pub struct InterfaceLogin {
     interface_uid: UID,
     login_accounts: Vec<Login>
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub enum Login{
-    Web3(Web3Login),
-    Google(GoogleLogin),
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
