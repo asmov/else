@@ -32,7 +32,7 @@ This software is comprised of four categories of components:
 - Server and service-hosting applications,
 - and Multimedia files (images, videos, sounds, music, documents).
 
-Standalone end-user applications, client applications, and tools are
+Standalone end-user applications and tools are
 licensed under the terms of the [GNU Public License 3.0](https://www.gnu.org/licenses/) (GPL-3) license.
 
 Libraries are licensed under the terms of the [GNU Public License 3.0](https://www.gnu.org/licenses/) (GPL-3) license.
