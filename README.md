@@ -13,8 +13,7 @@ Documents
 - [Building](./BUILDING.md) : Instructions for building from source
 - [Design Notes](./docs/design/README.md) : Design notes and reference material
 - [Roadmap](./docs/Roadmap.md) : Planned fixes and enhancements
-- [Copying](./COPYING.txt) : The GPL3 licensing declaration as displayed below.
-- [License](./LICENSE.txt) : The complete GPL3 license definition.
+- [Licensing](./docs/licensing/README.md) : The GPL3 licensing declaration as displayed below.
 
 
 Structure
@@ -22,20 +21,37 @@ Structure
 - [Documents](./docs)
 
 
-License (GPL 3)
+Licensing
 --------------------------------------------------------------------------------
 Asmov Else: An alternate world simulator  
-Copyright (C) 2024 Asmov LLC 
+Copyright (C) 2024 Asmov LLC  
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This software is comprised of four categories of components:
+- Standalone end-user applications, client applications, and tools,
+- Libraries,
+- Server and service-hosting applications,
+- and Multimedia files (images, videos, sounds, music, documents).
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+Standalone end-user applications, client applications, and tools are
+licensed under the terms of the [GNU Public License 3.0](https://www.gnu.org/licenses/) (GPL-3) license.
 
-You should have received a [copy](./LICENSE.txt) of the GNU General Public License
-along with this program.  If not, see https://www.gnu.org/licenses/.
+Libraries are licensed under the terms of the [GNU Public License 3.0](https://www.gnu.org/licenses/) (GPL-3) license.
+
+Server and service-hosting applications are licensed under the terms of
+the [GNU Affero Publice License 3.0](https://www.gnu.org/licenses/) (AGPL-3) license.
+
+Non-branded Multimedia files are licensed under the terms of the
+[Community Commons Attribution ShareAlike 4.0 International] (CC-BY-SA-4) license.
+
+You should have received copying and license files for each license with this
+software:
+  - [COPYING-GPL-3.txt] and [LICENSE-GPL-3.txt]
+  - [COPYING-AGPL-3.txt] and [LICENSE-AGPL-3.txt]
+  - [COPYING-CC-BY-SA-4.txt] and [LICENSE-CC-BY-SA-4.txt]
+
+Each package contains specific licensing instructions for its distribution.
+
+
+
+
+

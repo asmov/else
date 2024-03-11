@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use strum;
 
-use crate::{timeframe::*, action::*, sync::Sync};
+use crate::{timeframe::*, action::*, sync::*, descriptor::*};
 
 pub type MessageID = u16;
 pub type ErrorCode = u8;
@@ -73,8 +73,11 @@ pub enum ClientToZoneMessage {
     /// Client is about to disconnect.
     /// Expects response: ZoneToClientMessage::Disconnect
     Disconnect,
-    Downlink(UID),
-    Action(Action)
+    /// Requests a paginated (u16, 0-index) list of downlinks that are that are reserved for or immediately available to the client's interface.
+    ListLinkable(u16),
+    Downlink(Frame, UID),
+    Unlink,
+    Action(Action),
 }
 
 impl Messaging for ClientToZoneMessage {
@@ -86,7 +89,9 @@ impl Messaging for ClientToZoneMessage {
         match self {
             ClientToZoneMessage::Connect => "ClientToZoneMessage::Connect",
             ClientToZoneMessage::Disconnect => "ClientToZoneMessage::Disconnect",
-            ClientToZoneMessage::Downlink(_) => "ClientToZoneMessage::Downlink",
+            ClientToZoneMessage::ListLinkable(_) => "ClientToZoneMessage::ListLinkable",
+            ClientToZoneMessage::Downlink(_,_) => "ClientToZoneMessage::Downlink",
+            ClientToZoneMessage::Unlink => "ClientToZoneMessage::Downlink",
             ClientToZoneMessage::Action(_) => "ClientToZoneMessage::Action",
         }
     }
@@ -96,16 +101,21 @@ impl Messaging for ClientToZoneMessage {
 pub enum ZoneToClientMessage {
     TimeFrame(NewTimeFrameMsg), // 2
     /// Response: Request to connect to the world through this server has been accepted.
-    Connected,
+    /// Provides a list of downlinks that are currently reserved by the client's interface.
+    Connected(Vec<(UID, Descriptor)>),
     /// Response: Request to connect to the world through this server has been rejected.
     ConnectRejected,
     InitInterfaceView(TimeFrame, Vec<u8>),
     Sync(Sync),
     Disconnect,
-    DownlinkApproved(Frame),
+    // Provides a list of downlinks that are that are reserved for or immediately available to the client's interface.
+    // Paginated 0-index with page (u16) and number of pages (u16), respectively.
+    // Tuple includes comprised of the character's UID and descriptor.
+    Linkable(u16, u16, Vec<(UID, Descriptor)>),
+    DownlinkApproved(Frame,Frame),
     DownlinkRejected(Frame),
-    ActionApproved(Frame),
-    ActionApprovedAt(Frame, Frame),
+    Unlinked(Frame),
+    ActionApproved(Frame,Frame),
     ActionRejected(Frame),
 }
 
@@ -113,15 +123,16 @@ impl Messaging for ZoneToClientMessage {
     fn message_name(&self) -> &'static str {
         match self {
             Self::TimeFrame(_) => "ZoneToClientMessage::TimeFrame",
-            Self::Connected => "ZoneToClientMessage::Connected",
+            Self::Connected(_) => "ZoneToClientMessage::Connected",
             Self::ConnectRejected => "ZoneToClientMessage::ConnectRejected",
             Self::InitInterfaceView(_, _)=> "ZoneToClientMessage::InitInterfaceView",
             Self::Sync(_) => "ZoneToClientMessage::Sync",
             Self::Disconnect => "ZoneToClientMessage::Disconnect",
-            Self::DownlinkApproved(_) => "ZoneToClientMessage::DownlinkApproved",
+            Self::Linkable(_, _, _) => "ZoneToClientMessage::Linkable",
+            Self::DownlinkApproved(_,_) => "ZoneToClientMessage::DownlinkApproved",
             Self::DownlinkRejected(_) => "ZoneToClientMessage::DownlinkRejected",
-            Self::ActionApproved(_) => "ZoneToClientMessage::ActionApproved",
-            Self::ActionApprovedAt(_,_) => "ZoneToClientMessage::ActionApprovedWithChange",
+            Self::Unlinked(_) => "ZoneToClientMessage::Unlinked",
+            Self::ActionApproved(_,_) => "ZoneToClientMessage::ActionApproved",
             Self::ActionRejected(_) => "ZoneToClientMessage::ActionRejected",
         }
     }
