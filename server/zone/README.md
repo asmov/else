@@ -1,26 +1,5 @@
-} else {
+} else { World Server }
 ================================================================================
-
-This is not your world.
-
-Packages
---------------------------------------------------------------------------------
-- [TBD](./) : TBD 
-
-
-Documents
---------------------------------------------------------------------------------
-- [Building](./BUILDING.md) : Instructions for building from source
-- [Design Notes](./docs/design/README.md) : Design notes and reference material
-- [Roadmap](./docs/Roadmap.md) : Planned fixes and enhancements
-- [Copying](./COPYING.txt) : The GPL3 licensing declaration as displayed below.
-- [License](./LICENSE.txt) : The complete GPL3 license definition.
-
-
-Structure
---------------------------------------------------------------------------------
-- [Documents](./docs)
-
 
 License (GPL 3)
 --------------------------------------------------------------------------------
