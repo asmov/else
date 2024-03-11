@@ -52,9 +52,7 @@ software:
 - [COPYING-CC-BY-SA-4](COPYING-CC-BY-SA-4.txt)
 - [LICENSE-CC-BY-SA-4](LICENSE-CC-BY-SA-4.txt)
 
-Each package contains specific licensing instructions for its distribution.
-
-
+Each package contains specific copying instructions and licensing terms. 
 
 
 
