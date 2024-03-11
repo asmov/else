@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use strum;
 
-use crate::{timeframe::*, action::*, sync::*, descriptor::*};
+use crate::{timeframe::*, action::*, sync::*, descriptor::*, interface::*};
 
 pub type MessageID = u16;
 pub type ErrorCode = u8;
@@ -15,6 +15,10 @@ pub enum Protocol {
     Unsupported,
     ClientToZone,
     ZoneToWorld,
+    ZoneToUniverse,
+    WorldToUniverse,
+    UniverseToWorld,
+    UniverseToZone,
     WorldToZone,
     ZoneToClient,
 }
@@ -65,17 +69,30 @@ fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct ConnectMsg {
+    pub auth: Auth,
+    pub last_downlink_uid: Option<UID>
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct ListLinkableMsg {
+    pub page: u16
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ClientToZoneMessage {
     /// Request to connect to the world through this server.
+    /// Sends an authentication along with an optional downlink UID that was previously used.
     /// Expects responses: ZoneToClientMessage::[Connected, ConnectRejected]
-    Connect,
+    Connect(ConnectMsg),
     /// Client is about to disconnect.
     /// Expects response: ZoneToClientMessage::Disconnect
     Disconnect,
-    /// Requests a paginated (u16, 0-index) list of downlinks that are that are reserved for or immediately available to the client's interface.
-    ListLinkable(u16),
-    Downlink(Frame, UID),
+    /// Requests a paginated (u16, 0-index) list of downlinks that are that are reserved for OR, if none, those
+    ///   immediately available to the client's interface.
+    ListLinkable(ListLinkableMsg),
+    Downlink(UID),
     Unlink,
     Action(Action),
 }
@@ -87,31 +104,46 @@ impl Messaging for ClientToZoneMessage {
 
     fn message_name(&self) -> &'static str {
         match self {
-            ClientToZoneMessage::Connect => "ClientToZoneMessage::Connect",
+            ClientToZoneMessage::Connect(_) => "ClientToZoneMessage::Connect",
             ClientToZoneMessage::Disconnect => "ClientToZoneMessage::Disconnect",
             ClientToZoneMessage::ListLinkable(_) => "ClientToZoneMessage::ListLinkable",
-            ClientToZoneMessage::Downlink(_,_) => "ClientToZoneMessage::Downlink",
+            ClientToZoneMessage::Downlink(_) => "ClientToZoneMessage::Downlink",
             ClientToZoneMessage::Unlink => "ClientToZoneMessage::Downlink",
             ClientToZoneMessage::Action(_) => "ClientToZoneMessage::Action",
         }
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct ConnectedMsg {
+    pub interface_uid: UID,
+    pub linkable: Vec<(UID, Descriptor)>,
+    pub linkable_pages: u16
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct LinkableMsg {
+    pub page: u16,
+    pub linkable: Vec<(UID, Descriptor)>,
+    pub pages: u16
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ZoneToClientMessage {
     TimeFrame(NewTimeFrameMsg), // 2
     /// Response: Request to connect to the world through this server has been accepted.
-    /// Provides a list of downlinks that are currently reserved by the client's interface.
-    Connected(Vec<(UID, Descriptor)>),
+    /// Returns the interface UID that the Authentication resolved to.
+    /// Provides the first page of ListLinkable results
+    Connected(ConnectedMsg),
     /// Response: Request to connect to the world through this server has been rejected.
     ConnectRejected,
     InitInterfaceView(TimeFrame, Vec<u8>),
     Sync(Sync),
     Disconnect,
     // Provides a list of downlinks that are that are reserved for or immediately available to the client's interface.
-    // Paginated 0-index with page (u16) and number of pages (u16), respectively.
+    // Paginated 0-index with page (first u16) and number of pages (last u16)
     // Tuple includes comprised of the character's UID and descriptor.
-    Linkable(u16, u16, Vec<(UID, Descriptor)>),
+    Linkable(LinkableMsg),
     DownlinkApproved(Frame,Frame),
     DownlinkRejected(Frame),
     Unlinked(Frame),
@@ -128,7 +160,7 @@ impl Messaging for ZoneToClientMessage {
             Self::InitInterfaceView(_, _)=> "ZoneToClientMessage::InitInterfaceView",
             Self::Sync(_) => "ZoneToClientMessage::Sync",
             Self::Disconnect => "ZoneToClientMessage::Disconnect",
-            Self::Linkable(_, _, _) => "ZoneToClientMessage::Linkable",
+            Self::Linkable(_) => "ZoneToClientMessage::Linkable",
             Self::DownlinkApproved(_,_) => "ZoneToClientMessage::DownlinkApproved",
             Self::DownlinkRejected(_) => "ZoneToClientMessage::DownlinkRejected",
             Self::Unlinked(_) => "ZoneToClientMessage::Unlinked",
@@ -144,15 +176,8 @@ impl Messaging for ZoneToClientMessage {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum ZoneToWorldMessage {
-    Acknowledged(AcknowledgedMsg), // 0
-    Error(ErrorMsg), // 1
     Connect,
     Disconnect,
-    ClientApproval,
-    ClientConnected,
-    ClientTransferring,
-    ClientTransfered,
-    ClientDisconnected
 }
 
 impl Messaging for ZoneToWorldMessage {
@@ -162,29 +187,63 @@ impl Messaging for ZoneToWorldMessage {
 
     fn message_name(&self) -> &'static str {
         match self {
-            ZoneToWorldMessage::Acknowledged(_) => "ZoneToWorldMessage::",
-            ZoneToWorldMessage::Error(_) => "ZoneToWorldMessage::Error",
-            ZoneToWorldMessage::Connect => "ZoneToWorldMessage::Connect",
-            ZoneToWorldMessage::Disconnect => "ZoneToWorldMessage::Disconnect",
-            ZoneToWorldMessage::ClientApproval => "ZoneToWorldMessage::ClientApproval",
-            ZoneToWorldMessage::ClientConnected => "ZoneToWorldMessage::ClientConnected",
-            ZoneToWorldMessage::ClientTransferring => "ZoneToWorldMessage::ClientTransferring",
-            ZoneToWorldMessage::ClientTransfered => "ZoneToWorldMessage::ClientTransfered",
-            ZoneToWorldMessage::ClientDisconnected => "ZoneToWorldMessage::ClientDisconnected",
+            Self::Connect => "ZoneToWorldMessage::Connect",
+            Self::Disconnect => "ZoneToWorldMessage::Disconnect",
         }
     }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub enum ZoneToUniverseMessage {
+    Connect,
+    Disconnect,
+}
+
+impl Messaging for ZoneToUniverseMessage {
+    fn message_type_name() -> &'static str {
+        "ZoneToUniverseMessage"
+    }
+
+    fn message_name(&self) -> &'static str {
+        match self {
+            Self::Connect => "ZoneToUniverseMessage::Connect",
+            Self::Disconnect => "ZoneToUniverseMessage::Disconnect",
+        }
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub enum UniverseToZoneMessage {
+    Connected,
+    ConnectRejected,
+    Disconnect,
+    UniverseBytes(Vec<u8>),
+    Sync(Sync)
+}
+
+impl Messaging for UniverseToZoneMessage {
+    fn message_type_name() -> &'static str {
+        "UniverseToZoneMessage"
+    }
+
+    fn message_name(&self) -> &'static str {
+        match self {
+            Self::Connected => "UniverseToZoneMessage::Connected",
+            Self::ConnectRejected => "UniverseToZoneMessage::ConnectRejected",
+            Self::Disconnect => "UniverseToZoneMessage::Disconnect",
+            Self::UniverseBytes(_) => "UniverseToZoneMessage::UniverseBytes",
+            Self::Sync(_) => "UniverseToZoneMessage::Sync"
+        }
+    }
+}
+
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum WorldToZoneMessage {
-    Acknowledged(AuthorityAcknowledgedMsg), // 0
-    Error(ErrorMsg), // 1
     TimeFrame(NewTimeFrameMsg), // 2
     Connected,
     ConnectRejected,
     Disconnect,
-    ClientApproved,
-    ClientRejected,
     WorldBytes(TimeFrame, Vec<u8>),
     Sync(Sync)
 }
@@ -196,14 +255,10 @@ impl Messaging for WorldToZoneMessage {
 
     fn message_name(&self) -> &'static str {
         match self {
-            Self::Acknowledged(_) => "WorldToZoneMessage::Acknowledged",
-            Self::Error(_) => "WorldToZoneMessage::Error",
             Self::TimeFrame(_) => "WorldToZoneMessage::TimeFrame",
             Self::Connected => "WorldToZoneMessage::Connected",
             Self::ConnectRejected => "WorldToZoneMessage::ConnectRejected",
             Self::Disconnect => "WorldToZoneMessage::Disconnect",
-            Self::ClientApproved => "WorldToZoneMessage::ClientApproved",
-            Self::ClientRejected => "WorldToZoneMessage::ClientRejected",
             Self::WorldBytes(_,_) => "WorldToZoneMessage::WorldBytes",
             Self::Sync(_) => "WorldToZoneMessage::Sync"
         }

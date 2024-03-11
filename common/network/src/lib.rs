@@ -3,12 +3,15 @@ use bincode;
 use asmov_else_model as model;
 
 pub const LOCALHOST_IP: &'static str = "127.0.0.1";
+pub const ELSE_UNIVERSE_PORT: u16 = 3152;
 pub const ELSE_WORLD_PORT: u16 = 3153;
 pub const ELSE_ZONE_PORT: u16 = 8443;
 pub const ELSE_LOCALHOST_ZONE_ADDR: &'static str = "127.0.0.1:8443";
 pub const ELSE_LOCALHOST_WORLD_ADDR: &'static str = "127.0.0.1:3153";
+pub const ELSE_LOCALHOST_UNIVERSE_ADDR: &'static str = "127.0.0.1:3152";
 pub const ELSE_LOCALHOST_ZONE_URL: &'static str = "wss://127.0.0.1:8443";
 pub const ELSE_LOCALHOST_WORLD_URL: &'static str = "wss://127.0.0.1:3153";
+pub const ELSE_LOCALHOST_UNIVERSE_URL: &'static str = "wss://127.0.0.1:3152";
 pub const WEBSOCKET_PAYLOAD_ERROR: u16 = 1007;
 
 pub const MAX_RECONNECT_WAIT: u64 = 120;
@@ -51,7 +54,8 @@ pub type LoggedResult<T> = Result<T, ()>;
 pub enum Who {
     Client (usize, String),
     Zone (usize, String),
-    World (usize, String)
+    World (usize, String),
+    Universe (usize, String)
 }
 
 impl Who {
@@ -60,6 +64,7 @@ impl Who {
             Self::Client(_,_) => "client",
             Self::Zone(_,_) => "zone server",
             Self::World(_,_) => "world server",
+            Self::Universe(_,_) => "universe server",
         }
     }
 }
@@ -69,7 +74,8 @@ impl std::fmt::Display for Who {
         match self {
             Who::Client(num, addr) => write!(f, "client #{num} ({addr})"),
             Who::Zone(num, addr) => write!(f, "zone server #{num} ({addr})"),
-            Who::World(num, addr) => write!(f, "world server #{num} ({addr})")
+            Who::World(num, addr) => write!(f, "world server #{num} ({addr})"),
+            Who::Universe(num, addr) => write!(f, "universe server #{num} ({addr})")
         }
     }
 }

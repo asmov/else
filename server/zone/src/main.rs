@@ -17,6 +17,7 @@ async fn main() -> process::ExitCode {
     };
 
     let _world_connector_task = tokio::spawn(world_connector_task(Arc::clone(&runtime)));
+    let _universe_connector_task = tokio::spawn(universe_connector_task(Arc::clone(&runtime)));
     let _client_listener_task = tokio::spawn(client_listener_task(client_listening, Arc::clone(&runtime)));
 
     let default_duration = tokio::time::Duration::from_secs(30);
@@ -81,6 +82,65 @@ async fn world_connector_task(runtime: ZoneRuntimeSync) {
         reconnect_attempts = 0; // reset after a successful handshake
 
         match world_stream_task(conn, Arc::clone(&runtime)).await {
+            Err(e) => {
+                server::log_error!("{e}");
+            },
+            Ok(who) => {
+                server::log!("Session finished with {who}");
+            }
+        }
+    }
+}
+
+async fn universe_connector_task(runtime: ZoneRuntimeSync) {
+    let mut next_universe_connection_num: usize = 1;
+    let universe_server_ip = elsenet::LOCALHOST_IP;
+    let universe_server_port = elsenet::ELSE_UNIVERSE_PORT;
+    let universe_server_url = format!("wss://{universe_server_ip}:{universe_server_port}");
+    let mut reconnect_attempts: i32 = -1;
+
+    loop {
+        if reconnect_attempts > -1 {
+            let wait = std::cmp::min(server::MAX_RECONNECT_WAIT, 15 + 3 * reconnect_attempts as u64);
+            server::log!("Reconnecting in {wait} seconds ...");
+            tokio::time::sleep(tokio::time::Duration::from_secs(15 + wait)).await;
+            reconnect_attempts += 1;
+        } else {
+            reconnect_attempts = 0;
+        }
+
+        let tls_connector = build_tls_connector();
+        let result = tokio_tungstenite::connect_async_tls_with_config(
+            universe_server_url.clone(),
+            None,
+            false,
+            Some(tls_connector)
+        ).await;
+
+        let universe_websocket_stream = match result {
+            Ok((stream, _)) => stream,
+            Err(e) => {
+                server::log_error!("Unable to connect to universe server at {universe_server_url} :> {e}");
+                continue
+            }
+        };
+
+        let universe_server_who = server::Who::Universe(next_universe_connection_num, format!("{universe_server_ip}:{universe_server_port}"));
+        next_universe_connection_num += 1;
+        server::log!("Established connection with {universe_server_who}.");
+
+        let conn = server::Connection::new(universe_server_who, server::Stream::Outgoing(universe_websocket_stream));
+        let conn = match negotiate_universe_session(conn).await {
+            Err(e) => {
+                server::log_error!("{e}");
+                continue;
+            },
+            Ok(conn) => conn
+        };
+
+        reconnect_attempts = 0; // reset after a successful handshake
+
+        match universe_stream_task(conn, Arc::clone(&runtime)).await {
             Err(e) => {
                 server::log_error!("{e}");
             },
@@ -164,7 +224,7 @@ async fn client_listener_task(listening: ClientListening, runtime: ZoneRuntimeSy
         let conn = server::Connection::new(client_who.clone(), server::Stream::Incoming(websocket_stream));
         let runtime_clone = Arc::clone(&runtime);
         let task = tokio::spawn(async move {
-            let conn = match negotiate_client_session(conn).await {
+            let conn = match negotiate_client_session(conn, Arc::clone(&runtime_clone)).await {
                 Err(e) => {
                     server::log_error!("{e}");
                     return
@@ -267,7 +327,72 @@ async fn world_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSyn
     }
 }
 
-async fn negotiate_client_session(mut conn: server::Connection) -> server::ConnectionResult {
+async fn negotiate_universe_session(mut conn: server::Connection) -> server::ConnectionResult {
+    // protocol verification: 1. the connector sends its protocol header
+    let msg = ProtocolHeader::current(Protocol::ZoneToUniverse);
+    conn.send(msg).await?;
+
+    // protocol verification: 2. server sends the expected corresponding protocol header or Protocol::Unsupported
+    let their_protocol_header: ProtocolHeader = conn.receive().await?;
+    if !their_protocol_header.compatible(Protocol::UniverseToZone) {
+        // either the protocol is Unsupported or the version is wrong
+        return Err(conn.error_payload("compatible protocol").await);
+    }
+     
+    // send a connection request
+    let msg = ZoneToUniverseMessage::Connect;
+    conn.send(msg).await?;
+
+    // receive a connection response
+    let msg: UniverseToZoneMessage = conn.receive().await?;
+    match msg {
+        UniverseToZoneMessage::Connected => {
+            server::log!("Connection negotiated with {}.", conn.who());
+            Ok(conn)
+        },
+        UniverseToZoneMessage::ConnectRejected => {
+            server::log_error!("Connection negotiation rejected by {}.", conn.who());
+            conn.halt().await;
+            Err(server::NetworkError::Rejected{who: conn.who().clone()})
+        },
+        _ => Err(conn.error_payload("UniverseToZoneMessage::[Connected, ConnectRejected]").await)
+    }
+}
+
+async fn universe_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSync) -> server::StreamResult {
+    loop {
+        let msg: UniverseToZoneMessage = conn.receive().await?;
+        match msg {
+            UniverseToZoneMessage::UniverseBytes(bytes) => {
+                {
+                    let mut runtime_lock = runtime.lock().await;
+                    runtime_lock.sync_universe(bytes).unwrap(); //todo: Don't Panic
+                }
+
+                server::log!("Synchronized universe.");
+            },
+            UniverseToZoneMessage::Sync(sync) => {
+                {
+                    let mut runtime_lock = runtime.lock().await;
+                    runtime_lock.sync(sync).unwrap();
+                }
+                server::log!("Sync");
+            },
+            UniverseToZoneMessage::Disconnect => {
+                server::log!("Disconnected from {}", conn.who());
+                conn.halt().await;
+                return Ok(conn.who().clone());
+            },
+            _ => {
+                return Err(elsenet::NetworkError::UnexpectedResponse{
+                    who: conn.who().clone(), expected: "appropriate UniverseToZone".to_string()})
+            }
+        }
+    }
+}
+
+
+async fn negotiate_client_session(mut conn: server::Connection, runtime: ZoneRuntimeSync) -> server::ConnectionResult {
     // protocol verification: connector sends their protocol header to us
     let their_protocol_header: ProtocolHeader = conn.receive().await?;
     // send our protocol header regardless
@@ -280,7 +405,7 @@ async fn negotiate_client_session(mut conn: server::Connection) -> server::Conne
 
     let msg: ClientToZoneMessage = conn.receive().await?; 
     match msg {
-        ClientToZoneMessage::Connect => {
+        ClientToZoneMessage::Connect(connect_msg) => {
             //todo: forward the auth request to the universe server and respond when it does
             let msg = ZoneToClientMessage::Connected();
             conn.send(msg).await?;
@@ -297,11 +422,10 @@ async fn client_stream_task(mut conn: server::Connection, runtime: ZoneRuntimeSy
     // init session
     let session;
     {
-        let timeframe;
-        {
+        let timeframe = {
             let runtime_lock = runtime.lock().await;
             session = ClientSession::todo_from_universe_server(runtime_lock.world().unwrap()).unwrap(); //todo: don't panic
-            timeframe = runtime_lock.timeframe().unwrap().clone();
+            runtime_lock.timeframe().unwrap().clone()
         };
 
         let bytes = bincode::serde::encode_to_vec(&session.interface_view(), bincode::config::standard()).unwrap();
