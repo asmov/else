@@ -5,8 +5,15 @@ This is not your world.
 
 Packages
 --------------------------------------------------------------------------------
-- [TBD](./) : TBD 
-
+- [Behavior Library](./behavior/) : Logic for Action and stimulation responses 
+- [Common Network Library](./common/network/) : Common to all networking
+- [Common Rust Library](./common/rust/) : Common Rust language usage
+- [Common Server Library](./common/server/) : Common to all servers
+- [Model Library](./model/) : All data models, including messages
+- [Multimedia Assets](./multimedia/) : Images and sounds for clients
+- [World Server](./server/world/) : Back-end World state server
+- [Zone Server](./server/zone/) : Front-end server for a World
+- [Web Client](./client/web/) : Web-based end-user client
 
 Documents
 --------------------------------------------------------------------------------
