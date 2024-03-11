@@ -27,7 +27,7 @@ Asmov Else: An alternate world simulator
 Copyright (C) 2024 Asmov LLC  
 
 This software is comprised of four categories of components:
-- Standalone end-user applications, client applications, and tools,
+- Standalone end-user applications and tools,
 - Libraries,
 - Server and service-hosting applications,
 - and Multimedia files (images, videos, sounds, music, documents).
