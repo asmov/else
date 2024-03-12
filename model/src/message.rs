@@ -1,7 +1,8 @@
+pub mod auth;
 use std::fmt::Display;
 use strum;
-
-use crate::{timeframe::*, action::*, sync::*, descriptor::*, interface::*};
+use crate::{timeframe::*, action::*, sync::*, descriptor::*};
+pub use auth::*;
 
 pub type MessageID = u16;
 pub type ErrorCode = u8;
@@ -72,7 +73,7 @@ fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ConnectMsg {
-    pub auth: Auth,
+    pub auth_request: Auth,
     pub last_downlink_uid: Option<UID>
 }
 
@@ -83,6 +84,8 @@ pub struct ListLinkableMsg {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ClientToZoneMessage {
+    AuthRequest(AuthRequestMsg),
+    AuthAnswer(AuthAnswerMsg),
     /// Request to connect to the world through this server.
     /// Sends an authentication along with an optional downlink UID that was previously used.
     /// Expects responses: ZoneToClientMessage::[Connected, ConnectRejected]
@@ -103,6 +106,8 @@ impl Messaging for ClientToZoneMessage {
 
     fn message_name(&self) -> &'static str {
         match self {
+            Self::AuthRequest(_) => "ClientToZoneMessage::AuthRequest",
+            Self::AuthAnswer(_) => "ClientToZoneMessage::AuthAnswer",
             Self::Connect(_) => "ClientToZoneMessage::Connect",
             Self::Disconnect => "ClientToZoneMessage::Disconnect",
             Self::ListLinkable(_) => "ClientToZoneMessage::ListLinkable",
@@ -133,6 +138,8 @@ pub enum ZoneToClientMessage {
     /// Response: Request to connect to the world through this server has been accepted.
     /// Returns the interface UID that the Authentication resolved to.
     /// Provides the first page of ListLinkable results
+    AuthResponse(AuthResponseMsg),
+    AuthResult(AuthResultMsg),
     Connected(ConnectedMsg),
     /// Response: Request to connect to the world through this server has been rejected.
     ConnectRejected,
@@ -156,6 +163,8 @@ impl Messaging for ZoneToClientMessage {
     fn message_name(&self) -> &'static str {
         match self {
             Self::TimeFrame(_) => "ZoneToClientMessage::TimeFrame",
+            Self::AuthResponse(_) => "ZoneToClientMessage::AuthResponse",
+            Self::AuthResult(_) => "ZoneToClientMessage::AuthResult",
             Self::Connected(_) => "ZoneToClientMessage::Connected",
             Self::ConnectRejected => "ZoneToClientMessage::ConnectRejected",
             Self::InitInterfaceView(_, _)=> "ZoneToClientMessage::InitInterfaceView",

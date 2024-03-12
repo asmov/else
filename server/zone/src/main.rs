@@ -376,18 +376,24 @@ async fn universe_stream_task(mut conn: server::Connection, runtime: ZoneRuntime
     }
 }
 
-
 async fn negotiate_client_session(mut conn: server::Connection, runtime: ZoneRuntimeSync) -> server::ConnectionResult {
-    // protocol verification: connector sends their protocol header to us
-    let their_protocol_header: ProtocolHeader = conn.receive().await?;
-    // send our protocol header regardless
-    let our_protocol_header = ProtocolHeader::current(Protocol::ZoneToClient);
-    conn.send(our_protocol_header).await?;
+    elsenet::negotiate_protocol(&mut conn, true, Protocol::ZoneToClient, Protocol::ClientToZone).await?;
 
-    if !their_protocol_header.compatible(Protocol::ClientToZone) {
-        return Err(conn.error_payload("compatible protocol").await);
+    const MAX_CLIENT_AUTH_ATTEMPTS: usize = 3;
+    let mut auth_attempts = 0;
+
+    let msg: ClientToZoneMessage = conn.receive().await?; 
+    match msg {
+        ClientToZoneMessage::AuthRequest(auth_request) => {
+            //todo: forward the auth request to the universe server and respond when it does
+            let msg = ZoneToClientMessage::Connected();
+            conn.send(msg).await?;
+            Ok(conn)
+        },
+        _ => {
+            Err(conn.error_payload("ClientToZoneMessage::Connect").await)
+        }
     }
-
     let msg: ClientToZoneMessage = conn.receive().await?; 
     match msg {
         ClientToZoneMessage::Connect(connect_msg) => {

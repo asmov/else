@@ -162,39 +162,3 @@ pub trait BuildableInterfaceList {
     fn edit_interface(&mut self, interface: InterfaceBuilder) -> Result<&mut Self>;
     fn remove_interface(&mut self, interface_uid: UID) -> Result<&mut Self>;
 }
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub enum Auth{
-    Password(String),
-}
-
-/*todo
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub struct InterfaceContact {
-    interface_uid: UID,
-    contacts: Vec<Contact>
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub struct InterfaceLogin {
-    interface_uid: UID,
-    login_accounts: Vec<Login>
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub struct Web3Login{
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub struct GoogleLogin{
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub enum Contact{
-    Email(EmailContact)
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-pub struct EmailContact {
-}
-*/

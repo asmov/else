@@ -26,6 +26,9 @@ pub enum NetworkError {
 
     #[error("Unexpected response received from {who} when expecting a {expected}.")]
     UnexpectedResponse{who: Who, expected: String},
+    
+    #[error("Protocol mismatch with {who}. Expected: {expected}. Received: {received}.")]
+    ProtocolMismatch{who: Who, expected: String, received: String},
 
     #[error("Connection rejected from {who}.")]
     Rejected{who: Who},
@@ -135,6 +138,15 @@ pub trait ConnectionTrait {
     async fn halt(&mut self) {
         self.stream().halt().await;
     }
+    
+    async fn error_protocol(&mut self, expected: model::Protocol, received: model::ProtocolHeader) -> NetworkError {
+        let error = NetworkError::ProtocolMismatch {
+            who: self.who().clone(),
+            expected: format!("{} v{}", expected, model::PROTOCOL_VERSION),
+            received: format!("{} v{}", received.protocol, received.version) };
+        self.stream().close_invalid(&error.to_string()).await;
+        error
+    }
 
     async fn error_payload(&mut self, expected: &str) -> NetworkError {
         let error = NetworkError::UnexpectedResponse {who: self.who().clone(), expected: expected.to_string() };
@@ -143,6 +155,31 @@ pub trait ConnectionTrait {
     }
 }
 
+/// Both ends send their protocol headers, the connecting end first.
+/// If the actual and expected protocols are incompatible, returns an error pending disconnection.
+pub async fn negotiate_protocol(
+    conn: &mut impl ConnectionTrait,
+    is_listener: bool,
+    our_protocol: model::Protocol,
+    their_expected_protocol: model::Protocol
+) -> Result<(), NetworkError> {
+    let our_protocol_header = model::ProtocolHeader::current(our_protocol);
+    let their_protocol_header: model::ProtocolHeader;
+
+    if is_listener {
+        their_protocol_header = conn.receive().await?;
+        conn.send(our_protocol_header).await?;
+    } else {
+        conn.send(our_protocol_header).await?;
+        their_protocol_header = conn.receive().await?;
+    }
+
+    if their_protocol_header.compatible(their_expected_protocol) {
+        Ok(())
+    } else {
+        Err(conn.error_protocol(their_expected_protocol, their_protocol_header).await)
+    }
+}
 
 
 
