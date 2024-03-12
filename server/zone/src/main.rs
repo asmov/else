@@ -363,21 +363,6 @@ async fn universe_stream_task(mut conn: server::Connection, runtime: ZoneRuntime
     loop {
         let msg: UniverseToZoneMessage = conn.receive().await?;
         match msg {
-            UniverseToZoneMessage::UniverseBytes(bytes) => {
-                {
-                    let mut runtime_lock = runtime.lock().await;
-                    runtime_lock.sync_universe(bytes).unwrap(); //todo: Don't Panic
-                }
-
-                server::log!("Synchronized universe.");
-            },
-            UniverseToZoneMessage::Sync(sync) => {
-                {
-                    let mut runtime_lock = runtime.lock().await;
-                    runtime_lock.sync(sync).unwrap();
-                }
-                server::log!("Sync");
-            },
             UniverseToZoneMessage::Disconnect => {
                 server::log!("Disconnected from {}", conn.who());
                 conn.halt().await;

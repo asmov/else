@@ -24,7 +24,12 @@ pub enum Protocol {
 }
 
 pub trait Messaging: Sized + serde::Serialize + serde::de::DeserializeOwned {
-    fn message_type_name() -> &'static str;
+    const MESSAGE_TYPE_NAME: &'static str;
+
+    fn message_type_name() -> &'static str {
+        Self::MESSAGE_TYPE_NAME
+    }
+
     fn message_name(&self) -> &'static str;
 }
 
@@ -37,18 +42,14 @@ pub struct ProtocolHeader {
 pub const PROTOCOL_VERSION: u8 = 1;
 
 impl Messaging for ProtocolHeader {
-    fn message_name(&self) -> &'static str {
-        Self::MESSAGE_NAME
-    }
+    const MESSAGE_TYPE_NAME: &'static str = "ProtocolHeader";
 
-    fn message_type_name() -> &'static str {
-        Self::MESSAGE_NAME
+    fn message_name(&self) -> &'static str {
+        Self::MESSAGE_TYPE_NAME
     }
 }
 
 impl ProtocolHeader {
-    pub const MESSAGE_NAME: &'static str = "ProtocolHeader";
-
     pub fn current(protocol: Protocol) -> Self {
         Self {
             protocol,
@@ -98,18 +99,16 @@ pub enum ClientToZoneMessage {
 }
 
 impl Messaging for ClientToZoneMessage {
-    fn message_type_name() -> &'static str {
-        "ClientToZoneMessage"
-    }
+    const MESSAGE_TYPE_NAME: &'static str = "ClientToZoneMessage";
 
     fn message_name(&self) -> &'static str {
         match self {
-            ClientToZoneMessage::Connect(_) => "ClientToZoneMessage::Connect",
-            ClientToZoneMessage::Disconnect => "ClientToZoneMessage::Disconnect",
-            ClientToZoneMessage::ListLinkable(_) => "ClientToZoneMessage::ListLinkable",
-            ClientToZoneMessage::Downlink(_) => "ClientToZoneMessage::Downlink",
-            ClientToZoneMessage::Unlink => "ClientToZoneMessage::Downlink",
-            ClientToZoneMessage::Action(_) => "ClientToZoneMessage::Action",
+            Self::Connect(_) => "ClientToZoneMessage::Connect",
+            Self::Disconnect => "ClientToZoneMessage::Disconnect",
+            Self::ListLinkable(_) => "ClientToZoneMessage::ListLinkable",
+            Self::Downlink(_) => "ClientToZoneMessage::Downlink",
+            Self::Unlink => "ClientToZoneMessage::Downlink",
+            Self::Action(_) => "ClientToZoneMessage::Action",
         }
     }
 }
@@ -152,6 +151,8 @@ pub enum ZoneToClientMessage {
 }
 
 impl Messaging for ZoneToClientMessage {
+    const MESSAGE_TYPE_NAME: &'static str = "ZoneToClientMessage";
+
     fn message_name(&self) -> &'static str {
         match self {
             Self::TimeFrame(_) => "ZoneToClientMessage::TimeFrame",
@@ -168,10 +169,6 @@ impl Messaging for ZoneToClientMessage {
             Self::ActionRejected(_) => "ZoneToClientMessage::ActionRejected",
         }
     }
-
-    fn message_type_name() -> &'static str {
-        "ZoneToClientMessage"
-    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -181,9 +178,7 @@ pub enum ZoneToWorldMessage {
 }
 
 impl Messaging for ZoneToWorldMessage {
-    fn message_type_name() -> &'static str {
-        "ZoneToWorldMessage"
-    }
+    const MESSAGE_TYPE_NAME: &'static str = "ZoneToWorldMessage";
 
     fn message_name(&self) -> &'static str {
         match self {
@@ -200,9 +195,7 @@ pub enum ZoneToUniverseMessage {
 }
 
 impl Messaging for ZoneToUniverseMessage {
-    fn message_type_name() -> &'static str {
-        "ZoneToUniverseMessage"
-    }
+    const MESSAGE_TYPE_NAME: &'static str = "ZoneToUniverseMessage";
 
     fn message_name(&self) -> &'static str {
         match self {
@@ -217,22 +210,16 @@ pub enum UniverseToZoneMessage {
     Connected,
     ConnectRejected,
     Disconnect,
-    UniverseBytes(Vec<u8>),
-    Sync(Sync)
 }
 
 impl Messaging for UniverseToZoneMessage {
-    fn message_type_name() -> &'static str {
-        "UniverseToZoneMessage"
-    }
+    const MESSAGE_TYPE_NAME: &'static str = "UniverseToZoneMessage";
 
     fn message_name(&self) -> &'static str {
         match self {
             Self::Connected => "UniverseToZoneMessage::Connected",
             Self::ConnectRejected => "UniverseToZoneMessage::ConnectRejected",
             Self::Disconnect => "UniverseToZoneMessage::Disconnect",
-            Self::UniverseBytes(_) => "UniverseToZoneMessage::UniverseBytes",
-            Self::Sync(_) => "UniverseToZoneMessage::Sync"
         }
     }
 }
@@ -249,9 +236,7 @@ pub enum WorldToZoneMessage {
 }
 
 impl Messaging for WorldToZoneMessage {
-    fn message_type_name() -> &'static str {
-        "WorldToZoneMessage"
-    }
+    const MESSAGE_TYPE_NAME: &'static str = "WorldToZoneMessage";
 
     fn message_name(&self) -> &'static str {
         match self {

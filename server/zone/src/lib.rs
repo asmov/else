@@ -107,10 +107,6 @@ impl ZoneRuntime {
         Ok(self.world.as_ref().unwrap())
     }
 
-    pub fn sync_universe(&mut self, bytes: Vec<u8>) -> Result<&model::World, ()> {
-        todo!("sync universe")
-    }
-
     pub fn sync(&mut self, sync: model::Sync) -> model::Result<()> {
         sync.sync(self.world.as_mut().unwrap())?;
         Ok(())
