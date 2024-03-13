@@ -386,7 +386,7 @@ async fn negotiate_client_session(mut conn: server::Connection, runtime: ZoneRun
     match msg {
         ClientToZoneMessage::AuthRequest(auth_request) => {
             //todo: forward the auth request to the universe server and respond when it does
-            let msg = ZoneToClientMessage::Connected();
+            let msg = ZoneToClientMessage::Connected;
             conn.send(msg).await?;
             Ok(conn)
         },
@@ -398,7 +398,7 @@ async fn negotiate_client_session(mut conn: server::Connection, runtime: ZoneRun
     match msg {
         ClientToZoneMessage::Connect(connect_msg) => {
             //todo: forward the auth request to the universe server and respond when it does
-            let msg = ZoneToClientMessage::Connected();
+            let msg = ZoneToClientMessage::Connected;
             conn.send(msg).await?;
             Ok(conn)
         },

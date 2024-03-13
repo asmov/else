@@ -73,7 +73,6 @@ fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ConnectMsg {
-    pub auth_request: Auth,
     pub last_downlink_uid: Option<UID>
 }
 

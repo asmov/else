@@ -1,0 +1,19 @@
+[package]
+name = "asmov-else-universe-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+asmov-else-model = { version = "0.1.0", path = "../../model" }
+asmov-else-network-common = { version = "0.1.0", path = "../../common/network" }
+asmov-else-server-common = { version = "0.1.0", path = "../../common/server" }
+asmov-else-behavior = { version = "0.1.0", path = "../../behavior" }
+anyhow = "1.0.79"
+bincode = { version = "2.0.0-rc.3", features = ["serde"] }
+bytes = "1.5.0"
+futures-util = { version = "0.3.30", features = ["tokio-io", "sink"] }
+native-tls = "0.2.11"
+tokio = { version = "1.35.1", features = ["full"] }
+tokio-native-tls = "0.3.1"
+tokio-tungstenite = { version = "0.21.0", features = ["native-tls"] }
+

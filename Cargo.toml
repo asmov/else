@@ -5,6 +5,7 @@ members = [
     "client/web",
     "server/zone",
     "server/world",
+    "server/universe",
     "common/server",
     "common/network",
     "common/rust",
