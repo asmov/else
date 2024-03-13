@@ -99,11 +99,11 @@ impl Identity {
         (self.universe_id, self.world_id, self.class_id, self.id)
     }
 
-    pub const fn to_base58(&self) -> String {
+    pub fn to_base58(&self) -> String {
         Self::base58(self.into_uid())
     }
 
-    pub const fn base58(uid: UID) -> String {
+    pub fn base58(uid: UID) -> String {
         bs58::encode(uid.to_be_bytes()).into_string()
     }
 }

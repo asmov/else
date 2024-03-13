@@ -200,6 +200,7 @@ impl Messaging for ZoneToWorldMessage {
 pub enum ZoneToUniverseMessage {
     Connect,
     Disconnect,
+    AuthRequest(AuthRequestMsg),
 }
 
 impl Messaging for ZoneToUniverseMessage {
@@ -209,6 +210,7 @@ impl Messaging for ZoneToUniverseMessage {
         match self {
             Self::Connect => "ZoneToUniverseMessage::Connect",
             Self::Disconnect => "ZoneToUniverseMessage::Disconnect",
+            Self::AuthRequest(_) => "ZoneToUniverseMessage::AuthRequest",
         }
     }
 }

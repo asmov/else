@@ -16,4 +16,5 @@ native-tls = "0.2.11"
 tokio = { version = "1.35.1", features = ["full"] }
 tokio-native-tls = "0.3.1"
 tokio-tungstenite = { version = "0.21.0", features = ["native-tls"] }
+solana-client = "1.18.5"
 
