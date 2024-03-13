@@ -22,7 +22,7 @@ impl Built for Interface {
 
 impl Interface {
     pub fn device_name(&self) -> String {
-        format!("/dev/tty/{:0>3}", Identity::from_uid(self.uid).id_to_string())
+        format!("/dev/tty/{:0>3}", Identity::base58(self.uid))
     }
 
     pub fn downlink_uid(&self) -> Option<UID> {

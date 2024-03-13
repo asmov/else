@@ -1,4 +1,5 @@
 use serde;
+use bs58;
 use crate::{codebase::*, error::*, modeling::*};
 
 pub type UID        = u128;
@@ -98,90 +99,14 @@ impl Identity {
         (self.universe_id, self.world_id, self.class_id, self.id)
     }
 
-    pub fn id_to_string(&self) -> String {
-        let mut chars: Vec<char> = Vec::new();
-        let mut x = self.id();
-        loop {
-            let m = (x % RADIX as ID) as usize;
-            x = x / RADIX as ID;
+    pub const fn to_base58(&self) -> String {
+        Self::base58(self.into_uid())
+    }
 
-            chars.push(CHARMAP[m]);
-
-            if x == 0 {
-                break;
-            }
-        }
-
-        chars.into_iter().collect()
+    pub const fn base58(uid: UID) -> String {
+        bs58::encode(uid.to_be_bytes()).into_string()
     }
 }
-
-const RADIX: usize = 62;
-const CHARMAP: [char; RADIX] = [
-    '0',
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    'a',
-    'b',
-    'c',
-    'd',
-    'e',
-    'f',
-    'g',
-    'h',
-    'i',
-    'j',
-    'k',
-    'l',
-    'm',
-    'n',
-    'o',
-    'p',
-    'q',
-    'r',
-    's',
-    't',
-    'u',
-    'v',
-    'w',
-    'x',
-    'y',
-    'z',
-    'A',
-    'B',
-    'C',
-    'D',
-    'E',
-    'F',
-    'G',
-    'H',
-    'I',
-    'J',
-    'K',
-    'L',
-    'M',
-    'N',
-    'O',
-    'P',
-    'Q',
-    'R',
-    'S',
-    'T',
-    'U',
-    'V',
-    'W',
-    'X',
-    'Y',
-    'Z',
-];
-
 
 impl Into<UID> for Identity {
     fn into(self) -> UID {
