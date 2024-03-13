@@ -8,7 +8,6 @@ use crate::universe_service::*;
 
 pub struct UniverseRuntime {
     universe: model::Universe,
-    sync_channel_tx: Option<mpsc::Sender<model::Sync>>,
 }
 
 impl UniverseRuntime {
@@ -17,25 +16,18 @@ impl UniverseRuntime {
 
         Ok(Self {
             universe,
-            sync_channel_tx: None,
         })
     }
 
-    pub fn subscribe_sync(&mut self) -> mpsc::Receiver<model::Sync> {
-        let (tx, rx) = mpsc::channel(8);
-        self.sync_channel_tx = Some(tx);
-        rx
+    pub const fn universe(&self) -> &model::Universe {
+        &self.universe
     }
 
-    pub fn universe(&self) -> &model::Universe {
-        &self.universe
+    pub const fn tick_interval(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(1)
     }
 
     pub async fn tick(&mut self) -> model::Result<()> {
         Ok(())
-    }
-
-    pub fn tick_interval(&self) -> std::time::Duration {
-        std::time::Duration::from_secs(1)
     }
 }

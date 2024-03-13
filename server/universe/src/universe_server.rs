@@ -33,12 +33,13 @@ pub(crate) async fn run() -> process::ExitCode {
     loop {
         tokio::select! {
             () = &mut sleep => {
-                {
+                let tick_interval = {
                     let mut runtime_lock = runtime.lock().await;
                     runtime_lock.tick().await.unwrap();
+                    runtime_lock.tick_interval()
                 };
 
-                sleep.as_mut().reset(tokio::time::Instant::now() + frame_duration);
+                sleep.as_mut().reset(tokio::time::Instant::now() + tick_interval);
             }
         }
     }

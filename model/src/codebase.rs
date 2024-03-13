@@ -25,4 +25,6 @@ pub enum CodebaseClassID {
     Direction,
     Awareness,
     Interface,
+    Session,
+    Zone
 }

@@ -1,12 +1,12 @@
 use serde;
-use crate::{error::*, codebase::*, identity::*, descriptor::*, modeling::*, world::*, interface::*};
+use crate::{error::*, codebase::*, identity::*, session::*, descriptor::*, modeling::*, world::*, interface::*};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Universe {
     uid: UID,
     descriptor: Descriptor,
     world_uids: Vec<UID>,
-    active_interfaces: Vec<UID>
+    sessions: Vec<Session>
 }
 
 impl Universe {
@@ -14,8 +14,8 @@ impl Universe {
         &self.world_uids
     }
 
-    pub fn active_interface_uids(&self) -> &Vec<UID> {
-        &self.active_interfaces
+    pub fn sessions(&self) -> &Vec<Session> {
+        &self.sessions
     }
 }
 
@@ -45,7 +45,7 @@ pub enum UniverseField {
     UID,
     Descriptor,
     WorldUIDs,
-    ActiveInterfaceUIDs
+    Sessions
 }
 
 impl Fields for UniverseField {
@@ -54,7 +54,7 @@ impl Fields for UniverseField {
             Self::UID => &Self::FIELD_UID,
             Self::Descriptor => &Self::FIELD_DESCRIPTOR,
             Self::WorldUIDs => &Self::FIELD_WORLD_UIDS,
-            Self::ActiveInterfaceUIDs => &Self::FIELD_ACTIVE_INTERFACE_UIDS
+            Self::Sessions => &Self::FIELD_SESSIONS
         }
     }
 }
@@ -71,14 +71,14 @@ impl UniverseField {
     const FIELDNAME_UID: &'static str = "uid";
     const FIELDNAME_DESCRIPTOR: &'static str = "descriptor";
     const FIELDNAME_WORLD_UIDS: &'static str = "world_uids";
-    const FIELDNAME_ACTIVE_INTERFACE_UIDS: &'static str = "active_interface_uids";
+    const SESSIONS: &'static str = "active_interface_uids";
     const FIELD_UID: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_UID,
         FieldValueType::UID(&Self::CLASS_IDENT));
     const FIELD_DESCRIPTOR: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_DESCRIPTOR,
         FieldValueType::Model(DescriptorField::class_ident_const()));
     const FIELD_WORLD_UIDS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_WORLD_UIDS,
         FieldValueType::UIDList(WorldField::class_ident_const()));
-    const FIELD_ACTIVE_INTERFACE_UIDS: Field = Field::new(&Self::CLASS_IDENT, Self::FIELDNAME_ACTIVE_INTERFACE_UIDS,
+    const FIELD_SESSIONS: Field = Field::new(&Self::CLASS_IDENT, Self::SESSIONS,
         FieldValueType::UIDList(InterfaceField::class_ident_const()));
 
     pub const fn class_ident_const() -> &'static ClassIdent {
@@ -91,7 +91,7 @@ pub struct UniverseBuilder {
     uid: Option<UID>,
     descriptor: Option<DescriptorBuilder>,
     world_uids: Vec<ListOp<UID, UID>>,
-    active_interface_uids: Vec<ListOp<UID, UID>>
+    sessions: Vec<ListOp<SessionBuilder, UID>>
 }
 
 impl Builder for UniverseBuilder {
@@ -104,7 +104,7 @@ impl Builder for UniverseBuilder {
             uid: None,
             descriptor: None,
             world_uids: Vec::new(),
-            active_interface_uids: Vec::new()
+            sessions: Vec::new()
         }
     }
 
@@ -129,24 +129,24 @@ impl Builder for UniverseBuilder {
         let uid = Build::create_uid(&mut self.uid, &mut fields_changed, UniverseField::UID)?;
         let descriptor = Build::create(&mut self.descriptor, &mut fields_changed, UniverseField::Descriptor)?;
         let world_uids = Build::create_uid_vec(&mut self.world_uids, &mut fields_changed, UniverseField::WorldUIDs)?;
-        let active_interfaces = Build::create_uid_vec(&mut self.active_interface_uids, &mut fields_changed, UniverseField::ActiveInterfaceUIDs)?;
+        let sessions = Build::create_vec(&mut self.sessions, &mut fields_changed, UniverseField::Sessions)?;
 
         let universe = Universe {
             uid,
             descriptor,
             world_uids,
-            active_interfaces
+            sessions
         };
 
         Ok(Creation::new(self, universe))
     }
 
     fn modify(mut self, existing: &mut Self::ModelType) -> crate::Result<Modification<Self::BuilderType>> {
-        let mut fields_changed = Build::prepare_modify_composite(&mut self, existing)?;
+        let mut fields_changed = Build::prepare_modify(&mut self, existing)?;
 
         Build::modify(&mut self.descriptor, &mut existing.descriptor, &mut fields_changed, UniverseField::Descriptor)?;
         Build::modify_uid_vec(&mut self.world_uids, &mut existing.world_uids, &mut fields_changed, UniverseField::WorldUIDs)?;
-        Build::modify_uid_vec(&mut self.active_interface_uids, &mut existing.active_interfaces, &mut fields_changed, UniverseField::ActiveInterfaceUIDs)?;
+        Build::modify_vec(&mut self.sessions, &mut existing.sessions, &mut fields_changed, UniverseField::Sessions)?;
 
         Ok(Modification::new(self, fields_changed))
     }
@@ -197,13 +197,13 @@ impl UniverseBuilder {
 }
 
 impl UniverseBuilder {
-    pub fn add_active_interface_uid(&mut self, uid: UID) -> Result<&mut Self> {
-        self.active_interface_uids.push(ListOp::Add(uid));
+    pub fn add_session(&mut self, session: SessionBuilder) -> Result<&mut Self> {
+        self.sessions.push(ListOp::Add(session));
         Ok(self)
     }
 
-    pub fn remove_active_interface_uid(&mut self, uid: UID) -> Result<&mut Self> {
-        self.active_interface_uids.push(ListOp::Remove(uid));
+    pub fn remove_session(&mut self, uid: UID) -> Result<&mut Self> {
+        self.sessions.push(ListOp::Remove(uid));
         Ok(self)
     }
 }
