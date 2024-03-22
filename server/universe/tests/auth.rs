@@ -7,7 +7,7 @@ mod tests {
     #[test]
     fn test_authenticate() {
         let (mut universe, _world, interface) = testing::create_universe();
-        let solana_auth = auth::SolanaAuthRequest {
+        let solana_auth = auth::Web3AuthRequest {
             client_public_key: [0; 32],
             client_challenge: [0; 32]
         };

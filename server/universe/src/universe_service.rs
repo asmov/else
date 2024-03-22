@@ -8,7 +8,7 @@ impl UniverseService {
         auth_request: AuthRequestMsg
     ) -> Result<Modification<UniverseBuilder>> {
         match auth_request {
-            AuthRequestMsg::Solana(solana_auth_request) => {
+            AuthRequestMsg::Web3(solana_auth_request) => {
                 
             }
         }

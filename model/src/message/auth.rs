@@ -3,20 +3,42 @@ use serde_with::{serde_as, Bytes};
 use crate::identity::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub enum Web3Blockchain {
+    Solana,
+    Ethereum
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub enum AuthRegisterMsg {
+    Web3(Web3AuthRegisterRequest)
+}
+
+#[serde_as]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct Web3AuthRegisterRequest {
+    pub blockchain: Web3Blockchain,
+    pub public_key: Bytes32,
+    pub email_address: String,
+    #[serde_as(as = "Bytes")]
+    pub email_address_signature: Bytes64,
+}
+
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum AuthRequestMsg {
-    Solana(SolanaAuthRequest)
+    Web3(Web3AuthRequest)
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum AuthResponseMsg {
     Unknown,
     Incorrect,
-    Solana(SolanaAuthChallenge)
+    Web3(Web3AuthChallenge)
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum AuthAnswerMsg {
-    Solana(SolanaAuthAnswer)
+    Web3(Web3AuthAnswer)
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -31,7 +53,8 @@ type Bytes64 = [u8; 64];
 
 /// The client sends its public key and a nonce for the server to sign
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct SolanaAuthRequest {
+pub struct Web3AuthRequest {
+    pub blockchain: Web3Blockchain,
     pub client_public_key: Bytes32,
     /// Nonce, generated for each request
     pub client_challenge: Bytes32,
@@ -43,7 +66,8 @@ pub struct SolanaAuthRequest {
 ///   2. Launch the wallet's signIn process (Sign-In With Solana SIWS)
 #[serde_as]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct SolanaAuthChallenge {
+pub struct Web3AuthChallenge {
+    pub blockchain: Web3Blockchain,
     pub server_public_key: Bytes32,
     /// The result of the server signing the [SolanaAuthRequest::client_challenge]
     #[serde_as(as = "Bytes")]
@@ -60,7 +84,7 @@ pub struct SolanaAuthChallenge {
 ///   3. Return the UID of the interface using [AuthResultMsg::Authenticated]
 #[serde_as]
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct SolanaAuthAnswer {
+pub struct Web3AuthAnswer {
     #[serde_as(as = "Bytes")]
     pub signature: Bytes64,
 }

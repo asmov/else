@@ -1,11 +1,20 @@
 pub mod auth;
 use std::fmt::Display;
 use strum;
+use const_format::concatcp;
 use crate::{timeframe::*, action::*, sync::*, descriptor::*};
 pub use auth::*;
 
 pub type MessageID = u16;
 pub type ErrorCode = u8;
+
+/// A const named MSGTYPENAME must be defined to use this.
+macro_rules! msgname {
+    ($name:literal) => {
+        concatcp!(MSGTYPENAME, "::", $name)
+    };
+}
+
 
 pub enum ErrorCodes {
     IllegalWebsocketFrame = 0x01 
@@ -83,6 +92,7 @@ pub struct ListLinkableMsg {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ClientToZoneMessage {
+    AuthRegister(AuthRegisterMsg),
     AuthRequest(AuthRequestMsg),
     AuthAnswer(AuthAnswerMsg),
     /// Request to connect to the world through this server.
@@ -104,15 +114,17 @@ impl Messaging for ClientToZoneMessage {
     const MESSAGE_TYPE_NAME: &'static str = "ClientToZoneMessage";
 
     fn message_name(&self) -> &'static str {
+        const MSGTYPENAME: &'static str = ClientToZoneMessage::MESSAGE_TYPE_NAME;
         match self {
-            Self::AuthRequest(_) => "ClientToZoneMessage::AuthRequest",
-            Self::AuthAnswer(_) => "ClientToZoneMessage::AuthAnswer",
-            Self::Connect(_) => "ClientToZoneMessage::Connect",
-            Self::Disconnect => "ClientToZoneMessage::Disconnect",
-            Self::ListLinkable(_) => "ClientToZoneMessage::ListLinkable",
-            Self::Downlink(_) => "ClientToZoneMessage::Downlink",
-            Self::Unlink => "ClientToZoneMessage::Downlink",
-            Self::Action(_) => "ClientToZoneMessage::Action",
+            Self::AuthRegister(_) => msgname!("AuthRegister"),
+            Self::AuthRequest(_) => msgname!("AuthRequest"),
+            Self::AuthAnswer(_) => msgname!("AuthAnswer"),
+            Self::Connect(_) => msgname!("Connect"),
+            Self::Disconnect => msgname!("Disconnect"),
+            Self::ListLinkable(_) => msgname!("ListLinkable"),
+            Self::Downlink(_) => msgname!("Downlink"),
+            Self::Unlink => msgname!("Downlink"),
+            Self::Action(_) => msgname!("Action"),
         }
     }
 }
@@ -160,21 +172,22 @@ impl Messaging for ZoneToClientMessage {
     const MESSAGE_TYPE_NAME: &'static str = "ZoneToClientMessage";
 
     fn message_name(&self) -> &'static str {
+        const MSGTYPENAME: &'static str = ZoneToClientMessage::MESSAGE_TYPE_NAME;
         match self {
-            Self::TimeFrame(_) => "ZoneToClientMessage::TimeFrame",
-            Self::AuthResponse(_) => "ZoneToClientMessage::AuthResponse",
-            Self::AuthResult(_) => "ZoneToClientMessage::AuthResult",
-            Self::Connected(_) => "ZoneToClientMessage::Connected",
-            Self::ConnectRejected => "ZoneToClientMessage::ConnectRejected",
-            Self::InitInterfaceView(_, _)=> "ZoneToClientMessage::InitInterfaceView",
-            Self::Sync(_) => "ZoneToClientMessage::Sync",
-            Self::Disconnect => "ZoneToClientMessage::Disconnect",
-            Self::Linkable(_) => "ZoneToClientMessage::Linkable",
-            Self::DownlinkApproved(_,_) => "ZoneToClientMessage::DownlinkApproved",
-            Self::DownlinkRejected(_) => "ZoneToClientMessage::DownlinkRejected",
-            Self::Unlinked(_) => "ZoneToClientMessage::Unlinked",
-            Self::ActionApproved(_,_) => "ZoneToClientMessage::ActionApproved",
-            Self::ActionRejected(_) => "ZoneToClientMessage::ActionRejected",
+            Self::TimeFrame(_) => msgname!("TimeFrame"),
+            Self::AuthResponse(_) => msgname!("AuthResponse"),
+            Self::AuthResult(_) => msgname!("AuthResult"),
+            Self::Connected(_) => msgname!("Connected"),
+            Self::ConnectRejected => msgname!("ConnectRejected"),
+            Self::InitInterfaceView(_, _)=> msgname!("InitInterfaceView"),
+            Self::Sync(_) => msgname!("Sync"),
+            Self::Disconnect => msgname!("Disconnect"),
+            Self::Linkable(_) => msgname!("Linkable"),
+            Self::DownlinkApproved(_,_) => msgname!("DownlinkApproved"),
+            Self::DownlinkRejected(_) => msgname!("DownlinkRejected"),
+            Self::Unlinked(_) => msgname!("Unlinked"),
+            Self::ActionApproved(_,_) => msgname!("ActionApproved"),
+            Self::ActionRejected(_) => msgname!("ActionRejected"),
         }
     }
 }
@@ -189,9 +202,10 @@ impl Messaging for ZoneToWorldMessage {
     const MESSAGE_TYPE_NAME: &'static str = "ZoneToWorldMessage";
 
     fn message_name(&self) -> &'static str {
+        const MSGTYPENAME: &'static str = ZoneToWorldMessage::MESSAGE_TYPE_NAME;
         match self {
-            Self::Connect => "ZoneToWorldMessage::Connect",
-            Self::Disconnect => "ZoneToWorldMessage::Disconnect",
+            Self::Connect => msgname!("Connect"),
+            Self::Disconnect => msgname!("Disconnect"),
         }
     }
 }
@@ -207,10 +221,11 @@ impl Messaging for ZoneToUniverseMessage {
     const MESSAGE_TYPE_NAME: &'static str = "ZoneToUniverseMessage";
 
     fn message_name(&self) -> &'static str {
+        const MSGTYPENAME: &'static str = ZoneToUniverseMessage::MESSAGE_TYPE_NAME;
         match self {
-            Self::Connect => "ZoneToUniverseMessage::Connect",
-            Self::Disconnect => "ZoneToUniverseMessage::Disconnect",
-            Self::AuthRequest(_) => "ZoneToUniverseMessage::AuthRequest",
+            Self::Connect => msgname!("Connect"),
+            Self::Disconnect => msgname!("Disconnect"),
+            Self::AuthRequest(_) => msgname!("AuthRequest"),
         }
     }
 }
@@ -226,10 +241,11 @@ impl Messaging for UniverseToZoneMessage {
     const MESSAGE_TYPE_NAME: &'static str = "UniverseToZoneMessage";
 
     fn message_name(&self) -> &'static str {
+        const MSGTYPENAME: &'static str = UniverseToZoneMessage::MESSAGE_TYPE_NAME;
         match self {
-            Self::Connected => "UniverseToZoneMessage::Connected",
-            Self::ConnectRejected => "UniverseToZoneMessage::ConnectRejected",
-            Self::Disconnect => "UniverseToZoneMessage::Disconnect",
+            Self::Connected => msgname!("Connected"),
+            Self::ConnectRejected => msgname!("ConnectRejected"),
+            Self::Disconnect => msgname!("Disconnect"),
         }
     }
 }
@@ -249,13 +265,14 @@ impl Messaging for WorldToZoneMessage {
     const MESSAGE_TYPE_NAME: &'static str = "WorldToZoneMessage";
 
     fn message_name(&self) -> &'static str {
+        const MSGTYPENAME: &'static str = WorldToZoneMessage::MESSAGE_TYPE_NAME;
         match self {
-            Self::TimeFrame(_) => "WorldToZoneMessage::TimeFrame",
-            Self::Connected => "WorldToZoneMessage::Connected",
-            Self::ConnectRejected => "WorldToZoneMessage::ConnectRejected",
-            Self::Disconnect => "WorldToZoneMessage::Disconnect",
-            Self::WorldBytes(_,_) => "WorldToZoneMessage::WorldBytes",
-            Self::Sync(_) => "WorldToZoneMessage::Sync"
+            Self::TimeFrame(_) => msgname!("TimeFrame"),
+            Self::Connected => msgname!("Connected"),
+            Self::ConnectRejected => msgname!("ConnectRejected"),
+            Self::Disconnect => msgname!("Disconnect"),
+            Self::WorldBytes(_,_) => msgname!("WorldBytes"),
+            Self::Sync(_) => msgname!("Sync")
         }
     }
 }
