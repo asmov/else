@@ -7,6 +7,8 @@ use super::terminal;
 pub enum AppMsg {
     Disconnected,
     Start,
+    Connect(model::ClientToZoneMessage),
+    AuthChallenge(model::AuthChallengeMsg),
     Connected,
     Frame(model::Frame),
     TerminalOutput(String, EntryCategory),
@@ -92,12 +94,19 @@ impl Component for App {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             AppMsg::Start => {
+            },
+            AppMsg::Connect(auth_request) => {
+                // message should be an auth request or registration
+                #[cfg(debug_assertions)]
+                matches!(auth_request, model::ClientToZoneMessage::AuthRequest(_) | model::ClientToZoneMessage::AuthRegister(_));
+
                 let log_callback = ctx.link().callback(|(text, category)| {
                     AppMsg::TerminalOutput(text, category)
                 });
 
                 let connection_callback = ctx.link().callback(|status: net::Status| {
                     match status {
+                        net::Status::AuthChallenge(auth_challenge) => AppMsg::AuthChallenge(auth_challenge),
                         net::Status::Connected => AppMsg::Connected,
                         net::Status::Disconnected => AppMsg::Disconnected,
                         net::Status::Frame(frame) => AppMsg::Frame(frame),
@@ -105,11 +114,11 @@ impl Component for App {
                     }
                 });
 
-                spawn_local(net::zone_connector_task(connection_callback, log_callback));
-
-                //let mut input = ParsedInput::parse("go".to_string())?;
-                //log!(input.parse().unwrap_err().to_string());
+                let (tx, mut rx) = yew::platform::pinned::mpsc::unbounded::<AttrValue>();
+                ctx.link().send_future(future)
+                spawn_local(net::zone_connector_task(connection_callback, auth_request, log_callback));
             },
+            A
             AppMsg::Connected => {
                 self.to_terminal_output("Synchronizing with zone server.", EntryCategory::Technical);
             },

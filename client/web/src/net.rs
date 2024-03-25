@@ -4,7 +4,7 @@ use reqwasm::websocket;
 use futures::{SinkExt, StreamExt};
 use reqwasm::websocket::futures::WebSocket;
 use yew::Callback;
-use model::{AuthChallengeMsg, ClientToZoneMessage, ZoneToClientMessage};
+use model::{ClientToZoneMessage, ZoneToClientMessage};
 use asmov_else_network_common::*;
 use asmov_else_model as model;
 
@@ -15,6 +15,7 @@ pub enum Stream {
 }
 
 pub enum Status {
+    AuthChallenge(model::AuthChallengeMsg),
     Connected,
     Disconnected,
     Frame(model::Frame),
@@ -122,13 +123,13 @@ async fn negotiate_session(
             return Err(NetworkError::Rejected{who: conn.who().clone()})
         },
         _ => {
-            Err(NetworkError::UnexpectedResponse{
+            return Err(NetworkError::UnexpectedResponse{
                 who: conn.who().clone(),
                 expected: "ZoneToClientMessage::[Connected, ConnectRejected]".to_string() })
         }
     }
 
-    negotiate_auth(conn, auth_msg, log).await
+    negotiate_auth(conn, auth_msg, _log).await
 }
 
 async fn negotiate_auth(
@@ -161,7 +162,14 @@ async fn negotiate_auth(
     }
 }
 
-pub async fn zone_connector_task(status: Callback<Status>, log: Callback<(String,EntryCategory)>) {
+pub async fn zone_connector_task(
+    status: Callback<Status>,
+    auth_request: model::ClientToZoneMessage,
+    log: Callback<(String,EntryCategory)>
+) {
+    #[cfg(debug_assertions)]
+    matches!(auth_request, model::ClientToZoneMessage::AuthRequest(_) | model::ClientToZoneMessage::AuthRegister(_));
+
     let mut connect_attempts: isize = -1;
 
     loop {
@@ -189,10 +197,17 @@ pub async fn zone_connector_task(status: Callback<Status>, log: Callback<(String
 
         log.emit((format!("Connected to {who}."), EntryCategory::Technical));
 
-        let conn = match negotiate_session(conn, &log).await {
-            Ok(conn) => {
-                log.emit((format!("Negotiated session with {}.", who.what()), EntryCategory::Technical));
-                conn
+        let conn;
+        let (conn, response) = negotiate_session(conn, auth_request, &log).await {
+            Ok((conn, response)) => match response {
+                model::ZoneToClientMessage::Authorized(_) => {
+                    log.emit((format!("Negotiated session with {}.", who.what()), EntryCategory::Technical));
+                    conn
+                },
+                model::ZoneToClientMessage::AuthChallenge(challenge) => {
+                    let answer = status.emit(Status::AuthChallenge(challenge));
+
+                }
             },
             Err(e) => {
                 log.emit((e.to_string(), EntryCategory::Error));
