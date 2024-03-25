@@ -30,9 +30,7 @@ pub enum AuthRequestMsg {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub enum AuthResponseMsg {
-    Unknown,
-    Incorrect,
+pub enum AuthChallengeMsg {
     Web3(Web3AuthChallenge)
 }
 
@@ -42,10 +40,8 @@ pub enum AuthAnswerMsg {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub enum AuthResultMsg {
-    Unknown,
-    Incorrect,
-    Authenticated(UID)
+pub struct AuthorizedMsg {
+    pub interface_uid: UID
 }
 
 type Bytes32 = [u8; 32];

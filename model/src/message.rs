@@ -95,10 +95,6 @@ pub enum ClientToZoneMessage {
     AuthRegister(AuthRegisterMsg),
     AuthRequest(AuthRequestMsg),
     AuthAnswer(AuthAnswerMsg),
-    /// Request to connect to the world through this server.
-    /// Sends an authentication along with an optional downlink UID that was previously used.
-    /// Expects responses: ZoneToClientMessage::[Connected, ConnectRejected]
-    Connect(ConnectMsg),
     /// Client is about to disconnect.
     /// Expects response: ZoneToClientMessage::Disconnect
     Disconnect,
@@ -119,7 +115,6 @@ impl Messaging for ClientToZoneMessage {
             Self::AuthRegister(_) => msgname!("AuthRegister"),
             Self::AuthRequest(_) => msgname!("AuthRequest"),
             Self::AuthAnswer(_) => msgname!("AuthAnswer"),
-            Self::Connect(_) => msgname!("Connect"),
             Self::Disconnect => msgname!("Disconnect"),
             Self::ListLinkable(_) => msgname!("ListLinkable"),
             Self::Downlink(_) => msgname!("Downlink"),
@@ -145,15 +140,17 @@ pub struct LinkableMsg {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
 pub enum ZoneToClientMessage {
-    TimeFrame(NewTimeFrameMsg), // 2
     /// Response: Request to connect to the world through this server has been accepted.
-    /// Returns the interface UID that the Authentication resolved to.
-    /// Provides the first page of ListLinkable results
-    AuthResponse(AuthResponseMsg),
-    AuthResult(AuthResultMsg),
-    Connected(ConnectedMsg),
+    Connected,
     /// Response: Request to connect to the world through this server has been rejected.
     ConnectRejected,
+    /// A timeframe (tick) has elapsed
+    TimeFrame(NewTimeFrameMsg),
+    /// The client has to further prove its identity to authenticate.
+    AuthChallenge(AuthChallengeMsg),
+    /// Authentication has either succeeded or failed.
+    Authorized(AuthorizedMsg),
+    AuthRejected,
     InitInterfaceView(TimeFrame, Vec<u8>),
     Sync(Sync),
     Disconnect,
@@ -175,9 +172,9 @@ impl Messaging for ZoneToClientMessage {
         const MSGTYPENAME: &'static str = ZoneToClientMessage::MESSAGE_TYPE_NAME;
         match self {
             Self::TimeFrame(_) => msgname!("TimeFrame"),
-            Self::AuthResponse(_) => msgname!("AuthResponse"),
-            Self::AuthResult(_) => msgname!("AuthResult"),
-            Self::Connected(_) => msgname!("Connected"),
+            Self::AuthChallenge(_) => msgname!("AuthResponse"),
+            Self::Authorized(_) => msgname!("AuthResult"),
+            Self::Connected => msgname!("Connected"),
             Self::ConnectRejected => msgname!("ConnectRejected"),
             Self::InitInterfaceView(_, _)=> msgname!("InitInterfaceView"),
             Self::Sync(_) => msgname!("Sync"),

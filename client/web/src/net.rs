@@ -4,7 +4,7 @@ use reqwasm::websocket;
 use futures::{SinkExt, StreamExt};
 use reqwasm::websocket::futures::WebSocket;
 use yew::Callback;
-use model::ZoneToClientMessage;
+use model::{AuthChallengeMsg, ClientToZoneMessage, ZoneToClientMessage};
 use asmov_else_network_common::*;
 use asmov_else_model as model;
 
@@ -105,35 +105,58 @@ impl ConnectionTrait for Connection {
 pub type ConnectionResult = Result<Connection, NetworkError>;
 pub type LogCallback = Callback<(String, EntryCategory)>;
 
-async fn negotiate_session(mut conn: Connection, log: &LogCallback) -> ConnectionResult {
-    // Send the protocol header
-    let our_protocol_header = model::ProtocolHeader::current(model::Protocol::ClientToZone);
-    conn.send(our_protocol_header).await?;
-    
-    // The server should send a protocol header back
-    let their_protocol_header: model::ProtocolHeader = conn.receive().await?;
-    if !their_protocol_header.compatible(model::Protocol::ZoneToClient) {
-        log.emit((format!("Incompatible protocol: {:?}", their_protocol_header), EntryCategory::Error));
-        return Err(conn.error_payload("compatible protocol").await);
-    }
-
-    // Send the connection request
-    let msg = model::ClientToZoneMessage::Connect;
-    conn.send(msg).await?;
+/// auth_msg must be either [model::ClientToZoneMessage::AuthRequest] or [model::ClientToZoneMessage::AuthRegister]
+/// On success, returns either [model::ZoneToClientMessage::AuthChallenge] or [model::ZoneToClientMessage::Authorized].
+async fn negotiate_session(
+    mut conn: Connection,
+    auth_msg: model::ClientToZoneMessage,
+    _log: &LogCallback
+) -> Result<(Connection, ClientToZoneMessage), NetworkError> {
+    negotiate_protocol(&mut conn, false, model::Protocol::ClientToZone, model::Protocol::ZoneToClient).await?;
 
     // Receive either Connected or ConnectRejected
     let msg: model::ZoneToClientMessage = conn.receive().await?;
     match msg {
-        model::ZoneToClientMessage::Connected => {
-            Ok(conn)
-        },
+        model::ZoneToClientMessage::Connected => {},
         model::ZoneToClientMessage::ConnectRejected => {
-            Err(NetworkError::Rejected{who: conn.who().clone()})
+            return Err(NetworkError::Rejected{who: conn.who().clone()})
         },
         _ => {
             Err(NetworkError::UnexpectedResponse{
                 who: conn.who().clone(),
                 expected: "ZoneToClientMessage::[Connected, ConnectRejected]".to_string() })
+        }
+    }
+
+    negotiate_auth(conn, auth_msg, log).await
+}
+
+async fn negotiate_auth(
+    mut conn: Connection,
+    auth_msg: model::ClientToZoneMessage,
+    _log: &LogCallback
+) -> Result<(Connection, ClientToZoneMessage), NetworkError> {
+    // ensure that login is either AuthRequest or AuthRegister
+    let (is_login, is_registration, is_challenge_answer) = match auth_msg {
+        model::ClientToZoneMessage::AuthRequest(_) => (true, false, false),
+        model::ClientToZoneMessage::AuthRegister(_) => (false, true, false), 
+        model::ClientToZoneMessage::AuthAnswer(_) => (false, false, true), 
+        _ => panic!("Expected auth_msg to be either AuthRequest, AuthRegister, or AuthAnswer."),
+    };
+
+    // send the auth request/register message
+    conn.send(auth_msg).await?;
+
+    // Receive either an an auth rejection, challenge, or successful authorization
+    let msg: model::ZoneToClientMessage = conn.receive().await?;
+    match msg {
+        model::ZoneToClientMessage::AuthChallenge(challenge_msg) => Ok((conn, msg)),
+        model::ZoneToClientMessage::Authorized(authorization_msg) => Ok((conn, msg)),
+        model::ZoneToClientMessage::AuthRejected => Err(NetworkError::Rejected{who: conn.who().clone()}),
+        _ => {
+            Err(NetworkError::UnexpectedResponse {
+                who: conn.who().clone(),
+                expected: "ZoneToClientMessage::[AuthAccepted, AuthRejected]".to_string() })
         }
     }
 }
