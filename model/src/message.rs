@@ -85,12 +85,12 @@ pub struct ConnectMsg {
     pub last_downlink_uid: Option<UID>
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct ListLinkableMsg {
     pub page: u16
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, strum::AsRefStr, Clone)]
 pub enum ClientToZoneMessage {
     AuthRegister(AuthRegisterMsg),
     AuthRequest(AuthRequestMsg),
@@ -172,8 +172,9 @@ impl Messaging for ZoneToClientMessage {
         const MSGTYPENAME: &'static str = ZoneToClientMessage::MESSAGE_TYPE_NAME;
         match self {
             Self::TimeFrame(_) => msgname!("TimeFrame"),
-            Self::AuthChallenge(_) => msgname!("AuthResponse"),
-            Self::Authorized(_) => msgname!("AuthResult"),
+            Self::AuthChallenge(_) => msgname!("AuthChallenge"),
+            Self::Authorized(_) => msgname!("Authorized"),
+            Self::AuthRejected => msgname!("AuthRejected"),
             Self::Connected => msgname!("Connected"),
             Self::ConnectRejected => msgname!("ConnectRejected"),
             Self::InitInterfaceView(_, _)=> msgname!("InitInterfaceView"),

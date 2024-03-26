@@ -1,6 +1,6 @@
 use crate::action::*;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct MultiplyAction {
     pub base: BaseAction
 }

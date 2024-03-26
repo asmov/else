@@ -1,5 +1,6 @@
+use model::Web3AuthAnswer;
 use web_sys::{wasm_bindgen::JsCast, HtmlElement, HtmlInputElement};
-use yew::{platform::spawn_local, prelude::*, virtual_dom::VChild};
+use yew::{platform::{pinned::mpsc::UnboundedSender, spawn_local}, prelude::*, virtual_dom::VChild};
 use asmov_else_model::{self as model, Descriptive, Identifiable, Routing};
 use crate::{cmd::{self, AppCmd}, error::*, input::{self, *}, net, ui::terminal::{EntryCategory, EntryProps, Terminal}};
 use super::terminal;
@@ -36,7 +37,8 @@ pub struct App {
     stats_output: Vec<AttrValue>,
     ready: bool,
     frame: model::Frame,
-    interface_view: Option<model::InterfaceView>
+    interface_view: Option<model::InterfaceView>,
+    ui_to_net_tx: Option<UnboundedSender<net::UItoNetMsg>>,
 }
 
 impl Component for App {
@@ -62,6 +64,7 @@ impl Component for App {
             ready: false,
             frame: 0,
             interface_view: None,
+            ui_to_net_tx: None
         };
 
         ctx.link().send_message(AppMsg::Start);
@@ -104,21 +107,34 @@ impl Component for App {
                     AppMsg::TerminalOutput(text, category)
                 });
 
-                let connection_callback = ctx.link().callback(|status: net::Status| {
+                let net_to_ui_callback = ctx.link().callback(|status: net::NetToUIMsg| {
                     match status {
-                        net::Status::AuthChallenge(auth_challenge) => AppMsg::AuthChallenge(auth_challenge),
-                        net::Status::Connected => AppMsg::Connected,
-                        net::Status::Disconnected => AppMsg::Disconnected,
-                        net::Status::Frame(frame) => AppMsg::Frame(frame),
-                        net::Status::Synchronized(interface_view, frame) => AppMsg::Synchronized(interface_view, frame),
+                        net::NetToUIMsg::AuthChallenge(auth_challenge) => AppMsg::AuthChallenge(auth_challenge),
+                        net::NetToUIMsg::Connected(interface_uid) => AppMsg::Connected,
+                        net::NetToUIMsg::Disconnected => AppMsg::Disconnected,
+                        net::NetToUIMsg::Frame(frame) => AppMsg::Frame(frame),
+                        net::NetToUIMsg::Synchronized(interface_view, frame) => AppMsg::Synchronized(interface_view, frame),
                     }
                 });
 
-                let (tx, mut rx) = yew::platform::pinned::mpsc::unbounded::<AttrValue>();
-                ctx.link().send_future(future)
-                spawn_local(net::zone_connector_task(connection_callback, auth_request, log_callback));
+                let (ui_to_net_tx, mut ui_to_net_rx) = yew::platform::pinned::mpsc::unbounded::<net::UItoNetMsg>();
+                self.ui_to_net_tx = Some(ui_to_net_tx);
+                spawn_local(net::zone_connector_task(net_to_ui_callback, ui_to_net_rx, auth_request, log_callback));
             },
-            A
+            AppMsg::AuthChallenge(auth_challenge) => {
+                //todo: do something 
+                let auth_answer = match auth_challenge {
+                    model::AuthChallengeMsg::Web3(challenge) => {
+                        model::AuthAnswerMsg::Web3(Web3AuthAnswer{
+                            signature: [0; 64] //todo
+                        })
+                    }
+                };
+
+                self.ui_to_net_tx
+                    .as_ref().expect("UI to Net channel should exist")
+                    .send_now(net::UItoNetMsg::AuthAnswer(auth_answer)).unwrap();
+            },
             AppMsg::Connected => {
                 self.to_terminal_output("Synchronizing with zone server.", EntryCategory::Technical);
             },

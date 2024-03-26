@@ -2,19 +2,19 @@ use serde;
 use serde_with::{serde_as, Bytes};
 use crate::identity::*;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub enum Web3Blockchain {
     Solana,
     Ethereum
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub enum AuthRegisterMsg {
     Web3(Web3AuthRegisterRequest)
 }
 
 #[serde_as]
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Web3AuthRegisterRequest {
     pub blockchain: Web3Blockchain,
     pub public_key: Bytes32,
@@ -24,7 +24,7 @@ pub struct Web3AuthRegisterRequest {
 }
 
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub enum AuthRequestMsg {
     Web3(Web3AuthRequest)
 }
@@ -34,7 +34,7 @@ pub enum AuthChallengeMsg {
     Web3(Web3AuthChallenge)
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub enum AuthAnswerMsg {
     Web3(Web3AuthAnswer)
 }
@@ -48,7 +48,7 @@ type Bytes32 = [u8; 32];
 type Bytes64 = [u8; 64];
 
 /// The client sends its public key and a nonce for the server to sign
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Web3AuthRequest {
     pub blockchain: Web3Blockchain,
     pub client_public_key: Bytes32,
@@ -79,7 +79,7 @@ pub struct Web3AuthChallenge {
 ///   2. Start a session for the client's Interface
 ///   3. Return the UID of the interface using [AuthResultMsg::Authenticated]
 #[serde_as]
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Web3AuthAnswer {
     #[serde_as(as = "Bytes")]
     pub signature: Bytes64,
